@@ -145,6 +145,28 @@ export class CalculadoraMetricas {
   }
 }
 
+// Marcas de tempo da webcam a partir do requestVideoFrameCallback. O t_ms é o
+// instante de captura (metadata.captureTime, ou o now do callback quando a
+// câmera não o informa), contado desde a captura do primeiro quadro, como o
+// relógio da webcam em entrada/fontes.py. A captura é limitada ao now, já que
+// um quadro não pode ter sido capturado depois de entregue. Devolve null quando
+// a marca não avança, porque o MediaPipe exige marcas estritamente crescentes.
+export class RelogioWebcam {
+  constructor() {
+    this.t0 = null;
+    this.ultimo = -1;
+  }
+
+  quadro(agora, metadados) {
+    const captura = Math.min(metadados?.captureTime ?? agora, agora);
+    if (this.t0 === null) this.t0 = captura;
+    const tMs = Math.round(captura - this.t0);
+    if (tMs <= this.ultimo) return null;
+    this.ultimo = tMs;
+    return { tMs, captura };
+  }
+}
+
 // CSV no formato de contratos/metricas.v1.json.
 export function cabecalhoCsv(contrato) {
   return contrato.colunas.map((c) => c.nome).join(",");

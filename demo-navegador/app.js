@@ -3,7 +3,7 @@
 import { FaceLandmarker, FilesetResolver } from
   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.0/vision_bundle.mjs";
 import {
-  CalculadoraMetricas, pontosEmPixels, matrizEmLinhas, cabecalhoCsv, linhaCsv,
+  CalculadoraMetricas, RelogioWebcam, pontosEmPixels, matrizEmLinhas, cabecalhoCsv, linhaCsv,
 } from "./extrator.js";
 
 const WASM = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.0/wasm";
@@ -41,8 +41,9 @@ async function novaSessao() {
   return { id: sessao, calc: new CalculadoraMetricas(config.confianca, indices) };
 }
 
-function processar(s, tMs, quadro) {
-  const inicio = performance.now();
+// O atraso é medido a partir de `inicio`: o instante de captura na webcam e,
+// por padrão, o começo do processamento, como pede o contrato para arquivos.
+function processar(s, tMs, quadro, inicio = performance.now()) {
   const res = landmarker.detectForVideo(video, tMs);
   const largura = video.videoWidth, altura = video.videoHeight;
   let pts = null, matriz = null;
@@ -93,18 +94,17 @@ async function usarWebcam() {
     video: { width: cam.largura, height: cam.altura }, audio: false });
   video.srcObject = fluxo;
   await video.play();
-  const t0 = performance.now();
-  let quadro = 0, ultimoT = -1;
+  const relogio = new RelogioWebcam();
+  let quadro = 0;
   $("estado").textContent = "Webcam ativa.";
-  const passo = () => {
+  const passo = (agora, metadados) => {
     if (s.id !== sessao) {
       fluxo.getTracks().forEach((t) => t.stop());
       return;
     }
-    const t = Math.round(performance.now() - t0);
-    if (t > ultimoT) {
-      processar(s, t, quadro++);
-      ultimoT = t;
+    const marca = relogio.quadro(agora, metadados);
+    if (marca) {
+      processar(s, marca.tMs, quadro++, marca.captura);
       $("baixar").disabled = false;
     }
     video.requestVideoFrameCallback(passo);

@@ -9,8 +9,9 @@ Origem: revisão de código de 29/10/2026 sobre `entrada/`, `demo-navegador/` e 
 - [x] Vídeo a 25 fps volta a dar 100% de concordância de rosto.
 
 ## T2 · `t_ms` e `atraso_ms` da webcam no navegador seguem o contrato
-- [ ] `t_ms` vem do instante de captura (`metadata.captureTime`, ou o `now` do callback quando não houver).
-- [ ] `atraso_ms` mede da captura até o resultado.
+- [x] `t_ms` vem do instante de captura (`metadata.captureTime`, ou o `now` do callback quando não houver).
+- [x] `atraso_ms` mede da captura até o resultado.
+- [x] `t_ms` começa na captura do primeiro quadro, e a captura nunca é posterior ao callback.
 
 ## T3 · Servidor local robusto
 - [ ] URL malformada responde 400 sem derrubar o processo.
@@ -29,3 +30,10 @@ Origem: revisão de código de 29/10/2026 sobre `entrada/`, `demo-navegador/` e 
 - [ ] Sobreposição não quebra sem matriz de pose.
 - [ ] `CalculadoraMetricas` recebe os índices por argumento (núcleo sem leitura de disco).
 - [ ] Rever `requires-python` e permitir rodar `gerar_casos.py` sem `PYTHONPATH`.
+
+## T8 · Sugestões da segunda revisão
+- [ ] Paridade a 25 fps é pulada, e não falha, quando falta `retrato25.mp4`.
+- [ ] `comparar` sem quadros em comum vira ALERTA com código 1, sem traceback.
+- [ ] `test_comparar.py` usa `pytest.approx` direto, sem o auxiliar `pytest_approx`.
+- [ ] README avisa que `preparar.sh` vem antes do `pytest`.
+- [ ] Registrar os números corretos da paridade: pitch tem média de 0,125° a 30 fps, e não abaixo de 0,1° como diz o commit f75d9ca.
