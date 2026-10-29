@@ -1,0 +1,20 @@
+{
+  "versao": 1,
+  "mediapipe": {
+    "modelo": "modelos/face_landmarker.task",
+    "min_confianca_deteccao": 0.5,
+    "min_confianca_presenca": 0.5,
+    "min_confianca_rastreio": 0.5
+  },
+  "confianca": {
+    "escala_residuo": 0.02,
+    "alfa_suavizacao": 0.3,
+    "valor_inicial": 0.5,
+    "intervalo_max_ms": 500
+  },
+  "webcam": {
+    "dispositivo": 0,
+    "largura": 640,
+    "altura": 480
+  }
+}

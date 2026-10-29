@@ -1,0 +1,9 @@
+{
+  "descricao": "Índices dos pontos do MediaPipe Face Landmarker (malha de 478 pontos). Lado esquerdo e direito são do motorista, não da imagem.",
+  "olho_esquerdo": [362, 385, 387, 263, 373, 380],
+  "olho_direito": [33, 160, 158, 133, 153, 144],
+  "boca_pares_verticais": [[81, 178], [13, 14], [311, 402]],
+  "boca_cantos": [78, 308],
+  "referencia_escala": [33, 263],
+  "rigidos": [33, 133, 362, 263, 168, 6, 197, 195, 5, 4, 1, 98, 327, 10, 151]
+}
