@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Extrator de métricas faciais</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 1.5rem; background: #f6f6f4; color: #1d1d1b; }
+    h1 { font-size: 1.25rem; margin: 0 0 1rem; }
+    .controles { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-bottom: 1rem; }
+    button, input[type=file] { font: inherit; }
+    button { padding: .4rem .9rem; border: 1px solid #888; border-radius: 6px; background: #fff; cursor: pointer; }
+    button:disabled { opacity: .45; cursor: default; }
+    label { display: inline-flex; gap: .35rem; align-items: center; }
+    input[type=number] { width: 4.5rem; font: inherit; }
+    .palco { position: relative; display: inline-block; max-width: 100%; background: #222; }
+    video, canvas { display: block; max-width: 100%; }
+    canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    pre { font-size: .95rem; background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: .75rem; min-height: 5.5em; }
+    #estado { color: #555; }
+  </style>
+</head>
+<body>
+  <h1>Extrator de métricas faciais</h1>
+  <div class="controles">
+    <button id="webcam">Usar webcam</button>
+    <label>Arquivo de vídeo <input type="file" id="arquivo" accept="video/*"></label>
+    <label title="O navegador não informa o fps do vídeo. Use o do arquivo: o Python o mostra ao extrair, e o ffprobe também.">FPS do arquivo <input type="number" id="fps" value="30" min="1" step="any"></label>
+    <button id="parar">Parar</button>
+    <button id="baixar" disabled>Baixar CSV</button>
+    <span id="estado">Carregando o modelo…</span>
+  </div>
+  <div class="palco">
+    <video id="video" muted playsinline></video>
+    <canvas id="sobreposicao"></canvas>
+  </div>
+  <pre id="valores"></pre>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
