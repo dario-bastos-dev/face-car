@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="theme-color" content="#030610" />
+<title>VIGIA — Simulador (Parte 3)</title>
+<link rel="icon" href="assets/vigia_icon.png" />
+<link rel="stylesheet" href="css/vigia.css?v=0.8.0" />
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo"><img src="assets/vigia_icon.png" alt="" /></div>
+      <div class="brand-copy">
+        <img class="wordmark" src="assets/vigia_wide.png" alt="VIGIA" />
+        <span class="brand-sub">SISTEMA DE SEGURANÇA VIÁRIA · SIMULADOR · PARTE 3</span>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span class="badge"><i></i>DEMONSTRAÇÃO ACADÊMICA</span>
+      <button class="control-button" id="soundBtn" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9H4Z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/></svg><span>Ativar áudio</span></button>
+      <button class="control-button" id="settingsBtn"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg><span>Ajustes</span></button>
+      <button class="control-button" id="fullscreenBtn"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg><span>Tela cheia</span></button>
+    </div>
+  </header>
+
+  <main class="app-grid">
+    <section class="card stage" id="stageCard" aria-label="Cenário da rodovia">
+      <div class="card-heading">
+        <div>
+          <div class="eyebrow">CENÁRIO 01 / RODOVIA</div>
+          <div class="heading-title" id="stageTitle">Simulação de direção • visão 2D</div>
+        </div>
+        <div class="view-switch" role="group" aria-label="Alternar visão da simulação">
+          <button id="view2dBtn" class="view-btn selected" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M4 15 6 9h12l2 6v4H4v-4ZM7 9l2-4h6l2 4"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg>VISÃO 2D</button>
+          <button id="view3dBtn" class="view-btn" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M3.5 10.5 10 12M20.5 10.5 14 12M12 14v7"/></svg>CABINE 3D</button>
+        </div>
+      </div>
+      <div class="stage-stats">
+        <div id="roadAlert" class="status-banner normal" role="status" aria-live="polite"><strong id="roadAlertTitle">CONDUÇÃO NORMAL</strong><small id="roadAlertCaption">Monitoramento em demonstração</small></div>
+        <div class="cycle-display"><span class="cycle-dot" id="cycleDot"></span><span id="cycleLabel">DIA · 10:30</span><small id="cycleSub">FARÓIS ACESOS</small></div>
+        <button class="cycle-toggle" id="cycleToggle" title="Transição suave entre dia e noite (tecla N)">☀ / ☾ Alternar</button>
+      </div>
+
+      <div class="scene" id="scene" data-level="normal">
+        <canvas id="view2d" class="view2d" aria-label="Rodovia vista de cima" role="img"></canvas>
+        <div id="view3d" class="view3d">
+          <canvas id="glCanvas" aria-label="Visão do motorista em 3D" role="img"></canvas>
+          <canvas id="cabinCanvas" class="cabin-canvas" aria-hidden="true"></canvas>
+          <div class="view3d-error" id="view3dError" hidden></div>
+        </div>
+        <div class="alert-vignette" aria-hidden="true"></div>
+
+        <div class="cockpit-cam" id="cockpitCam">
+          <div class="cc-head"><label class="camera-switch" title="Ligar / desligar a câmera"><input id="cameraBtn3d" type="checkbox" role="switch" aria-label="Ligar ou desligar câmera" /><span class="switch-track"></span><b>CÂMERA</b></label><span class="cc-status" id="ccStatus"><i></i>SIMULAÇÃO</span></div>
+          <button class="cc-view" id="ccView" title="Ligar / desligar a câmera">
+            <video id="cameraFeed3d" autoplay muted playsinline aria-label="Imagem da webcam"></video>
+            <canvas id="ccOverlay" aria-hidden="true"></canvas>
+            <div class="cam-warning" id="camWarning3d" hidden></div>
+          </button>
+          <div class="scanner-bar"><span class="scanner-status" data-scanner-status>SCANNER DESLIGADO</span><button class="scanner-btn" data-scanner="demonstrar" title="Liga a câmera e o scanner, mostrando a malha do rosto">◉ Demonstrar</button><button class="scanner-btn" data-scanner="invisivel" title="O scanner continua rodando, sem desenho sobre a imagem">◌ Invisível</button></div>
+          <div class="cc-metrics">
+            <div class="metric" data-mirror="mEyes"><small>Olhos</small><span class="bar"><i></i></span><b>100%</b></div>
+            <div class="metric" data-mirror="mHead"><small>Cabeça</small><span class="bar"><i></i></span><b>0°</b></div>
+            <div class="metric" data-mirror="mPerclos"><small>PERCLOS</small><span class="bar"><i></i></span><b>5%</b></div>
+            <div class="metric" data-mirror="mFatigue"><small>Fadiga</small><span class="bar"><i></i></span><b>10</b></div>
+          </div>
+          <div class="cc-foot" id="ccSource">MÉTRICAS SIMULADAS</div>
+          <div class="cc-foot model-line" data-modelo>Modelo (Parte 4): ainda não treinado</div>
+        </div>
+
+        <div class="cockpit-tag"><span class="dot"></span>VISÃO DO MOTORISTA / <b id="cockpitVehicleLabel">CARRO FAMILIAR</b></div>
+        <!-- Painéis da visão 2D -->
+        <div class="ov2d ov-left">
+          <div class="ov-card ov-cam monitor-card" id="monitorCard">
+            <div class="ov-head">
+              <label class="camera-switch" title="Ligar / desligar a câmera"><input id="cameraBtn" type="checkbox" role="switch" aria-label="Ligar ou desligar câmera" /><span class="switch-track"></span><b>CÂMERA</b></label>
+              <span class="cam-status" id="camStatus">SIMULAÇÃO</span>
+            </div>
+            <div class="ov-cam-body">
+              <video id="cameraFeed" autoplay muted playsinline aria-label="Imagem da webcam"></video>
+              <canvas id="monitorOverlay" aria-hidden="true"></canvas>
+              <div class="cam-warning" id="camWarning" hidden></div>
+            </div>
+            <div class="scanner-bar"><span class="scanner-status" data-scanner-status>SCANNER DESLIGADO</span><button class="scanner-btn" data-scanner="demonstrar" title="Liga a câmera e o scanner, mostrando a malha do rosto">◉ Demonstrar</button><button class="scanner-btn" data-scanner="invisivel" title="O scanner continua rodando, sem desenho sobre a imagem">◌ Invisível</button></div>
+            <div class="cc-metrics">
+              <div class="metric" id="mEyes"><small>Olhos</small><span class="bar"><i></i></span><b>100%</b></div>
+              <div class="metric" id="mHead"><small>Cabeça</small><span class="bar"><i></i></span><b>0°</b></div>
+              <div class="metric" id="mPerclos"><small>PERCLOS</small><span class="bar"><i></i></span><b>5%</b></div>
+              <div class="metric" id="mFatigue"><small>Fadiga</small><span class="bar"><i></i></span><b>10</b></div>
+            </div>
+            <div class="cc-foot" id="monitorSource">MÉTRICAS SIMULADAS</div>
+            <div class="cc-foot model-line" data-modelo>Modelo (Parte 4): ainda não treinado</div>
+          </div>
+          <div class="ov-card ov-dash">
+            <div class="ov-head"><svg viewBox="0 0 24 24"><path d="M4 15 6 9h12l2 6v4H4v-4ZM7 9l2-4h6l2 4M7 19v1.5M17 19v1.5"/></svg><b id="ovDashName">PAINEL - CARRO FAMILIAR</b><span class="ov-live"><i></i>SIMULAÇÃO</span></div>
+            <div class="ov-dash-body">
+              <div class="ov-gauge">
+                <svg viewBox="0 0 200 200" role="img" aria-label="Velocímetro">
+                  <defs>
+                    <radialGradient id="ovgFace" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#11243d"/><stop offset="1" stop-color="#050b16"/></radialGradient>
+                    <linearGradient id="ovgGrad" x1="0" x2="1"><stop offset="0" stop-color="#1d6fff"/><stop offset=".7" stop-color="#36c6ff"/><stop offset="1" stop-color="#f4be75"/></linearGradient>
+                  </defs>
+                  <circle cx="100" cy="100" r="95" fill="url(#ovgFace)" stroke="#1f3a5a" stroke-width="2"/>
+                  <path id="ovGaugeTrack" class="ovg-track"/>
+                  <path id="ovGaugeArc" class="ovg-arc"/>
+                  <g id="ovGaugeTicks"></g>
+                  <g id="ovNeedle" transform="rotate(-125 100 100)"><path d="M97 104 100 30 103 104Z" class="ovg-needle"/></g>
+                  <circle cx="100" cy="100" r="9" class="ovg-cap"/>
+                </svg>
+                <div class="ov-gauge-num"><strong id="ovSpeed">80</strong><span>km/h</span></div>
+              </div>
+              <div class="ov-status"><small>STATUS DO VEÍCULO</small><strong id="ovStatus">NORMAL</strong><span id="ovTarget">ALVO: 80 km/h</span></div>
+            </div>
+            <div class="ov-tiles">
+              <div class="ov-tile" id="ovHazard"><svg viewBox="0 0 24 24"><path d="M3 12h8M3 12l3-3M3 12l3 3M21 12h-8M21 12l-3-3M21 12l-3 3"/></svg>PISCA</div>
+              <div class="ov-tile" id="ovBrake"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/><path d="M4.5 6.5a9 9 0 0 0 0 11M19.5 6.5a9 9 0 0 1 0 11M12 9v3.5M12 15h.01"/></svg>FREIO</div>
+              <div class="ov-tile on" id="ovSignal"><svg viewBox="0 0 24 24"><path d="M13 6h2a5 5 0 0 1 0 10h-2z M3 8h7M3 11h7M3 14h7"/></svg>SINAL</div>
+            </div>
+          </div>
+        </div>
+        <div class="ov2d ov-right">
+          <div class="ov-card ov-info">
+            <svg class="ov-info-bg" viewBox="0 0 120 60" aria-hidden="true"><path d="M0 60 30 28l14 12 26-30 22 22 28-14v42z"/></svg>
+            <svg class="ov-icon" viewBox="0 0 24 24"><path d="M7 21v-4M7 17l-4 0 4-7-3 0 3-7 3 7-3 0 4 7zM16 21v-3M16 18h-4l4-6h-2.5l2.5-5 2.5 5H16l4 6z"/></svg>
+            <div><small>AMBIENTE</small><b id="ovEnvName">RODOVIA - MÃO DUPLA</b></div>
+          </div>
+          <div class="ov-card ov-info">
+            <svg class="ov-icon" viewBox="0 0 24 24"><path d="M2 13 3.5 9h8l1.5 4v4H2zM9 9l1-3h8l1.5 4v4H13"/><circle cx="5" cy="16" r="1"/><circle cx="10" cy="16" r="1"/></svg>
+            <div><small>TRÁFEGO</small><b><span id="ovTraffic">3</span> no sentido oposto</b></div>
+            <span class="ov-cars"><svg viewBox="0 0 24 24"><path d="M4 15 6 9h12l2 6v4H4z"/></svg><svg viewBox="0 0 24 24"><path d="M4 15 6 9h12l2 6v4H4z"/></svg></span>
+          </div>
+          <div class="ov-card ov-info">
+            <span class="env-icon ov-env-icon" id="ovEnvIcon" data-phase="day"></span>
+            <div><small>CONDIÇÕES</small><b><span id="ovPhase">Dia</span> · <span id="ovClock">10:30</span> · <span id="ovTemp">28°C</span></b></div>
+          </div>
+        </div>
+        <div class="paused-mask">SIMULAÇÃO PAUSADA</div>
+      </div>
+
+      <div class="stage-bottom">
+        <div class="stage-legend"><span>Faixa própria livre</span><span>Ciclo dia/noite contínuo</span><span>Sem controle veicular real</span></div>
+        <div class="stage-keys">Atalhos: <kbd>V</kbd> visão · <kbd>N</kbd> dia/noite · <kbd>C</kbd> cidade/campo · <kbd>1-4</kbd> níveis · <kbd>A</kbd> estou atento · <kbd>Espaço</kbd> pausa</div>
+        <button class="tiny-btn" id="pauseBtn">Ⅱ Pausar</button>
+      </div>
+    </section>
+
+    <div class="right">
+      <section class="card vehicle-card">
+        <div class="panel-label">01 / Tipo de veículo</div>
+        <div class="vehicle-tabs">
+          <button class="vehicle-tab active" id="carBtn" aria-pressed="true"><svg viewBox="0 0 32 26"><path d="M4 16 7 9h18l3 7v6H4v-6ZM8 9l3-5h10l3 5M10 16h12M7 21v3m18-3v3"/></svg><span><b>Carro familiar</b><small>Aplicação urbana / viagens</small></span></button>
+          <button class="vehicle-tab" id="truckBtn" aria-pressed="false"><svg viewBox="0 0 32 26"><path d="M2 7h18v15H2zM20 12h6l4 5v5H20zM7 22a2 2 0 1 0 4 0m13 0a2 2 0 1 0 4 0M4 4h14"/></svg><span><b>Caminhão</b><small>Transporte rodoviário</small></span></button>
+        </div>
+      </section>
+
+      <section class="card speed-card">
+        <div class="card-row"><div class="panel-label">02 / Painel do veículo</div><span class="hint" id="speedMode">CRUZEIRO SIMULADO</span></div>
+        <div class="gauge-wrap">
+          <svg viewBox="0 0 320 210" role="img" aria-label="Velocímetro">
+            <defs><linearGradient id="arcGrad" x1="0" x2="1"><stop offset="0" stop-color="#1d6fff"/><stop offset=".7" stop-color="#36c6ff"/><stop offset="1" stop-color="#f4be75"/></linearGradient></defs>
+            <circle cx="160" cy="120" r="104" fill="#0a1828" stroke="#1f3a52" stroke-width="2"/>
+            <path id="gaugeTrack" fill="none" stroke="#1d3347" stroke-width="9" stroke-linecap="round"/>
+            <path id="gaugeProgress" fill="none" stroke="url(#arcGrad)" stroke-width="9" stroke-linecap="round"/>
+            <g id="gaugeTicks"></g>
+            <g id="needleGroup" transform="rotate(-125 160 120)"><path d="M157.5 122 160 44 162.5 122Z" fill="#e5f8f5"/><circle cx="160" cy="120" r="8" fill="#36c6ff" stroke="#0b3a55" stroke-width="3"/></g>
+          </svg>
+          <div class="gauge-center"><div class="speed-value" id="speedValue">80</div><div class="speed-unit">KM/H</div></div>
+          <div class="gauge-caption" id="speedCaption">VELOCIDADE ATUAL</div>
+        </div>
+        <div class="speed-actions">
+          <button class="square" id="lessSpeed" aria-label="Reduzir velocidade-alvo">−</button>
+          <div class="cruise">VELOCIDADE-ALVO <b id="targetSpeed">80</b> km/h</div>
+          <button class="square" id="moreSpeed" aria-label="Aumentar velocidade-alvo">+</button>
+        </div>
+      </section>
+
+      <section class="card state-card">
+        <div class="card-row"><div class="panel-label">03 / Condição do motorista</div><span class="state-pill normal" id="statePill">NORMAL</span></div>
+        <div class="state-description" id="stateDescription"></div>
+        <div class="state-metrics">
+          <div class="state-metric"><small>Pisca-alerta</small><b id="hazardLabel">DESLIGADO</b></div>
+          <div class="state-metric"><small>Frenagem</small><b id="brakeLabel">INATIVA</b></div>
+          <div class="state-metric"><small>Motorista</small><b id="driverLabel">AGUARDANDO</b></div>
+        </div>
+      </section>
+
+      <section class="card command-card">
+        <div class="card-row"><div class="panel-label">04 / Controles da demonstração</div><small class="source" id="sourceLabel">● MODO MANUAL</small></div>
+        <div class="levels">
+          <button class="level-btn normal active" id="normalBtn">Normal</button>
+          <button class="level-btn attention" id="attentionBtn">Atenção</button>
+          <button class="level-btn critical" id="criticalBtn">Crítico</button>
+          <button class="level-btn intervention" id="interventionBtn">Intervenção</button>
+        </div>
+        <div class="second-actions">
+          <button class="action-btn ack" id="ackBtn">✓ Estou atento</button>
+          <button class="action-btn" id="hornBtn">♫ Testar buzina</button>
+          <button class="action-btn" id="replayBtn">▶ Replay guiado</button>
+          <button class="action-btn" id="resetBtn">↺ Reiniciar cenário</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <section class="status-grid">
+    <div class="card footer-card">
+      <div class="footer-title"><b>CONEXÃO COM O ESTIMADOR · PARTE 2</b><span>WebSocket local</span></div>
+      <div class="ws-line"><label class="visually-hidden" for="wsUrl">Endereço do WebSocket</label><input id="wsUrl" value="ws://localhost:8765" spellcheck="false" autocomplete="off" /><button id="wsBtn">Conectar</button></div>
+      <div class="connection-status"><span class="status-dot" id="wsDot"></span><span id="wsStatus">Desconectado · modo manual disponível</span></div>
+      <div class="help-note">Mensagens no contrato <code>contratos/sinal.v1.json</code>. Com o scanner ligado, o estimador da Parte 2 roda na própria página; aqui, conecte o estimador em Python (<code>simulador/servidor.py</code>).</div>
+    </div>
+    <div class="card footer-card">
+      <div class="footer-title"><b>REGISTRO DE EVENTOS</b><span id="eventCount">0 eventos</span></div>
+      <div class="log" id="log" role="log" aria-live="off"></div>
+      <div class="meta-actions"><button id="exportBtn">↓ Exportar JSONL</button><button id="importReplayBtn">↑ Importar replay</button><input class="visually-hidden" type="file" id="replayFile" accept=".json,.jsonl,application/json,application/x-ndjson" /><button id="metricsCsvBtn" disabled title="Métricas reais do scanner no contrato metricas.v1 (para a Parte 4)">↓ Métricas reais (CSV)</button><button id="clearLogBtn">Limpar histórico</button></div>
+    </div>
+  </section>
+  <footer class="app-foot">VIGIA · simulador acadêmico · nenhuma função comanda veículos reais</footer>
+</div>
+
+<div class="modal" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="dialog">
+    <h2 id="settingsTitle">Configurações da demonstração</h2>
+    <p>Os sons são sintetizados pelo próprio navegador e não precisam de arquivos externos.</p>
+    <label for="volume">Volume geral <span id="volumeLabel">45%</span></label>
+    <input type="range" min="0" max="100" value="45" id="volume" />
+    <label for="trafficDensity">Frequência de tráfego <span id="densityLabel">Média</span></label>
+    <input type="range" min="1" max="3" value="2" id="trafficDensity" />
+    <label for="cycleMinutes">Duração do ciclo dia/noite <span id="cycleLabelSetting">4 min</span></label>
+    <input type="range" min="1" max="20" value="4" id="cycleMinutes" />
+    <label for="zoneSeconds">Troca campo ↔ cidade a cada <span id="zoneLabelSetting">30 s</span></label>
+    <input type="range" min="15" max="300" step="15" value="30" id="zoneSeconds" />
+    <label class="check"><span>Reduzir trepidação da câmera</span><input type="checkbox" id="reduceMotion" /></label>
+    <button id="closeSettings">Concluir</button>
+  </div>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script>window.THREE || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');</script>
+<script src="js/core.js?v=0.8.0"></script>
+<script src="js/scene2d.js?v=0.8.0"></script>
+<script src="js/world3d.js?v=0.8.0"></script>
+<script src="js/cabin.js?v=0.8.0"></script>
+<script src="js/audio.js?v=0.8.0"></script>
+<script src="js/driver-monitor.js?v=0.8.0"></script>
+<script src="js/overlay2d.js?v=0.8.0"></script>
+<!-- Parte 3: canal de sinal (sinal.v1) e scanner real (Partes 1 e 2 na página) -->
+<script type="module" src="js/sinal.js?v=0.8.0"></script>
+<script type="module" src="js/ia.js?v=0.8.0" onerror="VIGIA.log('Scanner indisponível: não foi possível carregar o MediaPipe', 'error')"></script>
+</body>
+</html>
