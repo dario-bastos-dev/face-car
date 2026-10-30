@@ -49,13 +49,19 @@ def recortar(quadro, caixa: Caixa, tamanho: int):
     return cv2.resize(regiao, (tamanho, tamanho), interpolation=interpolacao)
 
 
-def maior_rosto(rostos):
-    """O rosto de maior área: o de quem está mais perto da câmera, o motorista."""
-    def area(pts):
-        (x0, y0), (x1, y1) = pts.min(axis=0), pts.max(axis=0)
+def indice_do_maior_rosto(rostos):
+    """Índice do rosto de maior área, o de quem está mais perto da câmera, ou None."""
+    def area(i):
+        (x0, y0), (x1, y1) = rostos[i].min(axis=0), rostos[i].max(axis=0)
         return (x1 - x0) * (y1 - y0)
 
-    return max(rostos, key=area, default=None)
+    return max(range(len(rostos)), key=area, default=None)
+
+
+def maior_rosto(rostos):
+    """O rosto de maior área: o do motorista."""
+    i = indice_do_maior_rosto(rostos)
+    return None if i is None else rostos[i]
 
 
 # Olhos e boca: mesmo recorte de treinamento/preparar_regioes.py, com o qual as CNNs

@@ -17,6 +17,7 @@ import cv2
 
 from entrada.captura import Agendador, GravadorImagens
 from entrada.contexto import CAMINHO_CONFIG, RAIZ, carregar_config, carregar_pontos_rosto
+from entrada.mapa import desenhar_mapa
 from entrada.recorte import (caixa_do_rosto, indices_das_regioes, recortar,
                              recortar_regiao)
 
@@ -28,41 +29,49 @@ class Capturador:
 
     def __init__(self, config: dict, detector, gravador: GravadorImagens, intervalo_ms: int):
         self.recorte = config["recorte"]
-        self.regioes = indices_das_regioes(carregar_pontos_rosto())
+        self.pontos_rosto = carregar_pontos_rosto()
+        self.regioes = indices_das_regioes(self.pontos_rosto)
         self.detector = detector
         self.gravador = gravador
         self.agendador = Agendador(intervalo_ms)
 
     def processar(self, quadro, t_ms: int):
-        """Devolve a caixa do rosto (ou None) e se o quadro virou captura."""
-        pontos = self.detector.detectar(quadro, t_ms)
-        if pontos is None:
-            return None, False
-        rosto = self.recorte["rosto"]
-        caixa = caixa_do_rosto(pontos, rosto["margem"])
+        """Devolve o rosto (ou None), a caixa do recorte e se o quadro virou captura.
+
+        Os recortes saem do quadro antes de qualquer desenho na janela.
+        """
+        rosto = self.detector.detectar(quadro, t_ms)
+        if rosto is None:
+            return None, None, False
+        config_rosto = self.recorte["rosto"]
+        caixa = caixa_do_rosto(rosto.pontos, config_rosto["margem"])
         if not self.agendador.pronto(t_ms):
-            return caixa, False
-        self.gravador.salvar(recortar(quadro, caixa, rosto["tamanho"]), t_ms, "rosto")
+            return rosto, caixa, False
+        self.gravador.salvar(recortar(quadro, caixa, config_rosto["tamanho"]), t_ms, "rosto")
         for regiao, indices in self.regioes.items():
-            imagem = recortar_regiao(quadro, pontos, indices, self.recorte["regioes"]["tamanho"])
+            imagem = recortar_regiao(quadro, rosto.pontos, indices,
+                                     self.recorte["regioes"]["tamanho"])
             if imagem is not None:
                 self.gravador.salvar(imagem, t_ms, regiao)
         self.agendador.registrar(t_ms)
-        return caixa, True
+        return rosto, caixa, True
 
 
-def desenhar(quadro, caixa, capturou: bool, total: int):
-    """Mostra a região que vira recorte do rosto e quantas capturas já foram feitas."""
+def desenhar(quadro, caixa, capturou: bool, total: int, rosto=None, pontos_rosto=None):
+    """Mostra o mapeamento do rosto, o quadrado do recorte e as capturas feitas."""
+    linhas = [f"capturas: {total}" if caixa is not None else f"capturas: {total}  (sem rosto)"]
+    if rosto is not None:
+        linhas += desenhar_mapa(quadro, rosto.pontos, rosto.matriz, pontos_rosto)
     if caixa is not None:
         metade = caixa.lado / 2
         p0 = (int(caixa.cx - metade), int(caixa.cy - metade))
         p1 = (int(caixa.cx + metade), int(caixa.cy + metade))
         cor, espessura = ((0, 255, 0), 4) if capturou else ((0, 200, 255), 1)
         cv2.rectangle(quadro, p0, p1, cor, espessura)
-    texto = f"capturas: {total}" if caixa is not None else f"capturas: {total}  (sem rosto)"
-    cv2.rectangle(quadro, (0, 0), (260, 30), (0, 0, 0), -1)
-    cv2.putText(quadro, texto, (8, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1,
-                cv2.LINE_AA)
+    cv2.rectangle(quadro, (0, 0), (260, 10 + 22 * len(linhas)), (0, 0, 0), -1)
+    for n, texto in enumerate(linhas):
+        cv2.putText(quadro, texto, (8, 24 + 22 * n), cv2.FONT_HERSHEY_SIMPLEX, 0.55,
+                    (255, 255, 255), 1, cv2.LINE_AA)
     return quadro
 
 
@@ -90,10 +99,12 @@ def _capturar(args, config: dict, gravadores: dict, quadros) -> int:
         }
         try:
             for camera, quadro, t_ms in quadros:
-                caixa, capturou = capturadores[camera].processar(quadro, t_ms)
+                capturador = capturadores[camera]
+                rosto, caixa, capturou = capturador.processar(quadro, t_ms)
                 if args.mostrar:
-                    total = gravadores[camera].total
-                    cv2.imshow(f"{camera} - {JANELA}", desenhar(quadro, caixa, capturou, total))
+                    imagem = desenhar(quadro, caixa, capturou, gravadores[camera].total, rosto,
+                                      capturador.pontos_rosto)
+                    cv2.imshow(f"{camera} - {JANELA}", imagem)
                     if cv2.waitKey(1) & 0xFF == ord("q"):
                         break
         except KeyboardInterrupt:

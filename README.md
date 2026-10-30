@@ -60,6 +60,23 @@ computador, veja os caminhos com `ls -l /dev/v4l/by-path/` e `v4l2-ctl --list-de
 - Quadros sem rosto não geram imagem e não consomem a vez: a captura acontece no primeiro quadro
   com rosto depois que o intervalo passou.
 
+## Mapeamento na janela
+
+Com `--mostrar`, cada janela desenha sobre a imagem:
+
+- o contorno do **rosto** (azul) e o quadrado que vira recorte (amarelo; verde a cada captura);
+- o contorno dos **olhos** e dos **lábios** (verde) e as **íris** (rosa);
+- a direção da **cabeça**: seta amarela saindo do nariz, vinda da matriz de pose do MediaPipe;
+- a direção do **olhar**: setas rosa saindo das íris, pela posição da íris entre os cantos do olho,
+  medida ao longo do eixo do olho para não confundir cabeça inclinada com olhar para cima;
+- no painel, para onde a cabeça e o olhar apontam (`frente`, `esquerda`, `baixo e direita`…), do
+  ponto de vista do motorista: como a câmera não espelha a imagem, olhar para a esquerda dele
+  leva o rosto para a direita da imagem. Os limiares (15° para a cabeça e 0,2 da meia largura do
+  olho para a íris) ficam em `entrada/mapa.py`.
+
+O mapeamento só aparece na tela: os recortes gravados para o modelo saem do quadro antes do
+desenho e não têm marcas.
+
 ## Privacidade
 
 Os recortes são dados pessoais (LGPD). Eles ficam só neste computador: `saidas/` está no
@@ -76,7 +93,7 @@ uv run pytest                # os testes com MediaPipe precisam de ./scripts/pre
 
 ```
 config/          parâmetros da captura e das câmeras
-entrada/         fontes de vídeo, detector, recortes, agendamento e gravação, linha de comando
+entrada/         fontes de vídeo, detector, recortes, mapeamento, agendamento e gravação, linha de comando
 scripts/         preparação do modelo e do vídeo de teste
 testes/          testes (entrada/) e dados gerados pelo preparar.sh (dados/)
 ```

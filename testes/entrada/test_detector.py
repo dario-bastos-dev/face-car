@@ -42,6 +42,10 @@ def test_escolhe_o_maior_rosto(detector):
     cena = np.full((512, 700, 3), 128, np.uint8)
     cena[:, :410] = grande
     cena[128:384, 470:675] = pequeno
-    pts = detector.detectar(cena, 0)
-    assert pts is not None
-    assert pts[:, 0].max() < 410  # o rosto escolhido está no retrato grande
+    rosto = detector.detectar(cena, 0)
+    assert rosto is not None
+    assert rosto.pontos[:, 0].max() < 410  # o rosto escolhido está no retrato grande
+    # A matriz de pose é a do mesmo rosto: de frente, aponta para a câmera (z > 0.9).
+    assert rosto.matriz.shape == (4, 4)
+    frente = rosto.matriz[:3, 2] / np.linalg.norm(rosto.matriz[:3, 2])
+    assert frente[2] > 0.9
