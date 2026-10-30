@@ -15,7 +15,7 @@ uv sync                      # Python 3.12, mediapipe, opencv-contrib-python, nu
 ## Capturar
 
 ```bash
-uv run python -m entrada webcam --rotulo alerta --pessoa p01 --mostrar               # pergunta a câmera
+uv run python -m entrada webcam --rotulo alerta --pessoa p01                        # pergunta a câmera
 uv run python -m entrada webcam --camera ir --rotulo alerta --pessoa p01             # só a infravermelha
 uv run python -m entrada webcam --camera todas --rotulo alerta --pessoa p01          # as duas
 uv run python -m entrada video <seu-video.mp4> --rotulo sonolento --pessoa p07       # vídeo gravado
@@ -29,7 +29,8 @@ uv run python -m entrada video <seu-video.mp4> --rotulo sonolento --pessoa p07  
 | `--intervalo-ms` | 1000 | tempo mínimo entre duas capturas |
 | `--saida` | `saidas/imagens` | pasta raiz dos recortes |
 | `--segundos` | sem limite | webcam: parar depois deste tempo |
-| `--mostrar` | desligado | uma janela por câmera com o quadrado do rosto; pisca em verde a cada captura |
+| `--mostrar` | ligado na webcam, desligado no vídeo | janela por câmera com o mapeamento; o quadrado pisca em verde a cada captura |
+| `--sem-janela` | — | webcam: capturar sem abrir a janela |
 
 Os arquivos ficam em `<saida>/<camera>/<rotulo>/<pessoa>_<origem>_<t_ms>ms.jpg`. Uma pasta por classe é o formato que as bibliotecas de treino
 de imagens leem direto, e a pessoa no nome permite separar treino e teste por pessoa, para o
@@ -63,7 +64,9 @@ computador, veja os caminhos com `ls -l /dev/v4l/by-path/` e `v4l2-ctl --list-de
 
 ## Mapeamento na janela
 
-Com `--mostrar`, cada janela desenha sobre a imagem:
+Na webcam a janela abre sempre (use `--sem-janela` para capturar sem ela); no vídeo, só com
+`--mostrar`. Sem tela gráfica, como por SSH, a captura segue sem janela e avisa. Cada janela
+desenha sobre a imagem:
 
 - o contorno do **rosto** (azul) e o quadrado que vira recorte (amarelo; verde a cada captura);
 - o contorno dos **olhos** e dos **lábios** (verde) e as **íris** (rosa);

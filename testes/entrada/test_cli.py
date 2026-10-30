@@ -6,7 +6,8 @@ import cv2
 import numpy as np
 import pytest
 
-from entrada.__main__ import _quadros_das_webcams, desenhar, escolher_cameras, main
+from entrada.__main__ import (_quadros_das_webcams, desenhar, escolher_cameras, janela_ativa,
+                              main)
 from entrada.contexto import carregar_config
 from entrada.contexto import RAIZ
 from entrada.fontes import FonteWebcam
@@ -152,3 +153,38 @@ def test_menu_sem_resposta_cancela():
 def test_configuracao_define_a_camera_padrao():
     config = carregar_config()
     assert config["camera_padrao"] in [c["nome"] for c in config["cameras"]]
+
+
+COM_TELA = {"WAYLAND_DISPLAY": "wayland-1"}
+
+
+def analisar(*argv):
+    import argparse
+    from entrada import __main__ as cli
+    capturado = {}
+
+    def guardar(args):
+        capturado["args"] = args
+        return 0
+    original = (cli.cmd_video, cli.cmd_webcam)
+    cli.cmd_video = cli.cmd_webcam = guardar
+    try:
+        cli.main(list(argv))
+    finally:
+        cli.cmd_video, cli.cmd_webcam = original
+    return capturado["args"]
+
+
+def test_webcam_abre_a_janela_por_padrao():
+    assert janela_ativa(analisar("webcam"), COM_TELA)
+    assert not janela_ativa(analisar("webcam", "--sem-janela"), COM_TELA)
+
+
+def test_video_so_abre_a_janela_com_mostrar():
+    assert not janela_ativa(analisar("video", "x.mp4"), COM_TELA)
+    assert janela_ativa(analisar("video", "x.mp4", "--mostrar"), COM_TELA)
+
+
+def test_sem_tela_nao_abre_a_janela_e_avisa(capsys):
+    assert not janela_ativa(analisar("webcam"), {})
+    assert "sem tela" in capsys.readouterr().err

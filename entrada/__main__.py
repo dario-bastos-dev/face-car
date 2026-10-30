@@ -1,6 +1,6 @@
 """Captura recortes do rosto completo do motorista para modelos de imagem.
 
-    uv run python -m entrada webcam --rotulo alerta --pessoa p01 [--camera rgb|ir|todas] [--mostrar]
+    uv run python -m entrada webcam --rotulo alerta --pessoa p01 [--camera rgb|ir|todas] [--sem-janela]
     uv run python -m entrada video <seu-video.mp4> --rotulo sonolento --pessoa p07 [--camera ir]
 
 Os recortes vão para <saida>/<camera>/<rotulo>/<pessoa>_<origem>_<t_ms>ms.jpg e ficam
@@ -8,6 +8,7 @@ só neste computador.
 """
 
 import argparse
+import os
 import sys
 import time
 from contextlib import ExitStack
@@ -73,6 +74,20 @@ def _gravador(args, config, camera: str, origem: str) -> GravadorImagens:
                            config["recorte"]["qualidade_jpeg"])
 
 
+def janela_ativa(args, ambiente=os.environ) -> bool:
+    """Se a janela deve abrir: sempre na webcam (salvo --sem-janela), no vídeo só com --mostrar.
+
+    Sem tela gráfica (por exemplo, por SSH), o Qt do OpenCV aborta o processo ao abrir
+    uma janela; nesse caso a captura segue sem ela.
+    """
+    quer = args.mostrar if args.comando == "video" else not args.sem_janela
+    if quer and not (ambiente.get("DISPLAY") or ambiente.get("WAYLAND_DISPLAY")):
+        print("aviso: sem tela (DISPLAY ou WAYLAND_DISPLAY); capturando sem janela",
+              file=sys.stderr)
+        return False
+    return quer
+
+
 def _capturar(args, config: dict, gravadores: dict, quadros) -> int:
     """Laço comum aos dois comandos, para uma ou várias câmeras.
 
@@ -83,6 +98,7 @@ def _capturar(args, config: dict, gravadores: dict, quadros) -> int:
     from entrada.detector import DetectorRosto
 
     intervalo = args.intervalo_ms or config["captura"]["intervalo_ms"]
+    mostrar = janela_ativa(args)
     with ExitStack() as pilha:
         capturadores = {
             camera: Capturador(config, pilha.enter_context(DetectorRosto(config)), gravador,
@@ -93,7 +109,7 @@ def _capturar(args, config: dict, gravadores: dict, quadros) -> int:
             for camera, quadro, t_ms in quadros:
                 capturador = capturadores[camera]
                 rosto, caixa, capturou = capturador.processar(quadro, t_ms)
-                if args.mostrar:
+                if mostrar:
                     imagem = desenhar(quadro, caixa, capturou, gravadores[camera].total, rosto,
                                       capturador.pontos_rosto)
                     cv2.imshow(f"{camera} - {JANELA}", imagem)
@@ -102,7 +118,7 @@ def _capturar(args, config: dict, gravadores: dict, quadros) -> int:
         except KeyboardInterrupt:
             pass
         finally:
-            if args.mostrar:
+            if mostrar:
                 cv2.destroyAllWindows()
     for camera, gravador in gravadores.items():
         print(f"{camera}: {gravador.total} recortes gravados em {gravador.pasta}")
@@ -199,7 +215,21 @@ def cmd_webcam(args) -> int:
         return _capturar(args, config, gravadores, _quadros_das_webcams(fontes, args.segundos))
 
 
+def _silenciar_bibliotecas() -> None:
+    """Corta o ruído no terminal sem esconder erros do programa.
+
+    O TensorFlow (dependência do treinamento) é carregado junto com o MediaPipe e
+    imprime avisos sobre GPU e CPU. O OpenCV não traz o plugin Wayland do Qt e avisa
+    a cada janela antes de cair para o X11; com DISPLAY disponível, vai direto ao X11.
+    Variáveis já definidas pelo usuário são respeitadas.
+    """
+    os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
+    if os.environ.get("DISPLAY"):
+        os.environ.setdefault("QT_QPA_PLATFORM", "xcb")
+
+
 def main(argv=None) -> int:
+    _silenciar_bibliotecas()
     parser = argparse.ArgumentParser(prog="python -m entrada", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--config", default=CAMINHO_CONFIG, help="arquivo de configuração")
@@ -212,7 +242,8 @@ def main(argv=None) -> int:
                        help="identificador da pessoa, vai no nome do arquivo (ex.: p01)")
         p.add_argument("--saida", help="pasta raiz dos recortes (padrão: config)")
         p.add_argument("--intervalo-ms", type=int, help="tempo entre capturas (padrão: config)")
-        p.add_argument("--mostrar", action="store_true", help="mostrar a imagem com o recorte")
+        p.add_argument("--mostrar", action="store_true",
+                       help="abrir a janela com o mapeamento (padrão na webcam)")
 
     p = sub.add_parser("video", help="capturar recortes de um arquivo de vídeo")
     p.add_argument("video")
@@ -225,6 +256,7 @@ def main(argv=None) -> int:
                    help="câmera da configuração (repetível) ou 'todas'; sem esta opção, "
                         "pergunta no terminal")
     p.add_argument("--segundos", type=float, help="parar depois deste tempo")
+    p.add_argument("--sem-janela", action="store_true", help="capturar sem abrir a janela")
     comuns(p)
     p.set_defaults(func=cmd_webcam)
 
