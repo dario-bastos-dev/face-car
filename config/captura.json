@@ -4,13 +4,17 @@
     "modelo": "modelos/face_landmarker.task",
     "min_confianca_deteccao": 0.5,
     "min_confianca_presenca": 0.5,
-    "min_confianca_rastreio": 0.5
+    "min_confianca_rastreio": 0.5,
+    "max_rostos": 3
   },
-  "confianca": {
-    "escala_residuo": 0.02,
-    "alfa_suavizacao": 0.3,
-    "valor_inicial": 0.5,
-    "intervalo_max_ms": 500
+  "recorte": {
+    "margem": 0.25,
+    "tamanho": 224,
+    "qualidade_jpeg": 95
+  },
+  "captura": {
+    "intervalo_ms": 1000,
+    "pasta": "saidas/imagens"
   },
   "webcam": {
     "dispositivo": 0,

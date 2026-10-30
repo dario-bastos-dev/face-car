@@ -1,7 +1,7 @@
 [project]
 name = "analise-direcao"
 version = "0.1.0"
-description = "Extrator de métricas faciais (EAR, abertura da boca, pose da cabeça) para monitoramento do motorista"
+description = "Captura de recortes do rosto do motorista para treinar um modelo de imagens"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "mediapipe>=0.10.30",

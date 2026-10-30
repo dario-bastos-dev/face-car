@@ -15,7 +15,4 @@ mkdir -p modelos testes/dados
 ffmpeg -loglevel error -y -loop 1 -framerate 30 -i testes/dados/retrato.jpg -t 4 \
   -vf "scale=410:512,rotate='if(lt(t,2),0,0.35*sin(2*PI*(t-2)/2))':fillcolor=gray,drawbox=enable='between(t,1,1.5)':color=black:t=fill,format=yuv420p" \
   -c:v libx264 -r 30 testes/dados/retrato.mp4
-# O mesmo vídeo a 25 fps, para conferir que Python e navegador usam o fps do arquivo.
-ffmpeg -loglevel error -y -i testes/dados/retrato.mp4 -r 25 -c:v libx264 -pix_fmt yuv420p \
-  testes/dados/retrato25.mp4
-echo "Pronto: modelos/face_landmarker.task, testes/dados/retrato.mp4 e retrato25.mp4"
+echo "Pronto: modelos/face_landmarker.task e testes/dados/retrato.mp4"

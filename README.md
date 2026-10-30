@@ -1,93 +1,66 @@
-# Extrator de métricas faciais
+# Captura do rosto do motorista
 
-Etapa de visão e métricas do sistema de monitoramento do estado do motorista.
-Lê um vídeo ou a webcam, extrai os pontos do rosto com o MediaPipe Face Landmarker e grava
-uma linha por quadro no formato de `contratos/metricas.v1.json`: EAR de cada olho, abertura
-da boca, yaw, pitch e roll, rosto visível, confiança do rastreio e atraso. Nenhum vídeo é gravado.
+Lê um vídeo ou a webcam, encontra o rosto com o MediaPipe Face Landmarker e grava, a cada
+intervalo fixo, um recorte quadrado só do rosto (224×224 px, JPEG). Os recortes formam o
+conjunto de dados para treinar, neste computador, um modelo de imagens que classifica o
+estado do motorista.
 
 ## Preparar
 
 ```bash
 uv sync                      # Python 3.12, mediapipe, opencv-contrib-python, numpy, pytest
-./scripts/preparar.sh        # baixa o modelo e gera os vídeos de teste (precisa de ffmpeg)
+./scripts/preparar.sh        # baixa o modelo e gera o vídeo de teste (precisa de ffmpeg)
 ```
 
-## Usar em Python
+## Capturar
 
 ```bash
-uv run python -m entrada video testes/dados/retrato.mp4 --mostrar               # modo vídeo
-uv run python -m entrada video <seu-video.mp4> -o saidas/metricas.csv            # outro vídeo
-uv run python -m entrada webcam --mostrar [--segundos 60] [-o saidas/w.csv]      # modo ao vivo
-uv run python -m entrada comparar a.csv b.csv                                    # diferença quadro a quadro
+uv run python -m entrada video testes/dados/retrato.mp4 --rotulo alerta --pessoa p01 --mostrar
+uv run python -m entrada video <seu-video.mp4> --rotulo sonolento --pessoa p07
+uv run python -m entrada webcam --rotulo alerta --pessoa p01 --mostrar [--segundos 60]
 ```
 
-- **Arquivo:** modo vídeo do MediaPipe, síncrono. `t_ms = round(quadro · 1000 / fps)`.
-- **Webcam:** a leitura roda numa thread que guarda só o quadro mais recente, e o MediaPipe
-  roda no modo ao vivo (assíncrono). Quadros que chegam enquanto ele está ocupado são ignorados.
-  `atraso_ms` é o tempo entre a captura e o resultado.
+| Opção | Padrão | Efeito |
+| --- | --- | --- |
+| `--rotulo` | `sem_rotulo` | classe das imagens; vira a pasta |
+| `--pessoa` | `anonimo` | identificador da pessoa; vai no nome do arquivo |
+| `--intervalo-ms` | 1000 | tempo mínimo entre duas capturas |
+| `--saida` | `saidas/imagens` | pasta raiz dos recortes |
+| `--mostrar` | desligado | janela com o quadrado do recorte; pisca em verde a cada captura |
 
-## Usar no navegador
+Os arquivos ficam em `<saida>/<rotulo>/<pessoa>_<origem>_<t_ms>ms.jpg`. Uma pasta por classe é o
+formato que as bibliotecas de treino de imagens leem direto, e a pessoa no nome permite separar
+treino e teste por pessoa, para o modelo não decorar rostos.
 
-```bash
-node scripts/servidor.mjs    # http://localhost:8000/demo-navegador/
-```
+## Como o recorte é feito
 
-A página usa a webcam ou um arquivo de vídeo, processado quadro a quadro com os mesmos
-instantes do Python, e exporta o CSV no mesmo contrato. A biblioteca `@mediapipe/tasks-vision`
-vem do jsDelivr; a inferência roda no próprio navegador.
+- O MediaPipe procura até 3 rostos e só o **maior** é recortado: o do motorista, mais perto da
+  câmera. Pessoas ao fundo não entram no conjunto de dados.
+- O quadrado é centrado no rosto, com lado 1,5 vez o maior eixo dele (`recorte.margem = 0.25`),
+  para incluir testa, queixo e a inclinação da cabeça. Perto da borda, a parte que fica fora da
+  imagem é preenchida de preto, e o rosto continua centrado.
+- Quadros sem rosto não geram imagem e não consomem a vez: a captura acontece no primeiro quadro
+  com rosto depois que o intervalo passou.
 
-Comparar o Python com o navegador no mesmo vídeo, usando o Chrome sem janela:
+Limiares, margem, tamanho, qualidade do JPEG e intervalo ficam em `config/captura.json`.
 
-```bash
-uv run python -m entrada video testes/dados/retrato.mp4 -o saidas/py.csv
-node scripts/extrair_navegador.mjs testes/dados/retrato.mp4 saidas/js.csv   # fps lido com ffprobe
-uv run python -m entrada comparar saidas/py.csv saidas/js.csv
-```
+## Privacidade
 
-O `comparar` sai com código 1 e mostra um ALERTA quando os números de quadros diferem ou o
-`t_ms` de um mesmo quadro diverge, o que indica fps diferente nos dois lados. Na página, o
-campo "FPS do arquivo" precisa receber o fps real do vídeo, já que o navegador não o informa.
-
-## Como as métricas são calculadas
-
-| Métrica | Cálculo |
-| --- | --- |
-| `ear_esq`, `ear_dir` | (|p2−p6| + |p3−p5|) / (2·|p1−p4|), em pixels, com os índices de `entrada/pontos_rosto.json` |
-| `abertura_boca` | média de três distâncias verticais internas dos lábios ÷ largura interna da boca |
-| `yaw`, `pitch`, `roll` | matriz de transformação facial do MediaPipe, decomposição ZYX, em graus |
-| `confiança` | 0 sem rosto; 0,5 ao reencontrar o rosto; depois exp(−resíduo/escala), em que o resíduo é o tremor dos pontos rígidos após alinhar quadros consecutivos, dividido pela distância entre os olhos e suavizado |
-
-Os limiares ficam em `config/extrator.json`. O valor `confiança.escala_residuo = 0.02` é um
-ponto de partida e ainda precisa ser calibrado com gravações reais.
+Os recortes são dados pessoais (LGPD). Eles ficam só neste computador: `saidas/` está no
+`.gitignore` e nunca vai para o repositório. Grave apenas pessoas que concordaram, e não induza
+sono ou embriaguez reais para gerar dados.
 
 ## Testes
 
 ```bash
-uv run pytest                                                         # Python
-npm test                                                              # JavaScript (Node)
-RODAR_PARIDADE=1 uv run pytest testes/entrada/test_paridade_navegador.py   # Python × navegador
+uv run pytest                # os testes com MediaPipe precisam de ./scripts/preparar.sh antes
 ```
-
-Os casos de `testes/casos/geometria.json` são lidos pelos testes das duas linguagens
-(para regenerar: `PYTHONPATH=. uv run python testes/casos/gerar_casos.py`).
-
-## Treinamento CNN
-
-O módulo em `treinamento/` usa TensorFlow/Keras com imagens reais do YawDD e duas classes
-visuais: `bocejo` e `sem_bocejo`. Elas não representam uma classificação completa de sonolência.
-Consulte [`treinamento/README.md`](treinamento/README.md) e o notebook
-[`treinamento/treinamento_cnn_colab.ipynb`](treinamento/treinamento_cnn_colab.ipynb).
-O fluxo não usa dados sintéticos e não versiona vídeos, datasets, imagens extraídas,
-modelos treinados ou resultados.
 
 ## Estrutura
 
 ```
-contratos/       contrato de métricas (v1) e exemplo
-config/          limiares e parâmetros do extrator
-entrada/         Python: fontes, geometria, confiança, extrator, linha de comando
-demo-navegador/  página, extrator.js (cálculo) e app.js (MediaPipe e interface)
-scripts/         preparação, servidor local e extração pelo navegador
-testes/          casos compartilhados, testes Python (entrada/) e JS (js/)
-treinamento/     preparação YawDD, CNN, avaliação e notebook Colab
+config/          parâmetros da captura
+entrada/         fontes de vídeo, detector, recorte, agendamento e gravação, linha de comando
+scripts/         preparação do modelo e do vídeo de teste
+testes/          testes (entrada/) e dados gerados pelo preparar.sh (dados/)
 ```

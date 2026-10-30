@@ -1,192 +1,124 @@
-"""Linha de comando do extrator.
+"""Captura recortes do rosto do motorista para treinar um modelo de imagens.
 
-    uv run python -m entrada video <seu-video.mp4> -o saidas/metricas.csv [--mostrar]
-    uv run python -m entrada webcam -o saidas/webcam.csv [--mostrar] [--segundos 30]
-    uv run python -m entrada comparar a.csv b.csv
+    uv run python -m entrada video <seu-video.mp4> --rotulo alerta --pessoa p01 [--mostrar]
+    uv run python -m entrada webcam --rotulo sonolento --pessoa p01 [--mostrar] [--segundos 60]
+
+Os recortes vão para <saida>/<rotulo>/<pessoa>_<origem>_<t_ms>ms.jpg e ficam só
+neste computador.
 """
 
 import argparse
-import json
 import sys
-import threading
 import time
 from pathlib import Path
 
 import cv2
-import numpy as np
 
-from entrada.contrato import RAIZ, EscritorMetricas, RegistroMetricas
-from entrada.geometria import direcao_do_rosto
+from entrada.captura import Agendador, GravadorImagens
+from entrada.contexto import CAMINHO_CONFIG, RAIZ, carregar_config
+from entrada.recorte import caixa_do_rosto, recortar
 
-CAMINHO_CONFIG = RAIZ / "config" / "extrator.json"
-JANELA = "extrator de metricas (q para sair)"
-
-
-def carregar_config(caminho=CAMINHO_CONFIG) -> dict:
-    return json.loads(Path(caminho).read_text(encoding="utf-8"))
+JANELA = "captura do rosto (q para sair)"
 
 
-def _valor(v, formato: str) -> str:
-    return "--" if v is None else format(v, formato)
+class Capturador:
+    """Detecta o rosto em cada quadro e grava um recorte a cada intervalo."""
+
+    def __init__(self, config: dict, detector, gravador: GravadorImagens, intervalo_ms: int):
+        self.recorte = config["recorte"]
+        self.detector = detector
+        self.gravador = gravador
+        self.agendador = Agendador(intervalo_ms)
+
+    def processar(self, quadro, t_ms: int):
+        """Devolve a caixa do rosto (ou None) e se o quadro virou captura."""
+        pontos = self.detector.detectar(quadro, t_ms)
+        if pontos is None:
+            return None, False
+        caixa = caixa_do_rosto(pontos, self.recorte["margem"])
+        if not self.agendador.pronto(t_ms):
+            return caixa, False
+        self.gravador.salvar(recortar(quadro, caixa, self.recorte["tamanho"]), t_ms)
+        self.agendador.registrar(t_ms)
+        return caixa, True
 
 
-def desenhar(quadro, registro: RegistroMetricas | None, pontos, indices: dict):
-    """Sobrepõe o contorno do rosto, os contornos completos dos olhos, das íris e
-    dos lábios (com os pontos usados no cálculo em destaque), uma seta com a
-    direção para onde o rosto aponta e os valores do registro.
-
-    A seta sai da ponta do nariz: com a cabeça baixa ela aponta para baixo, e com
-    o rosto de frente para a câmera ela quase some.
-    """
-    if pontos is not None:
-        def inteiros(nome):
-            return np.round(pontos[indices[nome]]).astype(np.int32)
-
-        cv2.polylines(quadro, [inteiros("contorno_rosto")], True, (255, 200, 0), 1, cv2.LINE_AA)
-        # Contornos completos dos olhos e dos lábios: mostram o rastreio inteiro.
-        for nome in ("contorno_olho_esquerdo", "contorno_olho_direito",
-                     "contorno_labios_externo", "contorno_labios_interno"):
-            cv2.polylines(quadro, [inteiros(nome)], True, (90, 200, 90), 1, cv2.LINE_AA)
-            for x, y in inteiros(nome):
-                cv2.circle(quadro, (int(x), int(y)), 1, (150, 255, 150), -1)
-        for nome in ("iris_esquerda", "iris_direita"):
-            centro, *borda = pontos[indices[nome]]
-            raio = float(np.mean(np.linalg.norm(np.array(borda) - centro, axis=1)))
-            cv2.circle(quadro, tuple(int(v) for v in np.round(centro)), max(1, round(raio)),
-                       (255, 120, 255), 1, cv2.LINE_AA)
-        # Pontos que entram no EAR e na abertura da boca, em destaque.
-        calculo = (indices["olho_esquerdo"] + indices["olho_direito"]
-                   + [i for par in indices["boca_pares_verticais"] for i in par]
-                   + indices["boca_cantos"])
-        for i in calculo:
-            x, y = pontos[i]
-            cv2.circle(quadro, (int(x), int(y)), 2, (0, 255, 0), -1)
-        if registro is not None and registro.pitch is not None:
-            a, b = indices["referencia_escala"]
-            comprimento = 1.5 * float(np.linalg.norm(pontos[a] - pontos[b]))
-            dx, dy, _ = direcao_do_rosto(registro.yaw, registro.pitch, registro.roll)
-            # Câmera com y para cima, imagem com y para baixo.
-            seta = np.array([dx, -dy]) * comprimento
-            if np.hypot(*seta) >= 2:
-                nariz = pontos[indices["ponta_nariz"]]
-                inicio = tuple(int(v) for v in np.round(nariz))
-                fim = tuple(int(v) for v in np.round(nariz + seta))
-                cv2.arrowedLine(quadro, inicio, fim, (0, 220, 255), 2, cv2.LINE_AA, tipLength=0.25)
-    if registro is None:
-        return quadro
-
-    r = registro
-    if r.rosto_visivel:
-        linhas = [
-            f"EAR esq {_valor(r.ear_esq, '.3f')}  dir {_valor(r.ear_dir, '.3f')}",
-            f"boca {_valor(r.abertura_boca, '.3f')}",
-            f"yaw {_valor(r.yaw, '+.1f')}  pitch {_valor(r.pitch, '+.1f')}  roll {_valor(r.roll, '+.1f')}",
-        ]
-    else:
-        linhas = ["rosto nao detectado"]
-    linhas.append(f"confianca {r.confianca:.2f}  atraso {_valor(r.atraso_ms, '.0f')} ms")
-
-    # Painel escuro atrás do texto, para ler sobre qualquer fundo.
-    fonte, escala, altura_linha = cv2.FONT_HERSHEY_SIMPLEX, 0.5, 20
-    largura = max(cv2.getTextSize(t, fonte, escala, 1)[0][0] for t in linhas) + 16
-    altura = altura_linha * len(linhas) + 10
-    painel = quadro[:altura, :largura]
-    painel[:] = (painel * 0.3).astype(quadro.dtype)
-    for n, texto in enumerate(linhas):
-        cv2.putText(quadro, texto, (8, 20 + altura_linha * n), fonte, escala,
-                    (255, 255, 255), 1, cv2.LINE_AA)
+def desenhar(quadro, caixa, capturou: bool, total: int):
+    """Mostra a região que vira recorte e quantas capturas já foram gravadas."""
+    if caixa is not None:
+        metade = caixa.lado / 2
+        p0 = (int(caixa.cx - metade), int(caixa.cy - metade))
+        p1 = (int(caixa.cx + metade), int(caixa.cy + metade))
+        cor, espessura = ((0, 255, 0), 4) if capturou else ((0, 200, 255), 1)
+        cv2.rectangle(quadro, p0, p1, cor, espessura)
+    texto = f"capturas: {total}" if caixa is not None else f"capturas: {total}  (sem rosto)"
+    cv2.rectangle(quadro, (0, 0), (260, 30), (0, 0, 0), -1)
+    cv2.putText(quadro, texto, (8, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1,
+                cv2.LINE_AA)
     return quadro
 
 
+def _gravador(args, config, origem) -> GravadorImagens:
+    pasta = Path(args.saida) if args.saida else RAIZ / config["captura"]["pasta"]
+    return GravadorImagens(pasta, args.rotulo, args.pessoa, origem,
+                           config["recorte"]["qualidade_jpeg"])
+
+
+def _mostrar(quadro, caixa, capturou, total) -> bool:
+    """Atualiza a janela; devolve False quando o usuário aperta q."""
+    cv2.imshow(JANELA, desenhar(quadro, caixa, capturou, total))
+    return cv2.waitKey(1) & 0xFF != ord("q")
+
+
 def cmd_video(args) -> int:
-    from entrada.extrator import ExtratorVideo
+    from entrada.detector import DetectorRosto
     from entrada.fontes import FonteArquivo
-    from entrada.metricas import carregar_pontos
 
     config = carregar_config(args.config)
-    indices = carregar_pontos()
-    saida = args.saida or RAIZ / "saidas" / (Path(args.video).stem + ".csv")
-    com_rosto = 0
-    inicio = time.perf_counter()
-    with FonteArquivo(args.video) as fonte, ExtratorVideo(config) as extrator, \
-            EscritorMetricas(saida) as escritor:
+    gravador = _gravador(args, config, Path(args.video).name)
+    intervalo = args.intervalo_ms or config["captura"]["intervalo_ms"]
+    with FonteArquivo(args.video) as fonte, DetectorRosto(config) as detector:
         print(f"{args.video}: {fonte.total} quadros a {fonte.fps:.2f} fps")
-        n = 0
-        for quadro, t_ms, indice in fonte:
-            registro = extrator.processar(quadro, t_ms, indice)
-            escritor.escrever(registro)
-            com_rosto += registro.rosto_visivel
-            n += 1
-            if args.mostrar:
-                cv2.imshow(JANELA, desenhar(quadro, registro, extrator.ultimos_pontos, indices))
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    break
+        capturador = Capturador(config, detector, gravador, intervalo)
+        for quadro, t_ms, _ in fonte:
+            caixa, capturou = capturador.processar(quadro, t_ms)
+            if args.mostrar and not _mostrar(quadro, caixa, capturou, gravador.total):
+                break
     if args.mostrar:
         cv2.destroyAllWindows()
-    duracao = time.perf_counter() - inicio
-    print(f"{n} quadros em {duracao:.1f} s ({n / duracao:.1f} q/s), "
-          f"rosto em {com_rosto} ({com_rosto / max(n, 1):.0%})")
-    print(f"Métricas gravadas em {saida}")
+    print(f"{gravador.total} recortes gravados em {gravador.pasta}")
     return 0
 
 
 def cmd_webcam(args) -> int:
-    from entrada.extrator import ExtratorAoVivo
+    from entrada.detector import DetectorRosto
     from entrada.fontes import FonteWebcam
-    from entrada.metricas import carregar_pontos
 
     config = carregar_config(args.config)
     cam = config["webcam"]
-    indices = carregar_pontos()
-    saida = args.saida or RAIZ / "saidas" / time.strftime("webcam-%Y%m%d-%H%M%S.csv")
-    ultimo = {"registro": None}
-    trava = threading.Lock()
-    contagem = {"enviados": 0, "registros": 0}
-
-    with EscritorMetricas(saida) as escritor, \
-            FonteWebcam(args.dispositivo if args.dispositivo is not None else cam["dispositivo"],
-                        cam["largura"], cam["altura"]) as fonte:
-
-        def ao_registrar(registro):
-            with trava:
-                escritor.escrever(registro)
-                ultimo["registro"] = registro
-                contagem["registros"] += 1
-
-        with ExtratorAoVivo(config, ao_registrar, fonte.agora_ms) as extrator:
-            fim = time.monotonic() + args.segundos if args.segundos else None
-            print("Capturando. Pressione q na janela ou Ctrl+C para parar.")
-            try:
-                while fonte.ativa and (fim is None or time.monotonic() < fim):
-                    item = fonte.ler(timeout=1.0)
-                    if item is None:
-                        continue
-                    quadro, t_ms, indice = item
-                    extrator.enviar(quadro, t_ms, indice)
-                    contagem["enviados"] += 1
-                    if args.mostrar:
-                        with trava:
-                            registro = ultimo["registro"]
-                        cv2.imshow(JANELA, desenhar(quadro.copy(), registro,
-                                                    extrator.ultimos_pontos, indices))
-                        if cv2.waitKey(1) & 0xFF == ord("q"):
-                            break
-            except KeyboardInterrupt:
-                pass
+    gravador = _gravador(args, config, time.strftime("webcam-%Y%m%d-%H%M%S"))
+    intervalo = args.intervalo_ms or config["captura"]["intervalo_ms"]
+    dispositivo = args.dispositivo if args.dispositivo is not None else cam["dispositivo"]
+    with FonteWebcam(dispositivo, cam["largura"], cam["altura"]) as fonte, \
+            DetectorRosto(config) as detector:
+        capturador = Capturador(config, detector, gravador, intervalo)
+        fim = time.monotonic() + args.segundos if args.segundos else None
+        print("Capturando. Pressione q na janela ou Ctrl+C para parar.")
+        try:
+            while fonte.ativa and (fim is None or time.monotonic() < fim):
+                item = fonte.ler(timeout=1.0)
+                if item is None:
+                    continue
+                quadro, t_ms, _ = item
+                caixa, capturou = capturador.processar(quadro, t_ms)
+                if args.mostrar and not _mostrar(quadro.copy(), caixa, capturou, gravador.total):
+                    break
+        except KeyboardInterrupt:
+            pass
     if args.mostrar:
         cv2.destroyAllWindows()
-    print(f"{contagem['enviados']} quadros enviados, {contagem['registros']} registros "
-          f"(os demais foram ignorados pelo MediaPipe enquanto ocupado)")
-    print(f"Métricas gravadas em {saida}")
+    print(f"{gravador.total} recortes gravados em {gravador.pasta}")
     return 0
-
-
-def cmd_comparar(args) -> int:
-    from entrada.comparar import comparar, imprimir
-
-    relatorio = comparar(args.a, args.b)
-    imprimir(relatorio)
-    return 1 if relatorio["alertas"] else 0
 
 
 def main(argv=None) -> int:
@@ -195,30 +127,32 @@ def main(argv=None) -> int:
     parser.add_argument("--config", default=CAMINHO_CONFIG, help="arquivo de configuração")
     sub = parser.add_subparsers(dest="comando", required=True)
 
-    p = sub.add_parser("video", help="extrair métricas de um arquivo de vídeo")
+    def comuns(p):
+        p.add_argument("--rotulo", default="sem_rotulo",
+                       help="classe das imagens, vira a pasta (ex.: alerta, sonolento)")
+        p.add_argument("--pessoa", default="anonimo",
+                       help="identificador da pessoa, vai no nome do arquivo (ex.: p01)")
+        p.add_argument("--saida", help="pasta raiz dos recortes (padrão: config)")
+        p.add_argument("--intervalo-ms", type=int, help="tempo entre capturas (padrão: config)")
+        p.add_argument("--mostrar", action="store_true", help="mostrar a imagem com o recorte")
+
+    p = sub.add_parser("video", help="capturar recortes de um arquivo de vídeo")
     p.add_argument("video")
-    p.add_argument("-o", "--saida", help="CSV de saída (padrão: saidas/<nome>.csv)")
-    p.add_argument("--mostrar", action="store_true", help="mostrar o vídeo com as métricas")
+    comuns(p)
     p.set_defaults(func=cmd_video)
 
-    p = sub.add_parser("webcam", help="extrair métricas da webcam, no modo ao vivo")
-    p.add_argument("-o", "--saida", help="CSV de saída (padrão: saidas/webcam-<data>.csv)")
+    p = sub.add_parser("webcam", help="capturar recortes da webcam")
     p.add_argument("--dispositivo", type=int, help="índice da câmera (padrão: config)")
     p.add_argument("--segundos", type=float, help="parar depois deste tempo")
-    p.add_argument("--mostrar", action="store_true", help="mostrar a câmera com as métricas")
+    comuns(p)
     p.set_defaults(func=cmd_webcam)
-
-    p = sub.add_parser("comparar", help="comparar dois CSVs de métricas quadro a quadro")
-    p.add_argument("a")
-    p.add_argument("b")
-    p.set_defaults(func=cmd_comparar)
 
     args = parser.parse_args(argv)
     try:
         return args.func(args)
     except (OSError, ValueError) as erro:
-        # Arquivo ausente, vídeo ilegível, câmera indisponível ou CSV fora do
-        # contrato: problemas de uso, que não precisam de traceback.
+        # Arquivo ausente, vídeo ilegível, câmera indisponível ou nome inválido:
+        # problemas de uso, que não precisam de traceback.
         print(f"erro: {erro}", file=sys.stderr)
         return 2
 
