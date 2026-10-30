@@ -1,6 +1,6 @@
 """Captura recortes do rosto completo do motorista para modelos de imagem.
 
-    uv run python -m entrada webcam --rotulo alerta --pessoa p01 [--camera rgb] [--mostrar]
+    uv run python -m entrada webcam --rotulo alerta --pessoa p01 [--camera rgb|ir|todas] [--mostrar]
     uv run python -m entrada video <seu-video.mp4> --rotulo sonolento --pessoa p07 [--camera ir]
 
 Os recortes vão para <saida>/<camera>/<rotulo>/<pessoa>_<origem>_<t_ms>ms.jpg e ficam
@@ -127,6 +127,45 @@ def _quadros_das_webcams(fontes: dict, segundos):
             time.sleep(0.005)
 
 
+def escolher_cameras(pedidas, cameras: dict, padrao: str, interativo: bool, ler=input) -> list:
+    """Câmeras a usar: as pedidas em --camera, a escolha no menu ou a padrão.
+
+    "todas" seleciona todas. No menu, Enter escolhe a padrão; sem terminal
+    interativo, a padrão é usada sem perguntar.
+    """
+    nomes = list(cameras)
+    if pedidas:
+        if "todas" in pedidas:
+            return nomes
+        for nome in pedidas:
+            if nome not in cameras:
+                raise ValueError(f"câmera desconhecida: {nome} (configuradas: {', '.join(nomes)})")
+        return list(dict.fromkeys(pedidas))
+    if not interativo:
+        return [padrao]
+
+    opcoes = [[nome] for nome in nomes] + [nomes]
+    print("Qual câmera usar?")
+    for n, nome in enumerate(nomes, 1):
+        marca = "  (padrão)" if nome == padrao else ""
+        print(f"  {n}) {nome} - {cameras[nome].get('descricao', '')}{marca}")
+    print(f"  {len(opcoes)}) todas")
+    while True:
+        try:
+            resposta = ler(f"Escolha [1-{len(opcoes)}, Enter = {padrao}]: ").strip().lower()
+        except EOFError:
+            raise ValueError("nenhuma câmera escolhida") from None
+        if resposta == "":
+            return [padrao]
+        if resposta == "todas":
+            return nomes
+        if resposta in cameras:
+            return [resposta]
+        if resposta.isdigit() and 1 <= int(resposta) <= len(opcoes):
+            return opcoes[int(resposta) - 1]
+        print(f"opção inválida: {resposta!r}")
+
+
 def cmd_video(args) -> int:
     from entrada.fontes import FonteArquivo
 
@@ -144,10 +183,8 @@ def cmd_webcam(args) -> int:
 
     config = carregar_config(args.config)
     cameras = {c["nome"]: c for c in config["cameras"]}
-    escolhidas = args.camera or list(cameras)
-    for nome in escolhidas:
-        if nome not in cameras:
-            raise ValueError(f"câmera desconhecida: {nome} (configuradas: {', '.join(cameras)})")
+    escolhidas = escolher_cameras(args.camera, cameras, config["camera_padrao"],
+                                  interativo=sys.stdin.isatty())
     origem = time.strftime("webcam-%Y%m%d-%H%M%S")
     gravadores = {nome: _gravador(args, config, nome, origem) for nome in escolhidas}
     t0 = time.monotonic()  # relógio comum: as marcas de tempo das câmeras se comparam
@@ -185,7 +222,8 @@ def main(argv=None) -> int:
 
     p = sub.add_parser("webcam", help="capturar recortes das webcams da configuração")
     p.add_argument("--camera", action="append",
-                   help="usar só esta câmera da configuração (repetível; padrão: todas)")
+                   help="câmera da configuração (repetível) ou 'todas'; sem esta opção, "
+                        "pergunta no terminal")
     p.add_argument("--segundos", type=float, help="parar depois deste tempo")
     comuns(p)
     p.set_defaults(func=cmd_webcam)

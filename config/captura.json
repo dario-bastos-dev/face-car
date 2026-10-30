@@ -16,15 +16,18 @@
     "intervalo_ms": 1000,
     "pasta": "saidas/imagens"
   },
+  "camera_padrao": "rgb",
   "cameras": [
     {
       "nome": "rgb",
+      "descricao": "colorida (HD Webcam)",
       "dispositivo": "/dev/v4l/by-path/pci-0000:00:14.0-usb-0:5:1.0-video-index0",
       "largura": 640,
       "altura": 480
     },
     {
       "nome": "ir",
+      "descricao": "infravermelha (IR Camera)",
       "dispositivo": "/dev/v4l/by-path/pci-0000:00:14.0-usb-0:5:1.2-video-index0",
       "largura": null,
       "altura": null

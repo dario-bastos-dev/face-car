@@ -15,8 +15,9 @@ uv sync                      # Python 3.12, mediapipe, opencv-contrib-python, nu
 ## Capturar
 
 ```bash
-uv run python -m entrada webcam --rotulo alerta --pessoa p01 --mostrar               # as duas câmeras
-uv run python -m entrada webcam --camera rgb --rotulo alerta --pessoa p01            # só a colorida
+uv run python -m entrada webcam --rotulo alerta --pessoa p01 --mostrar               # pergunta a câmera
+uv run python -m entrada webcam --camera ir --rotulo alerta --pessoa p01             # só a infravermelha
+uv run python -m entrada webcam --camera todas --rotulo alerta --pessoa p01          # as duas
 uv run python -m entrada video <seu-video.mp4> --rotulo sonolento --pessoa p07       # vídeo gravado
 ```
 
@@ -24,7 +25,7 @@ uv run python -m entrada video <seu-video.mp4> --rotulo sonolento --pessoa p07  
 | --- | --- | --- |
 | `--rotulo` | `sem_rotulo` | classe das imagens; vira a pasta |
 | `--pessoa` | `anonimo` | identificador da pessoa; vai no nome do arquivo |
-| `--camera` | todas (webcam), `rgb` (vídeo) | webcam: quais câmeras da configuração usar (repetível); vídeo: nome da pasta |
+| `--camera` | menu (webcam), `rgb` (vídeo) | webcam: `rgb`, `ir` ou `todas` (repetível); vídeo: nome da pasta |
 | `--intervalo-ms` | 1000 | tempo mínimo entre duas capturas |
 | `--saida` | `saidas/imagens` | pasta raiz dos recortes |
 | `--segundos` | sem limite | webcam: parar depois deste tempo |
@@ -36,6 +37,10 @@ modelo não decorar rostos. As câmeras usam o mesmo relógio, então o `t_ms` d
 `rgb` e na `ir` se comparam.
 
 ## Câmeras
+
+Sem `--camera`, o comando `webcam` mostra um menu com as câmeras configuradas e a opção `todas`;
+responda com o número ou o nome, ou Enter para a padrão (`camera_padrao`, hoje `rgb`). Fora de um
+terminal interativo, ele usa a padrão sem perguntar.
 
 As câmeras ficam em `config/captura.json` pelo caminho fixo em `/dev/v4l/by-path/`, e não pelo
 número (`/dev/video0`, `/dev/video2`), que pode mudar ao reiniciar ou reconectar. Em outro

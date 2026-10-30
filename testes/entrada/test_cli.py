@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 import pytest
 
-from entrada.__main__ import _quadros_das_webcams, desenhar, main
+from entrada.__main__ import _quadros_das_webcams, desenhar, escolher_cameras, main
 from entrada.contexto import carregar_config
 from entrada.contexto import RAIZ
 from entrada.fontes import FonteWebcam
@@ -98,3 +98,57 @@ def test_quadros_das_webcams_respeitam_o_tempo_limite():
         quadros = list(_quadros_das_webcams({"rgb": rgb}, 0.2))
         assert 0.2 <= time.monotonic() - inicio < 1.5
     assert quadros
+
+
+CAMERAS = {
+    "rgb": {"nome": "rgb", "descricao": "colorida"},
+    "ir": {"nome": "ir", "descricao": "infravermelha"},
+}
+
+
+def respostas(*textos):
+    """Imita input(): devolve as respostas em ordem e EOFError quando acabam."""
+    fila = list(textos)
+
+    def ler(_prompt=""):
+        if not fila:
+            raise EOFError
+        return fila.pop(0)
+    return ler
+
+
+def test_camera_pedida_na_linha_de_comando_nao_pergunta():
+    assert escolher_cameras(["ir"], CAMERAS, "rgb", interativo=True, ler=respostas()) == ["ir"]
+    assert escolher_cameras(["todas"], CAMERAS, "rgb", interativo=True, ler=respostas()) == [
+        "rgb", "ir"]
+
+
+def test_sem_terminal_usa_a_camera_padrao():
+    assert escolher_cameras(None, CAMERAS, "rgb", interativo=False, ler=respostas()) == ["rgb"]
+
+
+@pytest.mark.parametrize("resposta, esperado", [
+    ("1", ["rgb"]), ("2", ["ir"]), ("3", ["rgb", "ir"]),
+    ("ir", ["ir"]), ("todas", ["rgb", "ir"]), ("", ["rgb"]),  # Enter = padrão
+])
+def test_menu_aceita_numero_nome_ou_enter(resposta, esperado, capsys):
+    escolha = escolher_cameras(None, CAMERAS, "rgb", interativo=True, ler=respostas(resposta))
+    assert escolha == esperado
+    menu = capsys.readouterr().out
+    assert "1) rgb - colorida" in menu and "2) ir - infravermelha" in menu and "3) todas" in menu
+
+
+def test_menu_pergunta_de_novo_se_a_resposta_nao_existe(capsys):
+    escolha = escolher_cameras(None, CAMERAS, "rgb", interativo=True, ler=respostas("9", "1"))
+    assert escolha == ["rgb"]
+    assert "opção inválida" in capsys.readouterr().out
+
+
+def test_menu_sem_resposta_cancela():
+    with pytest.raises(ValueError, match="nenhuma câmera escolhida"):
+        escolher_cameras(None, CAMERAS, "rgb", interativo=True, ler=respostas())
+
+
+def test_configuracao_define_a_camera_padrao():
+    config = carregar_config()
+    assert config["camera_padrao"] in [c["nome"] for c in config["cameras"]]
