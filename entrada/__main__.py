@@ -1,6 +1,6 @@
 """Linha de comando do extrator.
 
-    uv run python -m entrada video caminho.mp4 -o saidas/metricas.csv [--mostrar]
+    uv run python -m entrada video <seu-video.mp4> -o saidas/metricas.csv [--mostrar]
     uv run python -m entrada webcam -o saidas/webcam.csv [--mostrar] [--segundos 30]
     uv run python -m entrada comparar a.csv b.csv
 """
@@ -13,8 +13,10 @@ import time
 from pathlib import Path
 
 import cv2
+import numpy as np
 
 from entrada.contrato import RAIZ, EscritorMetricas, RegistroMetricas
+from entrada.geometria import direcao_do_rosto
 
 CAMINHO_CONFIG = RAIZ / "config" / "extrator.json"
 JANELA = "extrator de metricas (q para sair)"
@@ -24,30 +26,75 @@ def carregar_config(caminho=CAMINHO_CONFIG) -> dict:
     return json.loads(Path(caminho).read_text(encoding="utf-8"))
 
 
+def _valor(v, formato: str) -> str:
+    return "--" if v is None else format(v, formato)
+
+
 def desenhar(quadro, registro: RegistroMetricas | None, pontos, indices: dict):
-    """Sobrepõe pontos dos olhos e da boca e os valores do registro."""
+    """Sobrepõe o contorno do rosto, os contornos completos dos olhos, das íris e
+    dos lábios (com os pontos usados no cálculo em destaque), uma seta com a
+    direção para onde o rosto aponta e os valores do registro.
+
+    A seta sai da ponta do nariz: com a cabeça baixa ela aponta para baixo, e com
+    o rosto de frente para a câmera ela quase some.
+    """
     if pontos is not None:
-        destaque = (indices["olho_esquerdo"] + indices["olho_direito"]
-                    + [i for par in indices["boca_pares_verticais"] for i in par]
-                    + indices["boca_cantos"])
-        for i in destaque:
+        def inteiros(nome):
+            return np.round(pontos[indices[nome]]).astype(np.int32)
+
+        cv2.polylines(quadro, [inteiros("contorno_rosto")], True, (255, 200, 0), 1, cv2.LINE_AA)
+        # Contornos completos dos olhos e dos lábios: mostram o rastreio inteiro.
+        for nome in ("contorno_olho_esquerdo", "contorno_olho_direito",
+                     "contorno_labios_externo", "contorno_labios_interno"):
+            cv2.polylines(quadro, [inteiros(nome)], True, (90, 200, 90), 1, cv2.LINE_AA)
+            for x, y in inteiros(nome):
+                cv2.circle(quadro, (int(x), int(y)), 1, (150, 255, 150), -1)
+        for nome in ("iris_esquerda", "iris_direita"):
+            centro, *borda = pontos[indices[nome]]
+            raio = float(np.mean(np.linalg.norm(np.array(borda) - centro, axis=1)))
+            cv2.circle(quadro, tuple(int(v) for v in np.round(centro)), max(1, round(raio)),
+                       (255, 120, 255), 1, cv2.LINE_AA)
+        # Pontos que entram no EAR e na abertura da boca, em destaque.
+        calculo = (indices["olho_esquerdo"] + indices["olho_direito"]
+                   + [i for par in indices["boca_pares_verticais"] for i in par]
+                   + indices["boca_cantos"])
+        for i in calculo:
             x, y = pontos[i]
             cv2.circle(quadro, (int(x), int(y)), 2, (0, 255, 0), -1)
+        if registro is not None and registro.pitch is not None:
+            a, b = indices["referencia_escala"]
+            comprimento = 1.5 * float(np.linalg.norm(pontos[a] - pontos[b]))
+            dx, dy, _ = direcao_do_rosto(registro.yaw, registro.pitch, registro.roll)
+            # Câmera com y para cima, imagem com y para baixo.
+            seta = np.array([dx, -dy]) * comprimento
+            if np.hypot(*seta) >= 2:
+                nariz = pontos[indices["ponta_nariz"]]
+                inicio = tuple(int(v) for v in np.round(nariz))
+                fim = tuple(int(v) for v in np.round(nariz + seta))
+                cv2.arrowedLine(quadro, inicio, fim, (0, 220, 255), 2, cv2.LINE_AA, tipLength=0.25)
     if registro is None:
         return quadro
-    if registro.rosto_visivel:
+
+    r = registro
+    if r.rosto_visivel:
         linhas = [
-            f"EAR esq {registro.ear_esq:.3f}  dir {registro.ear_dir:.3f}",
-            f"boca {registro.abertura_boca:.3f}",
-            f"yaw {registro.yaw:+.1f}  pitch {registro.pitch:+.1f}  roll {registro.roll:+.1f}",
+            f"EAR esq {_valor(r.ear_esq, '.3f')}  dir {_valor(r.ear_dir, '.3f')}",
+            f"boca {_valor(r.abertura_boca, '.3f')}",
+            f"yaw {_valor(r.yaw, '+.1f')}  pitch {_valor(r.pitch, '+.1f')}  roll {_valor(r.roll, '+.1f')}",
         ]
     else:
         linhas = ["rosto nao detectado"]
-    linhas.append(f"confianca {registro.confianca:.2f}  atraso {registro.atraso_ms or 0:.0f} ms")
+    linhas.append(f"confianca {r.confianca:.2f}  atraso {_valor(r.atraso_ms, '.0f')} ms")
+
+    # Painel escuro atrás do texto, para ler sobre qualquer fundo.
+    fonte, escala, altura_linha = cv2.FONT_HERSHEY_SIMPLEX, 0.5, 20
+    largura = max(cv2.getTextSize(t, fonte, escala, 1)[0][0] for t in linhas) + 16
+    altura = altura_linha * len(linhas) + 10
+    painel = quadro[:altura, :largura]
+    painel[:] = (painel * 0.3).astype(quadro.dtype)
     for n, texto in enumerate(linhas):
-        y = 22 + 22 * n
-        cv2.putText(quadro, texto, (10, y), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 0), 3)
-        cv2.putText(quadro, texto, (10, y), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1)
+        cv2.putText(quadro, texto, (8, 20 + altura_linha * n), fonte, escala,
+                    (255, 255, 255), 1, cv2.LINE_AA)
     return quadro
 
 
@@ -167,7 +214,13 @@ def main(argv=None) -> int:
     p.set_defaults(func=cmd_comparar)
 
     args = parser.parse_args(argv)
-    return args.func(args)
+    try:
+        return args.func(args)
+    except (OSError, ValueError) as erro:
+        # Arquivo ausente, vídeo ilegível, câmera indisponível ou CSV fora do
+        # contrato: problemas de uso, que não precisam de traceback.
+        print(f"erro: {erro}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":

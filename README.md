@@ -15,7 +15,8 @@ uv sync                      # Python 3.12, mediapipe, opencv-contrib-python, nu
 ## Usar em Python
 
 ```bash
-uv run python -m entrada video caminho.mp4 -o saidas/metricas.csv [--mostrar]   # modo vídeo
+uv run python -m entrada video testes/dados/retrato.mp4 --mostrar               # modo vídeo
+uv run python -m entrada video <seu-video.mp4> -o saidas/metricas.csv            # outro vídeo
 uv run python -m entrada webcam --mostrar [--segundos 60] [-o saidas/w.csv]      # modo ao vivo
 uv run python -m entrada comparar a.csv b.csv                                    # diferença quadro a quadro
 ```

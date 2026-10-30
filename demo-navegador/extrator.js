@@ -46,6 +46,17 @@ export function angulosDaMatriz(m) {
   };
 }
 
+// Vetor unitário para onde o rosto aponta (x direita, y cima, z para a câmera):
+// terceira coluna de R = Rz(roll)·Ry(yaw)·Rx(pitch). Com a cabeça baixa, y < 0.
+export function direcaoDoRosto(yaw, pitch, roll) {
+  const [y, p, r] = [yaw, pitch, roll].map((a) => (a * Math.PI) / 180);
+  return [
+    Math.cos(r) * Math.sin(y) * Math.cos(p) + Math.sin(r) * Math.sin(p),
+    Math.sin(r) * Math.sin(y) * Math.cos(p) - Math.cos(r) * Math.sin(p),
+    Math.cos(y) * Math.cos(p),
+  ];
+}
+
 // RMS do resíduo entre dois conjuntos de pontos 2D após alinhamento por
 // semelhança (translação, rotação e escala), com s = Σ conj(a)·b / Σ |a|².
 export function residuoAlinhado(anterior, atual) {
@@ -142,6 +153,28 @@ export class CalculadoraMetricas {
       ...pose,
       confianca,
     };
+  }
+}
+
+// Marcas de tempo da webcam a partir do requestVideoFrameCallback. O t_ms é o
+// instante de captura (metadata.captureTime, ou o now do callback quando a
+// câmera não o informa), contado desde a captura do primeiro quadro, como o
+// relógio da webcam em entrada/fontes.py. A captura é limitada ao now, já que
+// um quadro não pode ter sido capturado depois de entregue. Devolve null quando
+// a marca não avança, porque o MediaPipe exige marcas estritamente crescentes.
+export class RelogioWebcam {
+  constructor() {
+    this.t0 = null;
+    this.ultimo = -1;
+  }
+
+  quadro(agora, metadados) {
+    const captura = Math.min(metadados?.captureTime ?? agora, agora);
+    if (this.t0 === null) this.t0 = captura;
+    const tMs = Math.round(captura - this.t0);
+    if (tMs <= this.ultimo) return null;
+    this.ultimo = tMs;
+    return { tMs, captura };
   }
 }
 

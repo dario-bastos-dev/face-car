@@ -87,24 +87,32 @@ try {
   await cdp("Page.navigate", { url });
 
   const limite = Date.now() + 10 * 60 * 1000;
-  let ultimo = "";
+  let ultimo = "", falha = null;
   while (Date.now() < limite) {
     await esperar(500);
-    const estado = await avaliar(
-      "JSON.stringify({ok: document.body?.dataset.concluido, txt: document.getElementById('estado')?.textContent})");
+    const estado = await avaliar("JSON.stringify({ok: document.body?.dataset.concluido, " +
+      "erro: document.body?.dataset.erro, txt: document.getElementById('estado')?.textContent})");
     if (!estado) continue;
-    const { ok, txt } = JSON.parse(estado);
+    const { ok, erro, txt } = JSON.parse(estado);
     if (txt !== ultimo) process.stdout.write(`\r${txt}          `);
     ultimo = txt;
+    if (erro) {
+      falha = erro;
+      break;
+    }
     if (ok) break;
   }
   process.stdout.write("\n");
+  if (falha) throw new Error(`A página falhou: ${falha}`);
   const csv = await avaliar("window.csvMetricas && document.body.dataset.concluido ? window.csvMetricas() : null");
   if (!csv) throw new Error(`A página não terminou: ${ultimo}`);
   mkdirSync(dirname(resolve(saida)), { recursive: true });
   writeFileSync(saida, csv);
   console.log(`Métricas do navegador gravadas em ${saida}`);
   ws.close();
+} catch (erro) {
+  console.error(erro.message);
+  process.exitCode = 1;
 } finally {
   chrome.kill();
   servidor.close();

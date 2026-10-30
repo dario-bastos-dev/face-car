@@ -14,16 +14,9 @@ from pathlib import Path
 import numpy as np
 
 from entrada.confianca import Estabilidade, ParametrosConfianca
+from entrada.geometria import rotacao
 
 DESTINO = Path(__file__).with_name("geometria.json")
-
-
-def rotacao(yaw, pitch, roll):
-    y, p, r = map(math.radians, (yaw, pitch, roll))
-    rx = np.array([[1, 0, 0], [0, math.cos(p), -math.sin(p)], [0, math.sin(p), math.cos(p)]])
-    ry = np.array([[math.cos(y), 0, math.sin(y)], [0, 1, 0], [-math.sin(y), 0, math.cos(y)]])
-    rz = np.array([[math.cos(r), -math.sin(r), 0], [math.sin(r), math.cos(r), 0], [0, 0, 1]])
-    return rz @ ry @ rx
 
 
 def semelhanca(pontos, angulo, escala, dx, dy):

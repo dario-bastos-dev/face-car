@@ -35,6 +35,17 @@
     <canvas id="sobreposicao"></canvas>
   </div>
   <pre id="valores"></pre>
-  <script type="module" src="app.js"></script>
+  <script>
+    // Falhas ao carregar ou iniciar o módulo (CDN fora do ar, configuração
+    // ausente) não passam pelos .catch de app.js; elas também marcam a página.
+    function marcarErro(mensagem) {
+      document.body.dataset.erro = mensagem;
+      document.getElementById("estado").textContent = "Erro: " + mensagem;
+    }
+    addEventListener("error", (e) => marcarErro(e.message || "falha ao executar a página"));
+    addEventListener("unhandledrejection", (e) => marcarErro(e.reason?.message ?? String(e.reason)));
+  </script>
+  <script type="module" src="app.js"
+          onerror="marcarErro('não foi possível carregar app.js ou suas dependências')"></script>
 </body>
 </html>

@@ -6,6 +6,7 @@ Ambas entregam tuplas (quadro_bgr, t_ms, indice). Nenhuma grava vídeo.
 import math
 import threading
 import time
+from pathlib import Path
 
 import cv2
 
@@ -20,6 +21,8 @@ class FonteArquivo:
 
     def __init__(self, caminho, abrir=cv2.VideoCapture):
         self.caminho = str(caminho)
+        if not Path(self.caminho).is_file():
+            raise FileNotFoundError(f"Arquivo de vídeo não encontrado: {self.caminho}")
         self._cap = abrir(self.caminho)
         if not self._cap.isOpened():
             raise OSError(f"Não foi possível abrir o vídeo: {self.caminho}")
@@ -75,18 +78,24 @@ class FonteWebcam:
         return (time.monotonic() - self._t0) * 1000
 
     def _ler(self) -> None:
+        # Só esta thread usa a câmera, inclusive para liberá-la: um release()
+        # vindo de outra thread no meio de um read() pode travar ou derrubar o
+        # processo com alguns drivers.
         indice = 0
-        while self._rodando:
-            ok, quadro = self._cap.read()
-            if not ok:
-                break
+        try:
+            while self._rodando:
+                ok, quadro = self._cap.read()
+                if not ok:
+                    break
+                with self._condicao:
+                    self._ultimo = (quadro, int(self.agora_ms()), indice)
+                    self._condicao.notify_all()
+                indice += 1
+        finally:
+            self._cap.release()
             with self._condicao:
-                self._ultimo = (quadro, int(self.agora_ms()), indice)
+                self._rodando = False
                 self._condicao.notify_all()
-            indice += 1
-        with self._condicao:
-            self._rodando = False
-            self._condicao.notify_all()
 
     def ler(self, timeout: float = 1.0):
         """Devolve o quadro mais recente ainda não entregue, ou None.
@@ -109,10 +118,14 @@ class FonteWebcam:
     def ativa(self) -> bool:
         return self._rodando
 
-    def fechar(self) -> None:
+    def fechar(self, timeout: float = 2.0) -> None:
+        """Pede o fim da captura e espera a thread por até `timeout` segundos.
+
+        Se a câmera estiver presa num read(), a thread libera a câmera quando
+        ele voltar; fechar() não a libera por conta própria.
+        """
         self._rodando = False
-        self._thread.join(timeout=2)
-        self._cap.release()
+        self._thread.join(timeout=timeout)
 
     def __enter__(self):
         return self

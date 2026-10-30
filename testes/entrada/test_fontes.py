@@ -78,3 +78,61 @@ def test_marca_de_tempo_arredonda_metade_para_cima(tmp_path):
 
     with FonteArquivo(caminho) as fonte:
         assert [t for _, t, _ in fonte] == [0, 63, 125, 188]
+
+
+class CameraTravada(CameraFalsa):
+    """Entrega um quadro e depois trava no read() até `destravar` ser acionado."""
+
+    def __init__(self, _dispositivo):
+        super().__init__(_dispositivo, intervalo=0.001, total=10**6)
+        self.destravar = threading.Event()
+        self.lendo = False
+        self.liberada = threading.Event()
+        self.liberada_durante_leitura = False
+
+    def read(self):
+        self.lendo = True
+        try:
+            if self.n >= 1:
+                self.destravar.wait(5)
+            return super().read()
+        finally:
+            self.lendo = False
+
+    def release(self):
+        self.liberada_durante_leitura = self.lendo
+        self.liberada.set()
+
+
+def test_fechar_nao_libera_a_camera_no_meio_de_uma_leitura():
+    camera = None
+
+    def abrir(dispositivo):
+        nonlocal camera
+        camera = CameraTravada(dispositivo)
+        return camera
+
+    fonte = FonteWebcam(abrir=abrir)
+    assert fonte.ler(timeout=1) is not None
+    time.sleep(0.05)  # a thread já está presa no segundo read()
+    fonte.fechar(timeout=0.1)
+    assert not camera.liberada.is_set(), "liberou enquanto o read() ainda rodava"
+
+    camera.destravar.set()  # o read() termina: a própria thread libera a câmera
+    assert camera.liberada.wait(2)
+    assert not camera.liberada_durante_leitura
+
+
+def test_camera_que_para_sozinha_e_liberada():
+    camera = None
+
+    def abrir(dispositivo):
+        nonlocal camera
+        camera = CameraTravada(dispositivo)
+        camera.total = 2
+        camera.destravar.set()
+        return camera
+
+    with FonteWebcam(abrir=abrir) as fonte:
+        assert camera.liberada.wait(2)  # o read() falhou e a thread encerrou
+        assert not fonte.ativa

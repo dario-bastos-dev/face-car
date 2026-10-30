@@ -42,3 +42,21 @@ def test_residuo_cresce_com_o_ruido():
     pequeno = geometria.residuo_alinhado(a, a + rng.normal(0, 0.1, a.shape))
     grande = geometria.residuo_alinhado(a, a + rng.normal(0, 2.0, a.shape))
     assert 0 < pequeno < grande
+
+
+@pytest.mark.parametrize("caso", CASOS["pose"], ids=lambda c: str(c["esperado"]))
+def test_direcao_do_rosto_bate_com_a_matriz(caso):
+    # A direção para onde o rosto aponta é o eixo z do modelo do rosto, ou seja,
+    # a terceira coluna da rotação.
+    e = caso["esperado"]
+    m = np.array(caso["matriz"])[:3, :3]
+    esperado = m[:, 2] / np.linalg.norm(m[:, 2])
+    assert geometria.direcao_do_rosto(e["yaw"], e["pitch"], e["roll"]) == pytest.approx(esperado, abs=1e-9)
+
+
+def test_cabeca_baixa_aponta_para_baixo_e_giro_para_a_direita():
+    # Câmera do MediaPipe: x para a direita, y para cima, z na direção da câmera.
+    _, y, z = geometria.direcao_do_rosto(0, 30, 0)
+    assert y < 0 and z > 0
+    x, _, _ = geometria.direcao_do_rosto(30, 0, 0)
+    assert x > 0

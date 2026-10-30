@@ -14,10 +14,34 @@ const TIPOS = {
   ".task": "application/octet-stream",
 };
 
+// Cabeçalho Range de uma única faixa (RFC 9110): devolve {inicio, fim}, "invalida"
+// (responder 416) ou null (sem Range ou com várias faixas: servir o arquivo inteiro).
+export function interpretarFaixa(texto, tamanho) {
+  const m = /^bytes=(\d*)-(\d*)$/.exec((texto ?? "").trim());
+  if (!m || (m[1] === "" && m[2] === "")) return null;
+  let inicio, fim;
+  if (m[1] === "") {  // sufixo: os últimos N bytes
+    const n = Number(m[2]);
+    if (n === 0) return "invalida";
+    inicio = Math.max(0, tamanho - n);
+    fim = tamanho - 1;
+  } else {
+    inicio = Number(m[1]);
+    fim = m[2] === "" ? tamanho - 1 : Math.min(Number(m[2]), tamanho - 1);
+  }
+  if (inicio >= tamanho || fim < inicio) return "invalida";
+  return { inicio, fim };
+}
+
 // extras: mapa de rotas para arquivos fora da raiz, por exemplo {"/__video": "/abs/v.mp4"}.
 export function criarServidor(raiz = RAIZ, extras = {}) {
   return createServer((req, res) => {
-    const rota = decodeURIComponent(new URL(req.url, "http://x").pathname);
+    let rota;
+    try {
+      rota = decodeURIComponent(new URL(req.url, "http://x").pathname);
+    } catch {
+      return res.writeHead(400).end("URL inválida");
+    }
     let caminho = extras[rota] ?? join(raiz, normalize(rota));
     if (!extras[rota] && !caminho.startsWith(raiz)) return res.writeHead(403).end();
     let info;
@@ -32,10 +56,11 @@ export function criarServidor(raiz = RAIZ, extras = {}) {
       "Accept-Ranges": "bytes",
       "Cache-Control": "no-store",
     };
-    const faixa = /bytes=(\d*)-(\d*)/.exec(req.headers.range ?? "");
-    if (faixa) {
-      const inicio = faixa[1] ? Number(faixa[1]) : 0;
-      const fim = faixa[2] ? Number(faixa[2]) : info.size - 1;
+    const faixa = interpretarFaixa(req.headers.range, info.size);
+    if (faixa === "invalida") {
+      res.writeHead(416, { ...cabecalho, "Content-Range": `bytes */${info.size}` }).end();
+    } else if (faixa) {
+      const { inicio, fim } = faixa;
       res.writeHead(206, { ...cabecalho, "Content-Range": `bytes ${inicio}-${fim}/${info.size}`,
         "Content-Length": fim - inicio + 1 });
       createReadStream(caminho, { start: inicio, end: fim }).pipe(res);

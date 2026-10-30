@@ -1,11 +1,11 @@
-// node --test testes/js/
+// npm test (node --test testes/js/*.test.mjs)
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import {
   ear, aberturaBoca, angulosDaMatriz, matrizEmLinhas, Estabilidade,
-  CalculadoraMetricas, cabecalhoCsv, linhaCsv,
+  CalculadoraMetricas, RelogioWebcam, direcaoDoRosto, cabecalhoCsv, linhaCsv,
 } from "../../demo-navegador/extrator.js";
 
 const ler = (caminho) => JSON.parse(readFileSync(new URL(caminho, import.meta.url)));
@@ -49,4 +49,43 @@ test("CSV segue o contrato", () => {
   const calc = new CalculadoraMetricas(casos.estabilidade.parametros, indices);
   const semRosto = calc.calcular(null, null, 100, 3, 9.06);
   assert.equal(linhaCsv(contrato, semRosto), "100,3,0,,,,,,,0.000,9.1");
+});
+
+test("relógio da webcam usa o instante de captura e começa no primeiro quadro", () => {
+  const relogio = new RelogioWebcam();
+  // O primeiro quadro foi capturado antes do callback: t_ms parte dele, não do callback.
+  assert.deepEqual(relogio.quadro(1000, { captureTime: 990 }), { tMs: 0, captura: 990 });
+  assert.deepEqual(relogio.quadro(1040, { captureTime: 1023.4 }), { tMs: 33, captura: 1023.4 });
+});
+
+test("relógio da webcam usa o now do callback quando não há captureTime", () => {
+  const relogio = new RelogioWebcam();
+  assert.deepEqual(relogio.quadro(500, {}), { tMs: 0, captura: 500 });
+  assert.deepEqual(relogio.quadro(533, undefined), { tMs: 33, captura: 533 });
+});
+
+test("relógio da webcam descarta marcas que não avançam", () => {
+  // O MediaPipe exige marcas de tempo estritamente crescentes.
+  const relogio = new RelogioWebcam();
+  relogio.quadro(110, { captureTime: 100 });
+  assert.equal(relogio.quadro(120, { captureTime: 100.3 }), null);
+  assert.equal(relogio.quadro(130, { captureTime: 90 }), null);
+  assert.equal(relogio.quadro(140, { captureTime: 101 }).tMs, 1);
+});
+
+test("relógio da webcam não aceita captura depois do callback", () => {
+  // A câmera falsa do Chrome chegou a informar captureTime ~2 ms à frente do now.
+  const relogio = new RelogioWebcam();
+  assert.deepEqual(relogio.quadro(1000, { captureTime: 1002 }), { tMs: 0, captura: 1000 });
+});
+
+test("direção do rosto bate com a terceira coluna da matriz", () => {
+  for (const c of casos.pose) {
+    const { yaw, pitch, roll } = c.esperado;
+    const d = direcaoDoRosto(yaw, pitch, roll);
+    const col = [0, 1, 2].map((i) => c.matriz[i][2]);
+    const n = Math.hypot(...col);
+    col.forEach((v, i) => perto(d[i], v / n, 1e-9, `eixo ${i}`));
+  }
+  assert.ok(direcaoDoRosto(0, 30, 0)[1] < 0, "cabeça baixa aponta para baixo");
 });
