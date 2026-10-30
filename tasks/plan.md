@@ -19,7 +19,8 @@ Origem: revisão de código de 29/10/2026 sobre `entrada/`, `demo-navegador/` e 
 - [x] Faixa invertida (`bytes=5-2`) responde 416, em vez de anunciar um `Content-Length` negativo.
 
 ## T4 · Falha da página encerra a extração automática
-- [ ] Erro em `app.js` marca a página; `extrair_navegador.mjs` falha logo com a mensagem.
+- [x] Erro em `app.js` marca a página; `extrair_navegador.mjs` falha logo com a mensagem.
+- [x] Falhas ao carregar o módulo (CDN ou configuração inacessíveis) também marcam a página.
 
 ## T5 · Webcam liberada pela própria thread de captura
 - [ ] `release()` só acontece depois que a leitura terminou.

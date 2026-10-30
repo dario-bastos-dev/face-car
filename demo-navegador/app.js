@@ -183,11 +183,15 @@ async function processarArquivo(url, fps) {
   if (s.id === sessao) concluir(`${linhas.length} quadros processados.`);
 }
 
-$("webcam").onclick = () => usarWebcam().catch((e) => ($("estado").textContent = e.message));
+// Mostra o erro e marca a página (data-erro), para quem a automatiza encerrar logo.
+// marcarErro vem do script clássico de index.html.
+const falhar = (erro) => window.marcarErro(erro?.message ?? String(erro));
+
+$("webcam").onclick = () => usarWebcam().catch(falhar);
 $("arquivo").onchange = (ev) => {
   const f = ev.target.files[0];
   if (f) processarArquivo(URL.createObjectURL(f), Number($("fps").value))
-    .catch((e) => ($("estado").textContent = e.message));
+    .catch(falhar);
 };
 $("parar").onclick = () => { sessao++; concluir(`Parado com ${linhas.length} quadros.`); };
 $("baixar").onclick = () => {
@@ -204,5 +208,5 @@ $("estado").textContent = "Pronto.";
 if (params.get("video")) {
   const fps = Number(params.get("fps") || $("fps").value);
   $("fps").value = fps;
-  processarArquivo(params.get("video"), fps).catch((e) => ($("estado").textContent = e.message));
+  processarArquivo(params.get("video"), fps).catch(falhar);
 }
