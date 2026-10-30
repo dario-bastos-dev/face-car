@@ -1,53 +1,80 @@
-# Treinamento CNN do Face-Car
+# CNNs de olhos e boca
 
-Este módulo classifica imagens faciais em duas classes visuais: `bocejo` e
-`sem_bocejo`. Isso não é uma classificação completa de sonolência. O código
-usa TensorFlow/Keras e foi estruturado para executar no Google Colab com o
-YawDD, sem baixar ou versionar o dataset.
+Esta etapa treina duas CNNs independentes com imagens reais: olhos `aberto`/
+`fechado` e boca `bocejo`/`sem_bocejo`. Não é uma classificação completa de
+sonolência e não usa dados sintéticos.
 
-## Preparar o YawDD
+## CEW: olhos
 
-Obtenha os vídeos respeitando os termos do dataset e crie um manifesto
-supervisionado, por exemplo `manifesto_yawdd.csv`:
+Use os patches de olhos do CEW e crie `manifesto_cew.csv`:
+
+```csv
+image_path,label,person_id
+eyes/open/0001.jpg,aberto,pessoa_01
+eyes/closed/0002.jpg,fechado,pessoa_01
+```
+
+Os rótulos devem ser os fornecidos pelo dataset. O `person_id` é obrigatório.
+Os patches CEW já são a região dos olhos, por isso não são recortados novamente
+com MediaPipe.
+
+```bash
+uv run python treinamento/preparar_regioes.py \
+  --region olhos --manifest /dados/cew/manifesto_cew.csv \
+  --input-root /dados/cew --input-roi \
+  --output-dir treinamento/dados/olhos_processado
+```
+
+## YawDD: boca
+
+Crie `manifesto_yawdd.csv` com rótulos reais por vídeo ou intervalo:
 
 ```csv
 video_path,label,driver_id
-person_01/video_001.avi,bocejo,person_01
-person_01/video_002.avi,sem_bocejo,person_01
+videos/p01_yawn.avi,bocejo,pessoa_01
+videos/p01_normal.avi,sem_bocejo,pessoa_01
 ```
 
-Os rótulos devem vir de anotações confiáveis; o script não deduz `bocejo` a
-partir do nome do arquivo. O `driver_id` é obrigatório para impedir que frames
-do mesmo motorista caiam em treino e teste. O manifesto pode conter caminhos
-relativos à opção `--videos-dir`.
+O script usa o Face Landmarker do MediaPipe para recortar a boca. Não baixe o
+modelo automaticamente; coloque `face_landmarker.task` no Drive ou forneça o
+caminho local.
 
 ```bash
-uv run python treinamento/preparar_dados.py \
-  --manifest /caminho/manifesto_yawdd.csv \
-  --videos-dir /caminho/YawDD \
-  --output-dir treinamento/dados/yawdd_processado \
-  --frame-stride 5 --image-size 96
+uv run python treinamento/preparar_regioes.py \
+  --region boca --manifest /dados/yawdd/manifesto_yawdd.csv \
+  --input-root /dados/yawdd --mediapipe-model /dados/face_landmarker.task \
+  --output-dir treinamento/dados/boca_processado --frame-stride 5
 ```
-
-O script extrai frames com OpenCV, recorta a maior face detectada pelo Haar
-cascade, redimensiona para 96×96 e grava `metadata.csv`. A integração futura
-com o MediaPipe pode substituir apenas a função de recorte.
 
 ## Treinar e avaliar
 
 ```bash
-uv run python treinamento/treinar.py --data-dir treinamento/dados/yawdd_processado --output-dir treinamento/resultados_cnn
-uv run python treinamento/avaliar.py --data-dir treinamento/dados/yawdd_processado --models-dir treinamento/resultados_cnn
+uv run python treinamento/treinar_regioes.py \
+  --region olhos --data-dir treinamento/dados/olhos_processado \
+  --output-dir treinamento/resultados_cnn/olhos
+uv run python treinamento/avaliar_regioes.py \
+  --region olhos --data-dir treinamento/dados/olhos_processado \
+  --models-dir treinamento/resultados_cnn/olhos
 ```
 
-O Modelo A usa a CNN básica por até 15 épocas. O Modelo B usa data
-augmentation, Dropout de 50% e EarlyStopping por até 30 épocas. A avaliação
-salva `metricas.json`, matrizes de confusão e `melhor_modelo.keras`, escolhido
-pela acurácia de validação. Nenhum resultado é gerado sem treinamento real.
+Repita trocando `olhos` por `boca`. O Modelo A treina até 15 épocas. O Modelo
+B usa augmentation, Dropout e EarlyStopping por até 30 épocas. Cada região
+salva modelos `.keras`, métricas e matrizes de confusão.
 
 ## Google Colab
 
-Abra `treinamento/treinamento_cnn_colab.ipynb`, ative GPU, monte o Drive e
-configure o dataset processado em
-`/content/drive/MyDrive/Face-Car/datasets/yawdd_processado` e os resultados em
-`/content/drive/MyDrive/Face-Car/resultados_cnn`. O notebook não baixa o YawDD.
+Use `treinamento_cnn_colab.ipynb`. Coloque manualmente no Drive:
+
+- `/content/drive/MyDrive/Face-Car/datasets/cew/`
+- `/content/drive/MyDrive/Face-Car/datasets/yawdd/`
+- `/content/drive/MyDrive/Face-Car/datasets/face_landmarker.task`
+
+Os resultados são salvos em `Face-Car/resultados_cnn/olhos` e
+`Face-Car/resultados_cnn/boca`. O notebook não baixa datasets grandes.
+
+## Análise temporal
+
+`analise_temporal.py` prepara PERCLOS, eventos de piscada, abertura da boca,
+velocidade do `pitch` e recuperação da cabeça. A decisão temporal será
+implementada depois das CNNs, usando as métricas do MediaPipe e confirmação de
+eventos ao longo de janelas, para evitar alertas por movimentos normais.
