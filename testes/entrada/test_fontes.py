@@ -68,8 +68,8 @@ def test_webcam_encerrada_devolve_none():
 
 
 def test_marca_de_tempo_arredonda_metade_para_cima(tmp_path):
-    # A 16 fps, o quadro 1 está em 62,5 ms. O JS usa Math.round (63); o round()
-    # do Python arredondaria para o par (62) e as duas versões divergiriam.
+    # A 16 fps, o quadro 1 está em 62,5 ms: vira 63, e não 62 como faria o
+    # round() do Python, que arredonda empates para o número par.
     caminho = str(tmp_path / "v16.avi")
     escritor = cv2.VideoWriter(caminho, cv2.VideoWriter_fourcc(*"MJPG"), 16, (64, 48))
     for i in range(4):

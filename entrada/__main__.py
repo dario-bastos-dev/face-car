@@ -64,61 +64,61 @@ def _gravador(args, config, origem) -> GravadorImagens:
                            config["recorte"]["qualidade_jpeg"])
 
 
-def _mostrar(quadro, caixa, capturou, total) -> bool:
-    """Atualiza a janela; devolve False quando o usuário aperta q."""
-    cv2.imshow(JANELA, desenhar(quadro, caixa, capturou, total))
-    return cv2.waitKey(1) & 0xFF != ord("q")
+def _capturar(args, config: dict, gravador: GravadorImagens, quadros) -> int:
+    """Laço comum aos dois comandos: detecta, grava no intervalo e mostra a janela.
 
-
-def cmd_video(args) -> int:
+    Termina quando os quadros acabam, com q na janela ou com Ctrl+C.
+    """
     from entrada.detector import DetectorRosto
-    from entrada.fontes import FonteArquivo
 
-    config = carregar_config(args.config)
-    gravador = _gravador(args, config, Path(args.video).name)
     intervalo = args.intervalo_ms or config["captura"]["intervalo_ms"]
-    with FonteArquivo(args.video) as fonte, DetectorRosto(config) as detector:
-        print(f"{args.video}: {fonte.total} quadros a {fonte.fps:.2f} fps")
+    with DetectorRosto(config) as detector:
         capturador = Capturador(config, detector, gravador, intervalo)
-        for quadro, t_ms, _ in fonte:
-            caixa, capturou = capturador.processar(quadro, t_ms)
-            if args.mostrar and not _mostrar(quadro, caixa, capturou, gravador.total):
-                break
-    if args.mostrar:
-        cv2.destroyAllWindows()
+        try:
+            for quadro, t_ms, _ in quadros:
+                caixa, capturou = capturador.processar(quadro, t_ms)
+                if args.mostrar:
+                    cv2.imshow(JANELA, desenhar(quadro, caixa, capturou, gravador.total))
+                    if cv2.waitKey(1) & 0xFF == ord("q"):
+                        break
+        except KeyboardInterrupt:
+            pass
+        finally:
+            if args.mostrar:
+                cv2.destroyAllWindows()
     print(f"{gravador.total} recortes gravados em {gravador.pasta}")
     return 0
 
 
+def _quadros_da_webcam(fonte, segundos):
+    """Quadros da webcam enquanto ela estiver ativa e o tempo não acabar."""
+    fim = time.monotonic() + segundos if segundos else None
+    while fonte.ativa and (fim is None or time.monotonic() < fim):
+        item = fonte.ler(timeout=1.0)
+        if item is not None:
+            yield item
+
+
+def cmd_video(args) -> int:
+    from entrada.fontes import FonteArquivo
+
+    config = carregar_config(args.config)
+    gravador = _gravador(args, config, Path(args.video).name)
+    with FonteArquivo(args.video) as fonte:
+        print(f"{args.video}: {fonte.total} quadros a {fonte.fps:.2f} fps")
+        return _capturar(args, config, gravador, fonte)
+
+
 def cmd_webcam(args) -> int:
-    from entrada.detector import DetectorRosto
     from entrada.fontes import FonteWebcam
 
     config = carregar_config(args.config)
     cam = config["webcam"]
     gravador = _gravador(args, config, time.strftime("webcam-%Y%m%d-%H%M%S"))
-    intervalo = args.intervalo_ms or config["captura"]["intervalo_ms"]
     dispositivo = args.dispositivo if args.dispositivo is not None else cam["dispositivo"]
-    with FonteWebcam(dispositivo, cam["largura"], cam["altura"]) as fonte, \
-            DetectorRosto(config) as detector:
-        capturador = Capturador(config, detector, gravador, intervalo)
-        fim = time.monotonic() + args.segundos if args.segundos else None
+    with FonteWebcam(dispositivo, cam["largura"], cam["altura"]) as fonte:
         print("Capturando. Pressione q na janela ou Ctrl+C para parar.")
-        try:
-            while fonte.ativa and (fim is None or time.monotonic() < fim):
-                item = fonte.ler(timeout=1.0)
-                if item is None:
-                    continue
-                quadro, t_ms, _ = item
-                caixa, capturou = capturador.processar(quadro, t_ms)
-                if args.mostrar and not _mostrar(quadro.copy(), caixa, capturou, gravador.total):
-                    break
-        except KeyboardInterrupt:
-            pass
-    if args.mostrar:
-        cv2.destroyAllWindows()
-    print(f"{gravador.total} recortes gravados em {gravador.pasta}")
-    return 0
+        return _capturar(args, config, gravador, _quadros_da_webcam(fonte, args.segundos))
 
 
 def main(argv=None) -> int:

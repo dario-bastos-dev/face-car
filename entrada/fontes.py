@@ -14,9 +14,8 @@ import cv2
 class FonteArquivo:
     """Lê um arquivo de vídeo quadro a quadro.
 
-    A marca de tempo é indice * 1000 / fps arredondado com a metade para cima
-    (como o Math.round do navegador), e não a posição informada pelo
-    decodificador, para que o Python e o navegador usem os mesmos instantes.
+    A marca de tempo é indice * 1000 / fps arredondado com a metade para cima,
+    e não a posição informada pelo decodificador, que varia entre formatos.
     """
 
     def __init__(self, caminho, abrir=cv2.VideoCapture):
@@ -74,7 +73,7 @@ class FonteWebcam:
         self._thread = threading.Thread(target=self._ler, name="captura-webcam", daemon=True)
         self._thread.start()
 
-    def agora_ms(self) -> float:
+    def _agora_ms(self) -> float:
         return (time.monotonic() - self._t0) * 1000
 
     def _ler(self) -> None:
@@ -88,7 +87,7 @@ class FonteWebcam:
                 if not ok:
                     break
                 with self._condicao:
-                    self._ultimo = (quadro, int(self.agora_ms()), indice)
+                    self._ultimo = (quadro, int(self._agora_ms()), indice)
                     self._condicao.notify_all()
                 indice += 1
         finally:

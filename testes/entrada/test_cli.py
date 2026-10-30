@@ -1,10 +1,16 @@
 """Linha de comando: capturas no vídeo de teste e erros sem traceback."""
 
+import time
+
 import cv2
+import numpy as np
 import pytest
 
-from entrada.__main__ import main
+from entrada.__main__ import _quadros_da_webcam, desenhar, main
 from entrada.contexto import RAIZ
+from entrada.fontes import FonteWebcam
+from entrada.recorte import Caixa
+from test_fontes import CameraFalsa
 
 VIDEO = RAIZ / "testes" / "dados" / "retrato.mp4"
 MODELO = RAIZ / "modelos" / "face_landmarker.task"
@@ -47,12 +53,21 @@ def test_rotulo_invalido_da_mensagem_clara(tmp_path, capsys):
 
 
 def test_desenho_da_janela_com_e_sem_rosto():
-    import numpy as np
-
-    from entrada.__main__ import desenhar
-    from entrada.recorte import Caixa
-
     quadro = np.zeros((240, 320, 3), np.uint8)
     desenhar(quadro, Caixa(160, 140, 100), capturou=True, total=3)
     assert (quadro[90:190, 110] == (0, 255, 0)).all(axis=1).any()  # borda verde ao capturar
     desenhar(np.zeros((240, 320, 3), np.uint8), None, capturou=False, total=3)
+
+
+def test_quadros_da_webcam_terminam_quando_a_camera_para():
+    with FonteWebcam(abrir=lambda d: CameraFalsa(d, intervalo=0.001, total=20)) as fonte:
+        indices = [i for _, _, i in _quadros_da_webcam(fonte, None)]
+    assert indices and indices == sorted(set(indices)) and indices[-1] <= 19
+
+
+def test_quadros_da_webcam_respeitam_o_tempo_limite():
+    with FonteWebcam(abrir=lambda d: CameraFalsa(d, intervalo=0.005, total=10**6)) as fonte:
+        inicio = time.monotonic()
+        quadros = list(_quadros_da_webcam(fonte, 0.2))
+        assert 0.2 <= time.monotonic() - inicio < 1.5
+    assert quadros
