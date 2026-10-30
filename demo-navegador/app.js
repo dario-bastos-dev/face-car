@@ -64,16 +64,35 @@ function desenhar(pts, r, largura, altura) {
   tela.height = altura;
   ctx.clearRect(0, 0, largura, altura);
   if (pts) {
-    ctx.strokeStyle = "#00c8ff";
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    indices.contorno_rosto.forEach((i, n) => (n ? ctx.lineTo : ctx.moveTo).call(ctx, ...pts[i]));
-    ctx.closePath();
-    ctx.stroke();
+    const contorno = (nome, cor, largura) => {
+      ctx.strokeStyle = cor;
+      ctx.lineWidth = largura;
+      ctx.beginPath();
+      indices[nome].forEach((i, n) => (n ? ctx.lineTo : ctx.moveTo).call(ctx, ...pts[i]));
+      ctx.closePath();
+      ctx.stroke();
+    };
+    contorno("contorno_rosto", "#00c8ff", 1.5);
+    // Contornos completos dos olhos e dos lábios: mostram o rastreio inteiro.
+    ctx.fillStyle = "#96ff96";
+    for (const nome of ["contorno_olho_esquerdo", "contorno_olho_direito",
+      "contorno_labios_externo", "contorno_labios_interno"]) {
+      contorno(nome, "#5ac85a", 1);
+      for (const i of indices[nome]) ctx.fillRect(pts[i][0] - 1, pts[i][1] - 1, 2, 2);
+    }
+    ctx.strokeStyle = "#ff78ff";
+    for (const nome of ["iris_esquerda", "iris_direita"]) {
+      const [centro, ...borda] = indices[nome].map((i) => pts[i]);
+      const raio = borda.reduce((s, p) => s + Math.hypot(p[0] - centro[0], p[1] - centro[1]), 0) / borda.length;
+      ctx.beginPath();
+      ctx.arc(centro[0], centro[1], Math.max(1, raio), 0, 2 * Math.PI);
+      ctx.stroke();
+    }
+    // Pontos que entram no EAR e na abertura da boca, em destaque.
     ctx.fillStyle = "#3ddc84";
-    const destaque = [...indices.olho_esquerdo, ...indices.olho_direito,
+    const calculo = [...indices.olho_esquerdo, ...indices.olho_direito,
       ...indices.boca_pares_verticais.flat(), ...indices.boca_cantos];
-    for (const i of destaque) ctx.fillRect(pts[i][0] - 2, pts[i][1] - 2, 4, 4);
+    for (const i of calculo) ctx.fillRect(pts[i][0] - 2, pts[i][1] - 2, 4, 4);
     if (r.pitch !== null) desenharSeta(pts, r);
   }
   const f = (v, n) => (v === null ? "—" : v.toFixed(n));

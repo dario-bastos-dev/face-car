@@ -31,19 +31,34 @@ def _valor(v, formato: str) -> str:
 
 
 def desenhar(quadro, registro: RegistroMetricas | None, pontos, indices: dict):
-    """Sobrepõe o contorno do rosto, os pontos dos olhos e da boca, uma seta com a
+    """Sobrepõe o contorno do rosto, os contornos completos dos olhos, das íris e
+    dos lábios (com os pontos usados no cálculo em destaque), uma seta com a
     direção para onde o rosto aponta e os valores do registro.
 
     A seta sai da ponta do nariz: com a cabeça baixa ela aponta para baixo, e com
     o rosto de frente para a câmera ela quase some.
     """
     if pontos is not None:
-        contorno = np.round(pontos[indices["contorno_rosto"]]).astype(np.int32)
-        cv2.polylines(quadro, [contorno], True, (255, 200, 0), 1, cv2.LINE_AA)
-        destaque = (indices["olho_esquerdo"] + indices["olho_direito"]
-                    + [i for par in indices["boca_pares_verticais"] for i in par]
-                    + indices["boca_cantos"])
-        for i in destaque:
+        def inteiros(nome):
+            return np.round(pontos[indices[nome]]).astype(np.int32)
+
+        cv2.polylines(quadro, [inteiros("contorno_rosto")], True, (255, 200, 0), 1, cv2.LINE_AA)
+        # Contornos completos dos olhos e dos lábios: mostram o rastreio inteiro.
+        for nome in ("contorno_olho_esquerdo", "contorno_olho_direito",
+                     "contorno_labios_externo", "contorno_labios_interno"):
+            cv2.polylines(quadro, [inteiros(nome)], True, (90, 200, 90), 1, cv2.LINE_AA)
+            for x, y in inteiros(nome):
+                cv2.circle(quadro, (int(x), int(y)), 1, (150, 255, 150), -1)
+        for nome in ("iris_esquerda", "iris_direita"):
+            centro, *borda = pontos[indices[nome]]
+            raio = float(np.mean(np.linalg.norm(np.array(borda) - centro, axis=1)))
+            cv2.circle(quadro, tuple(int(v) for v in np.round(centro)), max(1, round(raio)),
+                       (255, 120, 255), 1, cv2.LINE_AA)
+        # Pontos que entram no EAR e na abertura da boca, em destaque.
+        calculo = (indices["olho_esquerdo"] + indices["olho_direito"]
+                   + [i for par in indices["boca_pares_verticais"] for i in par]
+                   + indices["boca_cantos"])
+        for i in calculo:
             x, y = pontos[i]
             cv2.circle(quadro, (int(x), int(y)), 2, (0, 255, 0), -1)
         if registro is not None and registro.pitch is not None:

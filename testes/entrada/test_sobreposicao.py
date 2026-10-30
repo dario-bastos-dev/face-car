@@ -51,3 +51,31 @@ def test_nao_quebra_sem_pose_nem_rosto():
     desenhar(quadro, registro(yaw=None, pitch=None, roll=None), rosto_sintetico(), INDICES)
     sem_rosto = RegistroMetricas(0, 0, False, confianca=0.0, atraso_ms=5.0)
     desenhar(quadro, sem_rosto, None, INDICES)
+
+
+CONTORNOS = ["contorno_olho_esquerdo", "contorno_olho_direito",
+             "contorno_labios_externo", "contorno_labios_interno"]
+
+
+def test_indices_dos_contornos_sao_coerentes():
+    for nome in CONTORNOS + ["iris_esquerda", "iris_direita"]:
+        assert all(0 <= i < 478 for i in INDICES[nome]), nome
+        assert len(set(INDICES[nome])) == len(INDICES[nome]), nome
+    assert len(INDICES["contorno_olho_esquerdo"]) == len(INDICES["contorno_olho_direito"]) == 16
+    assert len(INDICES["contorno_labios_externo"]) == len(INDICES["contorno_labios_interno"]) == 20
+    # Os pontos do cálculo fazem parte dos contornos desenhados.
+    assert set(INDICES["olho_esquerdo"]) <= set(INDICES["contorno_olho_esquerdo"])
+    assert set(INDICES["olho_direito"]) <= set(INDICES["contorno_olho_direito"])
+    boca = {i for par in INDICES["boca_pares_verticais"] for i in par} | set(INDICES["boca_cantos"])
+    assert boca <= set(INDICES["contorno_labios_interno"])
+
+
+def test_desenha_todos_os_pontos_dos_olhos_e_da_boca():
+    pts = rosto_sintetico()
+    quadro = quadro_vazio()
+    desenhar(quadro, registro(), pts, INDICES)
+    for nome in CONTORNOS:
+        for i in INDICES[nome]:
+            x, y = np.round(pts[i]).astype(int)
+            if y > TOPO_LIVRE:
+                assert quadro[y - 1:y + 2, x - 1:x + 2].any(), f"{nome}: ponto {i}"
