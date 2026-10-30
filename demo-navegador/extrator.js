@@ -46,6 +46,17 @@ export function angulosDaMatriz(m) {
   };
 }
 
+// Vetor unitário para onde o rosto aponta (x direita, y cima, z para a câmera):
+// terceira coluna de R = Rz(roll)·Ry(yaw)·Rx(pitch). Com a cabeça baixa, y < 0.
+export function direcaoDoRosto(yaw, pitch, roll) {
+  const [y, p, r] = [yaw, pitch, roll].map((a) => (a * Math.PI) / 180);
+  return [
+    Math.cos(r) * Math.sin(y) * Math.cos(p) + Math.sin(r) * Math.sin(p),
+    Math.sin(r) * Math.sin(y) * Math.cos(p) - Math.cos(r) * Math.sin(p),
+    Math.cos(y) * Math.cos(p),
+  ];
+}
+
 // RMS do resíduo entre dois conjuntos de pontos 2D após alinhamento por
 // semelhança (translação, rotação e escala), com s = Σ conj(a)·b / Σ |a|².
 export function residuoAlinhado(anterior, atual) {

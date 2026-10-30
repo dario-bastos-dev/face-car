@@ -49,6 +49,26 @@ def angulos_da_matriz(matriz) -> tuple[float, float, float]:
     return math.degrees(yaw), math.degrees(pitch), math.degrees(roll)
 
 
+def rotacao(yaw: float, pitch: float, roll: float) -> np.ndarray:
+    """Matriz 3x3 R = Rz(roll) · Ry(yaw) · Rx(pitch), com ângulos em graus.
+
+    É a inversa de angulos_da_matriz, no mesmo sistema de câmera do MediaPipe.
+    """
+    y, p, r = (math.radians(a) for a in (yaw, pitch, roll))
+    rx = np.array([[1, 0, 0], [0, math.cos(p), -math.sin(p)], [0, math.sin(p), math.cos(p)]])
+    ry = np.array([[math.cos(y), 0, math.sin(y)], [0, 1, 0], [-math.sin(y), 0, math.cos(y)]])
+    rz = np.array([[math.cos(r), -math.sin(r), 0], [math.sin(r), math.cos(r), 0], [0, 0, 1]])
+    return rz @ ry @ rx
+
+
+def direcao_do_rosto(yaw: float, pitch: float, roll: float) -> np.ndarray:
+    """Vetor unitário para onde o rosto aponta (x direita, y cima, z para a câmera).
+
+    De frente para a câmera é (0, 0, 1); com a cabeça baixa, y fica negativo.
+    """
+    return rotacao(yaw, pitch, roll)[:, 2]
+
+
 def residuo_alinhado(anterior, atual) -> float:
     """RMS do que sobra entre dois conjuntos de pontos 2D após alinhá-los.
 

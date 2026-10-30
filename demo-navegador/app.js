@@ -3,7 +3,8 @@
 import { FaceLandmarker, FilesetResolver } from
   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.0/vision_bundle.mjs";
 import {
-  CalculadoraMetricas, RelogioWebcam, pontosEmPixels, matrizEmLinhas, cabecalhoCsv, linhaCsv,
+  CalculadoraMetricas, RelogioWebcam, direcaoDoRosto, pontosEmPixels, matrizEmLinhas,
+  cabecalhoCsv, linhaCsv,
 } from "./extrator.js";
 
 const WASM = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.0/wasm";
@@ -63,10 +64,17 @@ function desenhar(pts, r, largura, altura) {
   tela.height = altura;
   ctx.clearRect(0, 0, largura, altura);
   if (pts) {
+    ctx.strokeStyle = "#00c8ff";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    indices.contorno_rosto.forEach((i, n) => (n ? ctx.lineTo : ctx.moveTo).call(ctx, ...pts[i]));
+    ctx.closePath();
+    ctx.stroke();
     ctx.fillStyle = "#3ddc84";
     const destaque = [...indices.olho_esquerdo, ...indices.olho_direito,
       ...indices.boca_pares_verticais.flat(), ...indices.boca_cantos];
     for (const i of destaque) ctx.fillRect(pts[i][0] - 2, pts[i][1] - 2, 4, 4);
+    if (r.pitch !== null) desenharSeta(pts, r);
   }
   const f = (v, n) => (v === null ? "—" : v.toFixed(n));
   $("valores").textContent = r.rosto_visivel
@@ -75,6 +83,29 @@ function desenhar(pts, r, largura, altura) {
       `yaw ${f(r.yaw, 1)}  pitch ${f(r.pitch, 1)}  roll ${f(r.roll, 1)}\n` +
       `confiança ${f(r.confianca, 2)}  atraso ${f(r.atraso_ms, 0)} ms`
     : `rosto não detectado\nconfiança ${f(r.confianca, 2)}`;
+}
+
+// Seta da ponta do nariz para onde o rosto aponta, como em entrada/__main__.py:
+// com a cabeça baixa ela aponta para baixo; de frente para a câmera quase some.
+function desenharSeta(pts, r) {
+  const [a, b] = indices.referencia_escala;
+  const comprimento = 1.5 * Math.hypot(pts[a][0] - pts[b][0], pts[a][1] - pts[b][1]);
+  const [dx, dy] = direcaoDoRosto(r.yaw, r.pitch, r.roll);
+  const [sx, sy] = [dx * comprimento, -dy * comprimento];  // imagem com y para baixo
+  if (Math.hypot(sx, sy) < 2) return;
+  const [x0, y0] = pts[indices.ponta_nariz];
+  const [x1, y1] = [x0 + sx, y0 + sy];
+  const angulo = Math.atan2(sy, sx), ponta = 0.25 * Math.hypot(sx, sy);
+  ctx.strokeStyle = "#ffdc00";
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(x0, y0);
+  ctx.lineTo(x1, y1);
+  for (const lado of [-0.5, 0.5]) {
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x1 - ponta * Math.cos(angulo + lado), y1 - ponta * Math.sin(angulo + lado));
+  }
+  ctx.stroke();
 }
 
 function concluir(mensagem) {

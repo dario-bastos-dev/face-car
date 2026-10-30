@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 
 import {
   ear, aberturaBoca, angulosDaMatriz, matrizEmLinhas, Estabilidade,
-  CalculadoraMetricas, RelogioWebcam, cabecalhoCsv, linhaCsv,
+  CalculadoraMetricas, RelogioWebcam, direcaoDoRosto, cabecalhoCsv, linhaCsv,
 } from "../../demo-navegador/extrator.js";
 
 const ler = (caminho) => JSON.parse(readFileSync(new URL(caminho, import.meta.url)));
@@ -77,4 +77,15 @@ test("relógio da webcam não aceita captura depois do callback", () => {
   // A câmera falsa do Chrome chegou a informar captureTime ~2 ms à frente do now.
   const relogio = new RelogioWebcam();
   assert.deepEqual(relogio.quadro(1000, { captureTime: 1002 }), { tMs: 0, captura: 1000 });
+});
+
+test("direção do rosto bate com a terceira coluna da matriz", () => {
+  for (const c of casos.pose) {
+    const { yaw, pitch, roll } = c.esperado;
+    const d = direcaoDoRosto(yaw, pitch, roll);
+    const col = [0, 1, 2].map((i) => c.matriz[i][2]);
+    const n = Math.hypot(...col);
+    col.forEach((v, i) => perto(d[i], v / n, 1e-9, `eixo ${i}`));
+  }
+  assert.ok(direcaoDoRosto(0, 30, 0)[1] < 0, "cabeça baixa aponta para baixo");
 });

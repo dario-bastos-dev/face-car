@@ -27,7 +27,7 @@ Origem: revisão de código de 29/10/2026 sobre `entrada/`, `demo-navegador/` e 
 - [ ] `python -m entrada video` e `comparar` cobertos por testes que rodam por padrão.
 
 ## T7 · Detalhes
-- [ ] Sobreposição não quebra sem matriz de pose.
+- [x] Sobreposição não quebra sem matriz de pose.
 - [ ] `CalculadoraMetricas` recebe os índices por argumento (núcleo sem leitura de disco).
 - [ ] Rever `requires-python` e permitir rodar `gerar_casos.py` sem `PYTHONPATH`.
 
