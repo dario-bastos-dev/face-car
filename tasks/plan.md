@@ -23,7 +23,7 @@ Origem: revisão de código de 29/10/2026 sobre `entrada/`, `demo-navegador/` e 
 - [x] Falhas ao carregar o módulo (CDN ou configuração inacessíveis) também marcam a página.
 
 ## T5 · Webcam liberada pela própria thread de captura
-- [ ] `release()` só acontece depois que a leitura terminou.
+- [x] `release()` só acontece depois que a leitura terminou.
 
 ## T6 · Testes da linha de comando
 - [ ] `python -m entrada video` e `comparar` cobertos por testes que rodam por padrão.
