@@ -5,3 +5,8 @@ modelos/*.task
 testes/dados/
 saidas/
 detalhes/
+/treinamento/dados/dados_sinteticos.csv
+/treinamento/dados/reais/
+/treinamento/modelos/*.joblib
+/treinamento/resultados/*.csv
+/treinamento/resultados/*.png

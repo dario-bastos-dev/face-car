@@ -70,6 +70,25 @@ RODAR_PARIDADE=1 uv run pytest testes/entrada/test_paridade_navegador.py   # Pyt
 Os casos de `testes/casos/geometria.json` são lidos pelos testes das duas linguagens
 (para regenerar: `PYTHONPATH=. uv run python testes/casos/gerar_casos.py`).
 
+## Treinamento e avaliação
+
+O módulo em `treinamento/` gera dados sintéticos, treina o classificador e avalia
+as previsões. Para executá-lo da raiz do repositório:
+
+```bash
+uv run python treinamento/preparar_dados.py
+uv run python treinamento/treinar.py
+uv run python treinamento/avaliar.py
+```
+
+Os resultados atuais são exclusivamente sintéticos e não representam validação
+com motoristas reais. O notebook
+[`treinamento/treinamento_colab.ipynb`](treinamento/treinamento_colab.ipynb)
+prepara a execução no Google Colab; a branch `feature/treinamento-avaliacao`
+precisa estar publicada para a célula de clonagem funcionar. Consulte
+[`treinamento/README.md`](treinamento/README.md) para o formato esperado dos
+futuros dados reais e os cuidados para não versionar datasets.
+
 ## Estrutura
 
 ```
@@ -79,4 +98,5 @@ entrada/         Python: fontes, geometria, confiança, extrator, linha de coman
 demo-navegador/  página, extrator.js (cálculo) e app.js (MediaPipe e interface)
 scripts/         preparação, servidor local e extração pelo navegador
 testes/          casos compartilhados, testes Python (entrada/) e JS (js/)
+treinamento/     geração de dados sintéticos, treino, avaliação e notebook Colab
 ```
