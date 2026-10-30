@@ -6,6 +6,7 @@ Ambas entregam tuplas (quadro_bgr, t_ms, indice). Nenhuma grava vídeo.
 import math
 import threading
 import time
+from pathlib import Path
 
 import cv2
 
@@ -20,6 +21,8 @@ class FonteArquivo:
 
     def __init__(self, caminho, abrir=cv2.VideoCapture):
         self.caminho = str(caminho)
+        if not Path(self.caminho).is_file():
+            raise FileNotFoundError(f"Arquivo de vídeo não encontrado: {self.caminho}")
         self._cap = abrir(self.caminho)
         if not self._cap.isOpened():
             raise OSError(f"Não foi possível abrir o vídeo: {self.caminho}")

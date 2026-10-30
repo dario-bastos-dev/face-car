@@ -167,7 +167,13 @@ def main(argv=None) -> int:
     p.set_defaults(func=cmd_comparar)
 
     args = parser.parse_args(argv)
-    return args.func(args)
+    try:
+        return args.func(args)
+    except (OSError, ValueError) as erro:
+        # Arquivo ausente, vídeo ilegível, câmera indisponível ou CSV fora do
+        # contrato: problemas de uso, que não precisam de traceback.
+        print(f"erro: {erro}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
