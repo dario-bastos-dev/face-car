@@ -1,0 +1,46 @@
+name: Testes
+
+on:
+  push:
+    branches: [master, feature/treinamento-avaliacao]
+  pull_request:
+    branches: [master, feature/treinamento-avaliacao]
+
+jobs:
+  python:
+    name: Testes Python
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Configurar uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Instalar dependências
+        run: uv sync --locked
+
+      - name: Executar testes Python
+        run: uv run pytest
+
+  javascript:
+    name: Testes JavaScript
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Executar testes JavaScript
+        run: npm test
