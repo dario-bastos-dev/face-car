@@ -45,7 +45,7 @@ test("estabilidade dá os mesmos valores que o Python", () => {
 
 test("CSV segue o contrato", () => {
   assert.equal(cabecalhoCsv(contrato), readFileSync(
-    new URL("../../contratos/metricas.exemplo.csv", import.meta.url), "utf8").split("\n")[0]);
+    new URL("../../contratos/metricas.exemplo.csv", import.meta.url), "utf8").split(/\r?\n/)[0]);
   const calc = new CalculadoraMetricas(casos.estabilidade.parametros, indices);
   const semRosto = calc.calcular(null, null, 100, 3, 9.06);
   assert.equal(linhaCsv(contrato, semRosto), "100,3,0,,,,,,,0.000,9.1");

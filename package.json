@@ -1,1 +1,1 @@
-{"type":"module","private":true,"scripts":{"test":"node --test testes/js/*.test.mjs"}}
+{"type":"module","private":true,"scripts":{"test":"node --test testes/js/*.test.mjs","test:estimador":"node --test testes/js/estimador.test.mjs testes/js/politica.test.mjs"}}

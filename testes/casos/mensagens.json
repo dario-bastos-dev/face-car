@@ -1,0 +1,418 @@
+{
+  "casos": [
+    {
+      "nome": "agenda_mudanca",
+      "passos": [
+        {
+          "t_ms": 0,
+          "estado": "NORMAL",
+          "esperadas": [
+            {
+              "versao": 1,
+              "sessao": "teste-compartilhado",
+              "tipo": "acao",
+              "seq": 1,
+              "ts": 0,
+              "ttl": 2000,
+              "estado": "NORMAL",
+              "nivel": 0,
+              "acao": "monitorar",
+              "indice": 70,
+              "confianca": 1
+            },
+            {
+              "versao": 1,
+              "sessao": "teste-compartilhado",
+              "tipo": "heartbeat",
+              "seq": 2,
+              "ts": 0,
+              "ttl": 2000,
+              "estado": "NORMAL",
+              "nivel": 0,
+              "acao": "monitorar",
+              "indice": 70,
+              "confianca": 1
+            }
+          ],
+          "indice": 70,
+          "confianca": 1
+        },
+        {
+          "t_ms": 0,
+          "estado": "NORMAL",
+          "esperadas": [],
+          "indice": 70,
+          "confianca": 1
+        },
+        {
+          "t_ms": 499,
+          "estado": "NORMAL",
+          "esperadas": [],
+          "indice": 70,
+          "confianca": 1
+        },
+        {
+          "t_ms": 500,
+          "estado": "NORMAL",
+          "esperadas": [
+            {
+              "versao": 1,
+              "sessao": "teste-compartilhado",
+              "tipo": "acao",
+              "seq": 3,
+              "ts": 500,
+              "ttl": 2000,
+              "estado": "NORMAL",
+              "nivel": 0,
+              "acao": "monitorar",
+              "indice": 70,
+              "confianca": 1
+            },
+            {
+              "versao": 1,
+              "sessao": "teste-compartilhado",
+              "tipo": "heartbeat",
+              "seq": 4,
+              "ts": 500,
+              "ttl": 2000,
+              "estado": "NORMAL",
+              "nivel": 0,
+              "acao": "monitorar",
+              "indice": 70,
+              "confianca": 1
+            }
+          ],
+          "indice": 70,
+          "confianca": 1
+        },
+        {
+          "t_ms": 501,
+          "estado": "ALERTA",
+          "esperadas": [
+            {
+              "versao": 1,
+              "sessao": "teste-compartilhado",
+              "tipo": "acao",
+              "seq": 5,
+              "ts": 501,
+              "ttl": 2000,
+              "estado": "ALERTA",
+              "nivel": 2,
+              "acao": "alarme_sonoro",
+              "indice": 70,
+              "confianca": 1
+            }
+          ],
+          "indice": 70,
+          "confianca": 1
+        },
+        {
+          "t_ms": 1000,
+          "estado": "ALERTA",
+          "esperadas": [
+            {
+              "versao": 1,
+              "sessao": "teste-compartilhado",
+              "tipo": "heartbeat",
+              "seq": 6,
+              "ts": 1000,
+              "ttl": 2000,
+              "estado": "ALERTA",
+              "nivel": 2,
+              "acao": "alarme_sonoro",
+              "indice": 70,
+              "confianca": 1
+            }
+          ],
+          "indice": 70,
+          "confianca": 1
+        },
+        {
+          "t_ms": 1001,
+          "estado": "ALERTA",
+          "esperadas": [
+            {
+              "versao": 1,
+              "sessao": "teste-compartilhado",
+              "tipo": "acao",
+              "seq": 7,
+              "ts": 1001,
+              "ttl": 2000,
+              "estado": "ALERTA",
+              "nivel": 2,
+              "acao": "alarme_sonoro",
+              "indice": 70,
+              "confianca": 1
+            }
+          ],
+          "indice": 70,
+          "confianca": 1
+        }
+      ]
+    },
+    {
+      "nome": "sem_camera",
+      "passos": [
+        {
+          "t_ms": 0,
+          "estado": "INTERVENCAO",
+          "estimativa_t_ms": 0,
+          "esperadas": [
+            {
+              "versao": 1,
+              "sessao": "teste-compartilhado",
+              "tipo": "acao",
+              "seq": 1,
+              "ts": 0,
+              "ttl": 2000,
+              "estado": "INTERVENCAO",
+              "nivel": 3,
+              "acao": "desacelerar_simulado",
+              "indice": 70,
+              "confianca": 1
+            },
+            {
+              "versao": 1,
+              "sessao": "teste-compartilhado",
+              "tipo": "heartbeat",
+              "seq": 2,
+              "ts": 0,
+              "ttl": 2000,
+              "estado": "INTERVENCAO",
+              "nivel": 3,
+              "acao": "desacelerar_simulado",
+              "indice": 70,
+              "confianca": 1
+            }
+          ],
+          "indice": 70,
+          "confianca": 1
+        },
+        {
+          "t_ms": 250,
+          "estado": "INTERVENCAO",
+          "estimativa_t_ms": 0,
+          "esperadas": [],
+          "indice": 70,
+          "confianca": 1
+        },
+        {
+          "t_ms": 251,
+          "estado": "INTERVENCAO",
+          "estimativa_t_ms": 0,
+          "esperadas": [
+            {
+              "versao": 1,
+              "sessao": "teste-compartilhado",
+              "tipo": "acao",
+              "seq": 3,
+              "ts": 251,
+              "ttl": 2000,
+              "estado": "DEGRADADO",
+              "nivel": 0,
+              "acao": "sistema_degradado",
+              "indice": null,
+              "confianca": 0
+            }
+          ],
+          "indice": 70,
+          "confianca": 1
+        },
+        {
+          "t_ms": 500,
+          "estado": "INTERVENCAO",
+          "estimativa_t_ms": 0,
+          "esperadas": [
+            {
+              "versao": 1,
+              "sessao": "teste-compartilhado",
+              "tipo": "heartbeat",
+              "seq": 4,
+              "ts": 500,
+              "ttl": 2000,
+              "estado": "DEGRADADO",
+              "nivel": 0,
+              "acao": "sistema_degradado",
+              "indice": null,
+              "confianca": 0
+            }
+          ],
+          "indice": 70,
+          "confianca": 1
+        },
+        {
+          "t_ms": 751,
+          "estado": "INTERVENCAO",
+          "estimativa_t_ms": 0,
+          "esperadas": [
+            {
+              "versao": 1,
+              "sessao": "teste-compartilhado",
+              "tipo": "acao",
+              "seq": 5,
+              "ts": 751,
+              "ttl": 2000,
+              "estado": "DEGRADADO",
+              "nivel": 0,
+              "acao": "sistema_degradado",
+              "indice": null,
+              "confianca": 0
+            }
+          ],
+          "indice": 70,
+          "confianca": 1
+        },
+        {
+          "t_ms": 1000,
+          "estado": "INTERVENCAO",
+          "estimativa_t_ms": 0,
+          "esperadas": [
+            {
+              "versao": 1,
+              "sessao": "teste-compartilhado",
+              "tipo": "heartbeat",
+              "seq": 6,
+              "ts": 1000,
+              "ttl": 2000,
+              "estado": "DEGRADADO",
+              "nivel": 0,
+              "acao": "sistema_degradado",
+              "indice": null,
+              "confianca": 0
+            }
+          ],
+          "indice": 70,
+          "confianca": 1
+        }
+      ]
+    },
+    {
+      "nome": "agendas_independentes",
+      "mensagens": {
+        "ttl_ms": 2000,
+        "heartbeat_ms": 300,
+        "renovar_acao_ms": 800
+      },
+      "passos": [
+        {
+          "t_ms": 0,
+          "estado": "NORMAL",
+          "esperadas": [
+            {
+              "versao": 1,
+              "sessao": "teste-compartilhado",
+              "tipo": "acao",
+              "seq": 1,
+              "ts": 0,
+              "ttl": 2000,
+              "estado": "NORMAL",
+              "nivel": 0,
+              "acao": "monitorar",
+              "indice": 70,
+              "confianca": 1
+            },
+            {
+              "versao": 1,
+              "sessao": "teste-compartilhado",
+              "tipo": "heartbeat",
+              "seq": 2,
+              "ts": 0,
+              "ttl": 2000,
+              "estado": "NORMAL",
+              "nivel": 0,
+              "acao": "monitorar",
+              "indice": 70,
+              "confianca": 1
+            }
+          ],
+          "indice": 70,
+          "confianca": 1
+        },
+        {
+          "t_ms": 300,
+          "estado": "NORMAL",
+          "esperadas": [
+            {
+              "versao": 1,
+              "sessao": "teste-compartilhado",
+              "tipo": "heartbeat",
+              "seq": 3,
+              "ts": 300,
+              "ttl": 2000,
+              "estado": "NORMAL",
+              "nivel": 0,
+              "acao": "monitorar",
+              "indice": 70,
+              "confianca": 1
+            }
+          ],
+          "indice": 70,
+          "confianca": 1
+        },
+        {
+          "t_ms": 600,
+          "estado": "NORMAL",
+          "esperadas": [
+            {
+              "versao": 1,
+              "sessao": "teste-compartilhado",
+              "tipo": "heartbeat",
+              "seq": 4,
+              "ts": 600,
+              "ttl": 2000,
+              "estado": "NORMAL",
+              "nivel": 0,
+              "acao": "monitorar",
+              "indice": 70,
+              "confianca": 1
+            }
+          ],
+          "indice": 70,
+          "confianca": 1
+        },
+        {
+          "t_ms": 800,
+          "estado": "NORMAL",
+          "esperadas": [
+            {
+              "versao": 1,
+              "sessao": "teste-compartilhado",
+              "tipo": "acao",
+              "seq": 5,
+              "ts": 800,
+              "ttl": 2000,
+              "estado": "NORMAL",
+              "nivel": 0,
+              "acao": "monitorar",
+              "indice": 70,
+              "confianca": 1
+            }
+          ],
+          "indice": 70,
+          "confianca": 1
+        },
+        {
+          "t_ms": 900,
+          "estado": "NORMAL",
+          "esperadas": [
+            {
+              "versao": 1,
+              "sessao": "teste-compartilhado",
+              "tipo": "heartbeat",
+              "seq": 6,
+              "ts": 900,
+              "ttl": 2000,
+              "estado": "NORMAL",
+              "nivel": 0,
+              "acao": "monitorar",
+              "indice": 70,
+              "confianca": 1
+            }
+          ],
+          "indice": 70,
+          "confianca": 1
+        }
+      ]
+    }
+  ]
+}

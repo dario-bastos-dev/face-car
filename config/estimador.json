@@ -1,0 +1,44 @@
+{
+  "versao": 1,
+  "janela_s": 30,
+  "max_intervalo_ms": 250,
+  "max_atraso_ms": 500,
+  "confianca_rastreio_minima": 0.5,
+  "min_evidencia_ms": 2000,
+  "min_fechamento_ms": 300,
+  "saturacao_fechamento_ms": 3000,
+  "olhos": {
+    "ear_aberto_esq": 0.30,
+    "ear_aberto_dir": 0.30,
+    "ear_fechado_esq": 0.05,
+    "ear_fechado_dir": 0.05,
+    "fechamento_limiar": 0.8
+  },
+  "calibracao": {
+    "duracao_minima_ms": 5000,
+    "min_amostras": 20,
+    "cobertura_minima": 0.9,
+    "cv_maximo": 0.15,
+    "ear_aberto_minimo": 0.15,
+    "ear_aberto_maximo": 0.5,
+    "ganho_minimo": 0.01
+  },
+  "politica": {
+    "confianca_minima": 0.65,
+    "validade_estimativa_ms": 250,
+    "intervalo_maximo_ms": 500,
+    "prazo_resposta_ms": 5000,
+    "transicoes": [
+      {"de": "*", "para": "DEGRADADO", "condicao": "sem_confianca", "duracao_ms": 0},
+      {"de": "DEGRADADO", "para": "NORMAL", "condicao": "recuperado", "limiar": 25, "duracao_ms": 2000},
+      {"de": "DEGRADADO", "para": "ATENCAO", "condicao": "alto", "limiar": 25, "duracao_ms": 2000},
+      {"de": "NORMAL", "para": "ATENCAO", "condicao": "alto", "limiar": 35, "duracao_ms": 1000},
+      {"de": "ATENCAO", "para": "NORMAL", "condicao": "baixo", "limiar": 25, "duracao_ms": 3000},
+      {"de": "ATENCAO", "para": "ALERTA", "condicao": "alto", "limiar": 65, "duracao_ms": 1500},
+      {"de": "ALERTA", "para": "ATENCAO", "condicao": "baixo", "limiar": 45, "duracao_ms": 3000},
+      {"de": "ALERTA", "para": "INTERVENCAO", "condicao": "sem_resposta", "limiar": 65, "duracao_ms": 1000},
+      {"de": "INTERVENCAO", "para": "ATENCAO", "condicao": "baixo", "limiar": 45, "duracao_ms": 3000}
+    ]
+  },
+  "mensagens": {"ttl_ms": 2000, "heartbeat_ms": 500, "renovar_acao_ms": 500}
+}

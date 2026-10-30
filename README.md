@@ -1,4 +1,24 @@
-# Extrator de métricas faciais
+# Face-Car · Visão, estimador e política de ação
+
+## Parte 2 pronta para executar sem câmera
+
+A Parte 2 consome o CSV da visão, estima PERCLOS, índice e confiança e aplica
+uma máquina de estados configurável. Produz ações e heartbeat com `seq`, `ts`
+e `ttl`, inclui calibração opcional avaliada em dados separados e módulos
+equivalentes em Python e JavaScript.
+
+```bash
+uv sync
+uv run python -m estimador replay exemplos/parte2/metricas.csv -o saidas/sinais.jsonl --diagnostico saidas/diagnostico.jsonl
+uv run pytest testes/estimador
+npm run test:estimador
+```
+
+Leia o [guia completo da Parte 2](docs/parte2.md) para instalação mínima no
+Windows, fórmulas, estados, contrato e integração com a Parte 3. Os exemplos
+são sintéticos e os parâmetros são experimentais para simulação.
+
+## Parte 1 · Extrator de métricas faciais
 
 Etapa de visão e métricas do sistema de monitoramento do estado do motorista.
 Lê um vídeo ou a webcam, extrai os pontos do rosto com o MediaPipe Face Landmarker e grava
