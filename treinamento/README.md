@@ -78,3 +78,37 @@ Os resultados são salvos em `Face-Car/resultados_cnn/olhos` e
 velocidade do `pitch` e recuperação da cabeça. A decisão temporal será
 implementada depois das CNNs, usando as métricas do MediaPipe e confirmação de
 eventos ao longo de janelas, para evitar alertas por movimentos normais.
+## Resultados do treinamento e avaliação
+
+Foram treinadas duas CNNs para cada região, utilizando TensorFlow/Keras e imagens de 96 × 96 pixels.
+
+| Região | CNN A | CNN B |
+|---|---:|---:|
+| Olhos | 92,43% | **97,37%** |
+| Boca | 94,21% | **96,71%** |
+
+*Valores de acurácia no conjunto de teste.*
+
+### Dados utilizados
+
+- **Olhos:** 4.000 imagens; 1.637 utilizadas no teste.
+- **Boca:** 5.119 imagens originais, reduzidas para 4.400 após remoção de duplicatas e conflitos; 881 utilizadas no teste.
+
+A CNN B apresentou maior acurácia no teste em ambas as regiões. Nos olhos, a CNN A apresentou melhor desempenho na validação, portanto a escolha posterior da CNN B deve ser considerada uma decisão exploratória.
+
+A divisão dos dados da boca foi feita por imagem, sem garantia de independência entre participantes. Os resultados ainda precisam ser confirmados em condições reais com webcam.
+
+### Modelos treinados
+
+Os arquivos estão disponíveis no Google Drive, na pasta `Face-Car/entrega_modelos`:
+
+- `cnn_olhos.keras`
+- `cnn_boca.keras`
+
+Ambos foram carregados com sucesso no TensorFlow.
+
+**Entrada:** `(None, 96, 96, 3)`
+
+**Saída:** `(None, 2)`
+
+Os modelos serão utilizados pela equipe na integração com o MediaPipe.
