@@ -26,13 +26,10 @@ def test_video_grava_um_recorte_por_intervalo(tmp_path):
     assert codigo == 0
     arquivos = sorted(str(p.relative_to(tmp_path)) for p in tmp_path.rglob("*") if p.is_file())
     # A tela preta (1 a 1,5 s) adia a segunda captura para o primeiro quadro com rosto.
-    # Sem --camera, o vídeo vai para a pasta rgb. Cada captura gera rosto, olhos e boca.
-    assert arquivos == sorted(f"rgb/{regiao}/alerta/p01_retrato.mp4_{t:09d}ms.jpg"
-                              for regiao in ("rosto", "olhos", "boca")
-                              for t in (0, 1533, 2533, 3533))
-    for regiao, lado in (("rosto", 224), ("olhos", 96), ("boca", 96)):
-        for p in (tmp_path / "rgb" / regiao / "alerta").iterdir():
-            assert cv2.imread(str(p)).shape == (lado, lado, 3)
+    # Sem --camera, o vídeo vai para a pasta rgb. Cada captura é só o rosto completo.
+    assert arquivos == [f"rgb/alerta/p01_retrato.mp4_{t:09d}ms.jpg" for t in (0, 1533, 2533, 3533)]
+    for p in (tmp_path / "rgb" / "alerta").iterdir():
+        assert cv2.imread(str(p)).shape == (224, 224, 3)
 
 
 def test_video_inexistente_da_mensagem_clara(tmp_path, capsys):

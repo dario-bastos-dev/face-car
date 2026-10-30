@@ -1,10 +1,10 @@
-"""Captura recortes do rosto, dos olhos e da boca do motorista para modelos de imagem.
+"""Captura recortes do rosto completo do motorista para modelos de imagem.
 
     uv run python -m entrada webcam --rotulo alerta --pessoa p01 [--camera rgb] [--mostrar]
     uv run python -m entrada video <seu-video.mp4> --rotulo sonolento --pessoa p07 [--camera ir]
 
-Os recortes vão para <saida>/<camera>/<regiao>/<rotulo>/<pessoa>_<origem>_<t_ms>ms.jpg,
-com regiao = rosto, olhos ou boca, e ficam só neste computador.
+Os recortes vão para <saida>/<camera>/<rotulo>/<pessoa>_<origem>_<t_ms>ms.jpg e ficam
+só neste computador.
 """
 
 import argparse
@@ -18,19 +18,17 @@ import cv2
 from entrada.captura import Agendador, GravadorImagens
 from entrada.contexto import CAMINHO_CONFIG, RAIZ, carregar_config, carregar_pontos_rosto
 from entrada.mapa import desenhar_mapa
-from entrada.recorte import (caixa_do_rosto, indices_das_regioes, recortar,
-                             recortar_regiao)
+from entrada.recorte import caixa_do_rosto, recortar
 
 JANELA = "captura (q para sair)"
 
 
 class Capturador:
-    """Detecta o rosto em cada quadro e, a cada intervalo, grava rosto, olhos e boca."""
+    """Detecta o rosto em cada quadro e grava um recorte dele a cada intervalo."""
 
     def __init__(self, config: dict, detector, gravador: GravadorImagens, intervalo_ms: int):
         self.recorte = config["recorte"]
         self.pontos_rosto = carregar_pontos_rosto()
-        self.regioes = indices_das_regioes(self.pontos_rosto)
         self.detector = detector
         self.gravador = gravador
         self.agendador = Agendador(intervalo_ms)
@@ -38,21 +36,15 @@ class Capturador:
     def processar(self, quadro, t_ms: int):
         """Devolve o rosto (ou None), a caixa do recorte e se o quadro virou captura.
 
-        Os recortes saem do quadro antes de qualquer desenho na janela.
+        O recorte sai do quadro antes de qualquer desenho na janela.
         """
         rosto = self.detector.detectar(quadro, t_ms)
         if rosto is None:
             return None, None, False
-        config_rosto = self.recorte["rosto"]
-        caixa = caixa_do_rosto(rosto.pontos, config_rosto["margem"])
+        caixa = caixa_do_rosto(rosto.pontos, self.recorte["margem"])
         if not self.agendador.pronto(t_ms):
             return rosto, caixa, False
-        self.gravador.salvar(recortar(quadro, caixa, config_rosto["tamanho"]), t_ms, "rosto")
-        for regiao, indices in self.regioes.items():
-            imagem = recortar_regiao(quadro, rosto.pontos, indices,
-                                     self.recorte["regioes"]["tamanho"])
-            if imagem is not None:
-                self.gravador.salvar(imagem, t_ms, regiao)
+        self.gravador.salvar(recortar(quadro, caixa, self.recorte["tamanho"]), t_ms)
         self.agendador.registrar(t_ms)
         return rosto, caixa, True
 

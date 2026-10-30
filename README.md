@@ -1,10 +1,9 @@
 # Captura do rosto do motorista
 
 Lê as webcams (a colorida e a infravermelha) ou um vídeo, encontra o rosto com o MediaPipe Face
-Landmarker e grava, a cada intervalo fixo, três recortes: o **rosto** (224×224 px), os **olhos** e a
-**boca** (96×96 px). Os recortes de olhos e boca seguem exatamente o recorte usado no treino das
-CNNs de olhos e boca (`treinamento/preparar_regioes.py`), para o modelo receber o mesmo tipo de
-imagem que viu no treino.
+Landmarker e grava, a cada intervalo fixo, um recorte do **rosto completo** (224×224 px, JPEG).
+Os recortes formam o conjunto de dados para treinar, neste computador, um modelo de imagens
+que classifica o estado do motorista.
 
 ## Preparar
 
@@ -31,8 +30,7 @@ uv run python -m entrada video <seu-video.mp4> --rotulo sonolento --pessoa p07  
 | `--segundos` | sem limite | webcam: parar depois deste tempo |
 | `--mostrar` | desligado | uma janela por câmera com o quadrado do rosto; pisca em verde a cada captura |
 
-Os arquivos ficam em `<saida>/<camera>/<regiao>/<rotulo>/<pessoa>_<origem>_<t_ms>ms.jpg`, com
-`regiao` = `rosto`, `olhos` ou `boca`. Uma pasta por classe é o formato que as bibliotecas de treino
+Os arquivos ficam em `<saida>/<camera>/<rotulo>/<pessoa>_<origem>_<t_ms>ms.jpg`. Uma pasta por classe é o formato que as bibliotecas de treino
 de imagens leem direto, e a pessoa no nome permite separar treino e teste por pessoa, para o
 modelo não decorar rostos. As câmeras usam o mesmo relógio, então o `t_ms` de uma captura na
 `rgb` e na `ir` se comparam.
@@ -52,11 +50,9 @@ computador, veja os caminhos com `ls -l /dev/v4l/by-path/` e `v4l2-ctl --list-de
 
 - O MediaPipe procura até 3 rostos e só o **maior** é recortado: o do motorista, mais perto da
   câmera. Pessoas ao fundo não entram no conjunto de dados.
-- **Rosto:** quadrado centrado, com lado 1,5 vez o maior eixo do rosto (`recorte.rosto.margem =
-  0.25`). Perto da borda, a parte fora da imagem é preenchida de preto.
-- **Olhos e boca:** caixa em volta dos pontos da região (os dois olhos juntos num só recorte), com
-  margem de 35% na horizontal e 45% na vertical (mínimo 8 px), cortada nas bordas e redimensionada
-  para 96×96. As constantes estão em `entrada/recorte.py` e precisam continuar iguais às do treino.
+- O recorte é um quadrado centrado no rosto, com lado 1,5 vez o maior eixo dele
+  (`recorte.margem = 0.25`), para incluir testa, queixo e a inclinação da cabeça. Perto da borda,
+  a parte fora da imagem é preenchida de preto, e o rosto continua centrado.
 - Quadros sem rosto não geram imagem e não consomem a vez: a captura acontece no primeiro quadro
   com rosto depois que o intervalo passou.
 
@@ -74,8 +70,8 @@ Com `--mostrar`, cada janela desenha sobre a imagem:
   leva o rosto para a direita da imagem. Os limiares (15° para a cabeça e 0,2 da meia largura do
   olho para a íris) ficam em `entrada/mapa.py`.
 
-O mapeamento só aparece na tela: os recortes gravados para o modelo saem do quadro antes do
-desenho e não têm marcas.
+O mapeamento só aparece na tela: o recorte gravado para o modelo sai do quadro antes do desenho
+e não tem marcas.
 
 ## Privacidade
 

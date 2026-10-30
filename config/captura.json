@@ -1,5 +1,5 @@
 {
-  "versao": 2,
+  "versao": 3,
   "mediapipe": {
     "modelo": "modelos/face_landmarker.task",
     "min_confianca_deteccao": 0.5,
@@ -8,14 +8,9 @@
     "max_rostos": 3
   },
   "recorte": {
-    "qualidade_jpeg": 95,
-    "rosto": {
-      "margem": 0.25,
-      "tamanho": 224
-    },
-    "regioes": {
-      "tamanho": 96
-    }
+    "margem": 0.25,
+    "tamanho": 224,
+    "qualidade_jpeg": 95
   },
   "captura": {
     "intervalo_ms": 1000,

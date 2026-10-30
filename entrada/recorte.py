@@ -63,39 +63,3 @@ def maior_rosto(rostos):
     i = indice_do_maior_rosto(rostos)
     return None if i is None else rostos[i]
 
-
-# Olhos e boca: mesmo recorte de treinamento/preparar_regioes.py, com o qual as CNNs
-# de olhos e boca foram treinadas. Mudar estes valores aqui sem mudar lá faz o modelo
-# receber imagens diferentes das do treino.
-MARGEM_X = 0.35
-MARGEM_Y = 0.45
-MARGEM_MINIMA_PX = 8
-
-
-def caixa_da_regiao(pontos, indices, largura: int, altura: int):
-    """(x0, y0, x1, y1) da região, cortada nas bordas da imagem, sem preenchimento."""
-    xs = [pontos[i][0] for i in indices]
-    ys = [pontos[i][1] for i in indices]
-    margem_x = max(MARGEM_MINIMA_PX, (max(xs) - min(xs)) * MARGEM_X)
-    margem_y = max(MARGEM_MINIMA_PX, (max(ys) - min(ys)) * MARGEM_Y)
-    x0, x1 = max(0, int(min(xs) - margem_x)), min(largura, int(max(xs) + margem_x))
-    y0, y1 = max(0, int(min(ys) - margem_y)), min(altura, int(max(ys) + margem_y))
-    return x0, y0, x1, y1
-
-
-def recortar_regiao(quadro, pontos, indices, tamanho: int):
-    """Recorte da região redimensionado para tamanho x tamanho, ou None se vazio."""
-    altura, largura = quadro.shape[:2]
-    x0, y0, x1, y1 = caixa_da_regiao(pontos, indices, largura, altura)
-    if x1 <= x0 or y1 <= y0:
-        return None
-    return cv2.resize(quadro[y0:y1, x0:x1], (tamanho, tamanho), interpolation=cv2.INTER_AREA)
-
-
-def indices_das_regioes(pontos_rosto: dict) -> dict:
-    """Índices de olhos e boca, escolhidos como em treinamento/preparar_regioes.py."""
-    return {
-        "olhos": sorted(set(pontos_rosto["olho_esquerdo"] + pontos_rosto["olho_direito"])),
-        "boca": sorted(set(sum(pontos_rosto["boca_pares_verticais"], [])
-                           + list(pontos_rosto["boca_cantos"]))),
-    }
