@@ -14,8 +14,9 @@ Origem: revisão de código de 29/10/2026 sobre `entrada/`, `demo-navegador/` e 
 - [x] `t_ms` começa na captura do primeiro quadro, e a captura nunca é posterior ao callback.
 
 ## T3 · Servidor local robusto
-- [ ] URL malformada responde 400 sem derrubar o processo.
-- [ ] `Range` com sufixo (`bytes=-N`) e fim além do tamanho são tratados ou recusados com 416.
+- [x] URL malformada responde 400 sem derrubar o processo.
+- [x] `Range` com sufixo (`bytes=-N`) e fim além do tamanho são tratados ou recusados com 416.
+- [x] Faixa invertida (`bytes=5-2`) responde 416, em vez de anunciar um `Content-Length` negativo.
 
 ## T4 · Falha da página encerra a extração automática
 - [ ] Erro em `app.js` marca a página; `extrair_navegador.mjs` falha logo com a mensagem.
@@ -37,3 +38,13 @@ Origem: revisão de código de 29/10/2026 sobre `entrada/`, `demo-navegador/` e 
 - [ ] `test_comparar.py` usa `pytest.approx` direto, sem o auxiliar `pytest_approx`.
 - [ ] README avisa que `preparar.sh` vem antes do `pytest`.
 - [ ] Registrar os números corretos da paridade: pitch tem média de 0,125° a 30 fps, e não abaixo de 0,1° como diz o commit f75d9ca.
+
+## T9 · Posição da cabeça no contrato (proposta, aguardando confirmação)
+- [ ] Deslocamento lateral, vertical e distância da câmera, vindos da matriz de transformação, em colunas novas do contrato (v2).
+
+## T10 · Eixos 3D da cabeça e malha opcional na sobreposição (proposta, aguardando confirmação)
+- [ ] Três eixos saindo do nariz no lugar da seta única; malha completa ligada por tecla.
+
+## T11 · Blendshapes e configuração da câmera (proposta, aguardando confirmação)
+- [ ] Os 52 coeficientes de expressão do MediaPipe num arquivo à parte, sem mudar o contrato de métricas.
+- [ ] Resolução, formato (MJPG) e fps da webcam configuráveis; medir os q/s em 1280×720.
