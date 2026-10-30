@@ -6,7 +6,8 @@ import cv2
 import numpy as np
 import pytest
 
-from entrada.__main__ import _quadros_da_webcam, desenhar, main
+from entrada.__main__ import _quadros_das_webcams, desenhar, main
+from entrada.contexto import carregar_config
 from entrada.contexto import RAIZ
 from entrada.fontes import FonteWebcam
 from entrada.recorte import Caixa
@@ -23,11 +24,15 @@ def test_video_grava_um_recorte_por_intervalo(tmp_path):
     codigo = main(["video", str(VIDEO), "--saida", str(tmp_path),
                    "--rotulo", "alerta", "--pessoa", "p01", "--intervalo-ms", "1000"])
     assert codigo == 0
-    arquivos = sorted(p.name for p in tmp_path.rglob("*") if p.is_file())
+    arquivos = sorted(str(p.relative_to(tmp_path)) for p in tmp_path.rglob("*") if p.is_file())
     # A tela preta (1 a 1,5 s) adia a segunda captura para o primeiro quadro com rosto.
-    assert arquivos == [f"p01_retrato.mp4_{t:09d}ms.jpg" for t in (0, 1533, 2533, 3533)]
-    for p in (tmp_path / "alerta").iterdir():
-        assert cv2.imread(str(p)).shape == (224, 224, 3)
+    # Sem --camera, o vídeo vai para a pasta rgb. Cada captura gera rosto, olhos e boca.
+    assert arquivos == sorted(f"rgb/{regiao}/alerta/p01_retrato.mp4_{t:09d}ms.jpg"
+                              for regiao in ("rosto", "olhos", "boca")
+                              for t in (0, 1533, 2533, 3533))
+    for regiao, lado in (("rosto", 224), ("olhos", 96), ("boca", 96)):
+        for p in (tmp_path / "rgb" / regiao / "alerta").iterdir():
+            assert cv2.imread(str(p)).shape == (lado, lado, 3)
 
 
 def test_video_inexistente_da_mensagem_clara(tmp_path, capsys):
@@ -59,15 +64,40 @@ def test_desenho_da_janela_com_e_sem_rosto():
     desenhar(np.zeros((240, 320, 3), np.uint8), None, capturou=False, total=3)
 
 
-def test_quadros_da_webcam_terminam_quando_a_camera_para():
-    with FonteWebcam(abrir=lambda d: CameraFalsa(d, intervalo=0.001, total=20)) as fonte:
-        indices = [i for _, _, i in _quadros_da_webcam(fonte, None)]
-    assert indices and indices == sorted(set(indices)) and indices[-1] <= 19
+@tem_dados
+def test_video_com_camera_ir_vai_para_a_pasta_ir(tmp_path):
+    assert main(["video", str(VIDEO), "--saida", str(tmp_path), "--camera", "ir",
+                 "--intervalo-ms", "100000"]) == 0
+    assert {p.relative_to(tmp_path).parts[0] for p in tmp_path.rglob("*.jpg")} == {"ir"}
 
 
-def test_quadros_da_webcam_respeitam_o_tempo_limite():
-    with FonteWebcam(abrir=lambda d: CameraFalsa(d, intervalo=0.005, total=10**6)) as fonte:
+def test_camera_desconhecida_da_mensagem_clara(tmp_path, capsys):
+    assert main(["webcam", "--camera", "termica", "--saida", str(tmp_path)]) == 2
+    assert "câmera desconhecida: termica" in capsys.readouterr().err
+
+
+def test_configuracao_tem_camera_normal_e_infravermelha():
+    nomes = [c["nome"] for c in carregar_config()["cameras"]]
+    assert nomes == ["rgb", "ir"]
+
+
+def test_quadros_das_webcams_alternam_entre_as_cameras():
+    with FonteWebcam(abrir=lambda d: CameraFalsa(d, intervalo=0.003, total=30)) as rgb, \
+            FonteWebcam(abrir=lambda d: CameraFalsa(d, intervalo=0.004, total=30)) as ir:
+        nomes = [nome for nome, _, _ in _quadros_das_webcams({"rgb": rgb, "ir": ir}, None)]
+    assert {"rgb", "ir"} <= set(nomes)
+
+
+def test_quadros_das_webcams_seguem_se_uma_camera_para():
+    with FonteWebcam(abrir=lambda d: CameraFalsa(d, intervalo=0.002, total=3)) as rgb, \
+            FonteWebcam(abrir=lambda d: CameraFalsa(d, intervalo=0.002, total=40)) as ir:
+        nomes = [nome for nome, _, _ in _quadros_das_webcams({"rgb": rgb, "ir": ir}, None)]
+    assert nomes.count("ir") > nomes.count("rgb")
+
+
+def test_quadros_das_webcams_respeitam_o_tempo_limite():
+    with FonteWebcam(abrir=lambda d: CameraFalsa(d, intervalo=0.005, total=10**6)) as rgb:
         inicio = time.monotonic()
-        quadros = list(_quadros_da_webcam(fonte, 0.2))
+        quadros = list(_quadros_das_webcams({"rgb": rgb}, 0.2))
         assert 0.2 <= time.monotonic() - inicio < 1.5
     assert quadros

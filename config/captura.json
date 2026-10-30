@@ -1,5 +1,5 @@
 {
-  "versao": 1,
+  "versao": 2,
   "mediapipe": {
     "modelo": "modelos/face_landmarker.task",
     "min_confianca_deteccao": 0.5,
@@ -8,17 +8,31 @@
     "max_rostos": 3
   },
   "recorte": {
-    "margem": 0.25,
-    "tamanho": 224,
-    "qualidade_jpeg": 95
+    "qualidade_jpeg": 95,
+    "rosto": {
+      "margem": 0.25,
+      "tamanho": 224
+    },
+    "regioes": {
+      "tamanho": 96
+    }
   },
   "captura": {
     "intervalo_ms": 1000,
     "pasta": "saidas/imagens"
   },
-  "webcam": {
-    "dispositivo": 0,
-    "largura": 640,
-    "altura": 480
-  }
+  "cameras": [
+    {
+      "nome": "rgb",
+      "dispositivo": "/dev/v4l/by-path/pci-0000:00:14.0-usb-0:5:1.0-video-index0",
+      "largura": 640,
+      "altura": 480
+    },
+    {
+      "nome": "ir",
+      "dispositivo": "/dev/v4l/by-path/pci-0000:00:14.0-usb-0:5:1.2-video-index0",
+      "largura": null,
+      "altura": null
+    }
+  ]
 }

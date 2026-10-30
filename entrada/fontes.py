@@ -54,10 +54,11 @@ class FonteWebcam:
 
     A leitura do OpenCV bloqueia; com ela fora do laço principal, o
     processamento nunca espera pela câmera e nunca trabalha num quadro velho.
-    O t_ms vem de um relógio monotônico iniciado na abertura da câmera.
+    O t_ms vem de um relógio monotônico iniciado na abertura da câmera, ou em t0.
     """
 
-    def __init__(self, dispositivo=0, largura=None, altura=None, abrir=cv2.VideoCapture):
+    def __init__(self, dispositivo=0, largura=None, altura=None, abrir=cv2.VideoCapture,
+                 t0: float | None = None):
         self._cap = abrir(dispositivo)
         if not self._cap.isOpened():
             raise OSError(f"Não foi possível abrir a webcam {dispositivo}")
@@ -65,7 +66,8 @@ class FonteWebcam:
             self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, largura)
         if altura:
             self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, altura)
-        self._t0 = time.monotonic()
+        # Webcams abertas com o mesmo t0 têm marcas de tempo comparáveis entre si.
+        self._t0 = time.monotonic() if t0 is None else t0
         self._condicao = threading.Condition()
         self._ultimo = None
         self._entregue = -1

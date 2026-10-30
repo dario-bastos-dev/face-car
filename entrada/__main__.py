@@ -1,31 +1,34 @@
-"""Captura recortes do rosto do motorista para treinar um modelo de imagens.
+"""Captura recortes do rosto, dos olhos e da boca do motorista para modelos de imagem.
 
-    uv run python -m entrada video <seu-video.mp4> --rotulo alerta --pessoa p01 [--mostrar]
-    uv run python -m entrada webcam --rotulo sonolento --pessoa p01 [--mostrar] [--segundos 60]
+    uv run python -m entrada webcam --rotulo alerta --pessoa p01 [--camera rgb] [--mostrar]
+    uv run python -m entrada video <seu-video.mp4> --rotulo sonolento --pessoa p07 [--camera ir]
 
-Os recortes vão para <saida>/<rotulo>/<pessoa>_<origem>_<t_ms>ms.jpg e ficam só
-neste computador.
+Os recortes vão para <saida>/<camera>/<regiao>/<rotulo>/<pessoa>_<origem>_<t_ms>ms.jpg,
+com regiao = rosto, olhos ou boca, e ficam só neste computador.
 """
 
 import argparse
 import sys
 import time
+from contextlib import ExitStack
 from pathlib import Path
 
 import cv2
 
 from entrada.captura import Agendador, GravadorImagens
-from entrada.contexto import CAMINHO_CONFIG, RAIZ, carregar_config
-from entrada.recorte import caixa_do_rosto, recortar
+from entrada.contexto import CAMINHO_CONFIG, RAIZ, carregar_config, carregar_pontos_rosto
+from entrada.recorte import (caixa_do_rosto, indices_das_regioes, recortar,
+                             recortar_regiao)
 
-JANELA = "captura do rosto (q para sair)"
+JANELA = "captura (q para sair)"
 
 
 class Capturador:
-    """Detecta o rosto em cada quadro e grava um recorte a cada intervalo."""
+    """Detecta o rosto em cada quadro e, a cada intervalo, grava rosto, olhos e boca."""
 
     def __init__(self, config: dict, detector, gravador: GravadorImagens, intervalo_ms: int):
         self.recorte = config["recorte"]
+        self.regioes = indices_das_regioes(carregar_pontos_rosto())
         self.detector = detector
         self.gravador = gravador
         self.agendador = Agendador(intervalo_ms)
@@ -35,16 +38,21 @@ class Capturador:
         pontos = self.detector.detectar(quadro, t_ms)
         if pontos is None:
             return None, False
-        caixa = caixa_do_rosto(pontos, self.recorte["margem"])
+        rosto = self.recorte["rosto"]
+        caixa = caixa_do_rosto(pontos, rosto["margem"])
         if not self.agendador.pronto(t_ms):
             return caixa, False
-        self.gravador.salvar(recortar(quadro, caixa, self.recorte["tamanho"]), t_ms)
+        self.gravador.salvar(recortar(quadro, caixa, rosto["tamanho"]), t_ms, "rosto")
+        for regiao, indices in self.regioes.items():
+            imagem = recortar_regiao(quadro, pontos, indices, self.recorte["regioes"]["tamanho"])
+            if imagem is not None:
+                self.gravador.salvar(imagem, t_ms, regiao)
         self.agendador.registrar(t_ms)
         return caixa, True
 
 
 def desenhar(quadro, caixa, capturou: bool, total: int):
-    """Mostra a região que vira recorte e quantas capturas já foram gravadas."""
+    """Mostra a região que vira recorte do rosto e quantas capturas já foram feitas."""
     if caixa is not None:
         metade = caixa.lado / 2
         p0 = (int(caixa.cx - metade), int(caixa.cy - metade))
@@ -58,27 +66,34 @@ def desenhar(quadro, caixa, capturou: bool, total: int):
     return quadro
 
 
-def _gravador(args, config, origem) -> GravadorImagens:
+def _gravador(args, config, camera: str, origem: str) -> GravadorImagens:
     pasta = Path(args.saida) if args.saida else RAIZ / config["captura"]["pasta"]
-    return GravadorImagens(pasta, args.rotulo, args.pessoa, origem,
+    return GravadorImagens(pasta, camera, args.rotulo, args.pessoa, origem,
                            config["recorte"]["qualidade_jpeg"])
 
 
-def _capturar(args, config: dict, gravador: GravadorImagens, quadros) -> int:
-    """Laço comum aos dois comandos: detecta, grava no intervalo e mostra a janela.
+def _capturar(args, config: dict, gravadores: dict, quadros) -> int:
+    """Laço comum aos dois comandos, para uma ou várias câmeras.
 
-    Termina quando os quadros acabam, com q na janela ou com Ctrl+C.
+    `quadros` entrega (camera, quadro, t_ms); cada câmera tem o próprio detector,
+    porque o MediaPipe acompanha o rosto de um quadro para o seguinte. Termina
+    quando os quadros acabam, com q numa janela ou com Ctrl+C.
     """
     from entrada.detector import DetectorRosto
 
     intervalo = args.intervalo_ms or config["captura"]["intervalo_ms"]
-    with DetectorRosto(config) as detector:
-        capturador = Capturador(config, detector, gravador, intervalo)
+    with ExitStack() as pilha:
+        capturadores = {
+            camera: Capturador(config, pilha.enter_context(DetectorRosto(config)), gravador,
+                               intervalo)
+            for camera, gravador in gravadores.items()
+        }
         try:
-            for quadro, t_ms, _ in quadros:
-                caixa, capturou = capturador.processar(quadro, t_ms)
+            for camera, quadro, t_ms in quadros:
+                caixa, capturou = capturadores[camera].processar(quadro, t_ms)
                 if args.mostrar:
-                    cv2.imshow(JANELA, desenhar(quadro, caixa, capturou, gravador.total))
+                    total = gravadores[camera].total
+                    cv2.imshow(f"{camera} - {JANELA}", desenhar(quadro, caixa, capturou, total))
                     if cv2.waitKey(1) & 0xFF == ord("q"):
                         break
         except KeyboardInterrupt:
@@ -86,39 +101,62 @@ def _capturar(args, config: dict, gravador: GravadorImagens, quadros) -> int:
         finally:
             if args.mostrar:
                 cv2.destroyAllWindows()
-    print(f"{gravador.total} recortes gravados em {gravador.pasta}")
+    for camera, gravador in gravadores.items():
+        print(f"{camera}: {gravador.total} recortes gravados em {gravador.pasta}")
     return 0
 
 
-def _quadros_da_webcam(fonte, segundos):
-    """Quadros da webcam enquanto ela estiver ativa e o tempo não acabar."""
+def _quadros_das_webcams(fontes: dict, segundos):
+    """(camera, quadro, t_ms) das webcams, alternando entre elas.
+
+    Segue enquanto alguma estiver ativa e o tempo não acabar.
+    """
     fim = time.monotonic() + segundos if segundos else None
-    while fonte.ativa and (fim is None or time.monotonic() < fim):
-        item = fonte.ler(timeout=1.0)
-        if item is not None:
-            yield item
+    while any(f.ativa for f in fontes.values()) and (fim is None or time.monotonic() < fim):
+        entregou = False
+        for camera, fonte in fontes.items():
+            item = fonte.ler(timeout=0)
+            if item is not None:
+                entregou = True
+                quadro, t_ms, _ = item
+                yield camera, quadro, t_ms
+        if not entregou:
+            time.sleep(0.005)
 
 
 def cmd_video(args) -> int:
     from entrada.fontes import FonteArquivo
 
     config = carregar_config(args.config)
-    gravador = _gravador(args, config, Path(args.video).name)
+    camera = args.camera or "rgb"
+    gravador = _gravador(args, config, camera, Path(args.video).name)
     with FonteArquivo(args.video) as fonte:
         print(f"{args.video}: {fonte.total} quadros a {fonte.fps:.2f} fps")
-        return _capturar(args, config, gravador, fonte)
+        quadros = ((camera, quadro, t_ms) for quadro, t_ms, _ in fonte)
+        return _capturar(args, config, {camera: gravador}, quadros)
 
 
 def cmd_webcam(args) -> int:
     from entrada.fontes import FonteWebcam
 
     config = carregar_config(args.config)
-    cam = config["webcam"]
-    gravador = _gravador(args, config, time.strftime("webcam-%Y%m%d-%H%M%S"))
-    dispositivo = args.dispositivo if args.dispositivo is not None else cam["dispositivo"]
-    with FonteWebcam(dispositivo, cam["largura"], cam["altura"]) as fonte:
-        print("Capturando. Pressione q na janela ou Ctrl+C para parar.")
-        return _capturar(args, config, gravador, _quadros_da_webcam(fonte, args.segundos))
+    cameras = {c["nome"]: c for c in config["cameras"]}
+    escolhidas = args.camera or list(cameras)
+    for nome in escolhidas:
+        if nome not in cameras:
+            raise ValueError(f"câmera desconhecida: {nome} (configuradas: {', '.join(cameras)})")
+    origem = time.strftime("webcam-%Y%m%d-%H%M%S")
+    gravadores = {nome: _gravador(args, config, nome, origem) for nome in escolhidas}
+    t0 = time.monotonic()  # relógio comum: as marcas de tempo das câmeras se comparam
+    with ExitStack() as pilha:
+        fontes = {
+            nome: pilha.enter_context(FonteWebcam(
+                cameras[nome]["dispositivo"], cameras[nome]["largura"], cameras[nome]["altura"],
+                t0=t0))
+            for nome in escolhidas
+        }
+        print(f"Capturando de {', '.join(escolhidas)}. Pressione q numa janela ou Ctrl+C.")
+        return _capturar(args, config, gravadores, _quadros_das_webcams(fontes, args.segundos))
 
 
 def main(argv=None) -> int:
@@ -138,11 +176,13 @@ def main(argv=None) -> int:
 
     p = sub.add_parser("video", help="capturar recortes de um arquivo de vídeo")
     p.add_argument("video")
+    p.add_argument("--camera", help="câmera que gravou o vídeo; vira a pasta (padrão: rgb)")
     comuns(p)
     p.set_defaults(func=cmd_video)
 
-    p = sub.add_parser("webcam", help="capturar recortes da webcam")
-    p.add_argument("--dispositivo", type=int, help="índice da câmera (padrão: config)")
+    p = sub.add_parser("webcam", help="capturar recortes das webcams da configuração")
+    p.add_argument("--camera", action="append",
+                   help="usar só esta câmera da configuração (repetível; padrão: todas)")
     p.add_argument("--segundos", type=float, help="parar depois deste tempo")
     comuns(p)
     p.set_defaults(func=cmd_webcam)

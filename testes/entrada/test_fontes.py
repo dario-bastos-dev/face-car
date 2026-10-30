@@ -136,3 +136,10 @@ def test_camera_que_para_sozinha_e_liberada():
     with FonteWebcam(abrir=abrir) as fonte:
         assert camera.liberada.wait(2)  # o read() falhou e a thread encerrou
         assert not fonte.ativa
+
+
+def test_webcams_podem_compartilhar_o_relogio():
+    t0 = time.monotonic() - 5  # relógio iniciado 5 s antes da abertura
+    with FonteWebcam(abrir=CameraFalsa, t0=t0) as fonte:
+        _, t_ms, _ = fonte.ler()
+    assert 5000 <= t_ms < 6500
