@@ -51,12 +51,12 @@ campo "FPS do arquivo" precisa receber o fps real do vídeo, já que o navegador
 
 | Métrica | Cálculo |
 | --- | --- |
-| `ear_esq`, `ear_dir` | (\|p2−p6\| + \|p3−p5\|) / (2·\|p1−p4\|), em pixels, com os índices de `entrada/pontos_rosto.json` |
+| `ear_esq`, `ear_dir` | (|p2−p6| + |p3−p5|) / (2·|p1−p4|), em pixels, com os índices de `entrada/pontos_rosto.json` |
 | `abertura_boca` | média de três distâncias verticais internas dos lábios ÷ largura interna da boca |
 | `yaw`, `pitch`, `roll` | matriz de transformação facial do MediaPipe, decomposição ZYX, em graus |
-| `confianca` | 0 sem rosto; 0,5 ao reencontrar o rosto; depois exp(−resíduo/escala), em que o resíduo é o tremor dos pontos rígidos após alinhar quadros consecutivos, dividido pela distância entre os olhos e suavizado |
+| `confiança` | 0 sem rosto; 0,5 ao reencontrar o rosto; depois exp(−resíduo/escala), em que o resíduo é o tremor dos pontos rígidos após alinhar quadros consecutivos, dividido pela distância entre os olhos e suavizado |
 
-Os limiares ficam em `config/extrator.json`. O valor `confianca.escala_residuo = 0.02` é um
+Os limiares ficam em `config/extrator.json`. O valor `confiança.escala_residuo = 0.02` é um
 ponto de partida e ainda precisa ser calibrado com gravações reais.
 
 ## Testes
@@ -70,24 +70,14 @@ RODAR_PARIDADE=1 uv run pytest testes/entrada/test_paridade_navegador.py   # Pyt
 Os casos de `testes/casos/geometria.json` são lidos pelos testes das duas linguagens
 (para regenerar: `PYTHONPATH=. uv run python testes/casos/gerar_casos.py`).
 
-## Treinamento e avaliação
+## Treinamento CNN
 
-O módulo em `treinamento/` gera dados sintéticos, treina o classificador e avalia
-as previsões. Para executá-lo da raiz do repositório:
-
-```bash
-uv run python treinamento/preparar_dados.py
-uv run python treinamento/treinar.py
-uv run python treinamento/avaliar.py
-```
-
-Os resultados atuais são exclusivamente sintéticos e não representam validação
-com motoristas reais. O notebook
-[`treinamento/treinamento_colab.ipynb`](treinamento/treinamento_colab.ipynb)
-prepara a execução no Google Colab; a branch `feature/treinamento-avaliacao`
-precisa estar publicada para a célula de clonagem funcionar. Consulte
-[`treinamento/README.md`](treinamento/README.md) para o formato esperado dos
-futuros dados reais e os cuidados para não versionar datasets.
+O módulo em `treinamento/` usa TensorFlow/Keras com imagens reais do YawDD e duas classes
+visuais: `bocejo` e `sem_bocejo`. Elas não representam uma classificação completa de sonolência.
+Consulte [`treinamento/README.md`](treinamento/README.md) e o notebook
+[`treinamento/treinamento_cnn_colab.ipynb`](treinamento/treinamento_cnn_colab.ipynb).
+O fluxo não usa dados sintéticos e não versiona vídeos, datasets, imagens extraídas,
+modelos treinados ou resultados.
 
 ## Estrutura
 
@@ -98,5 +88,5 @@ entrada/         Python: fontes, geometria, confiança, extrator, linha de coman
 demo-navegador/  página, extrator.js (cálculo) e app.js (MediaPipe e interface)
 scripts/         preparação, servidor local e extração pelo navegador
 testes/          casos compartilhados, testes Python (entrada/) e JS (js/)
-treinamento/     geração de dados sintéticos, treino, avaliação e notebook Colab
+treinamento/     preparação YawDD, CNN, avaliação e notebook Colab
 ```
