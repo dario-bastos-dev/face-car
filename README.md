@@ -1,5 +1,20 @@
 # Face-Car · Visão, estimador e política de ação
 
+## Parte 3 · Simulador e integração
+
+Simulador de direção (visão 2D e cabine 3D) com o **scanner de rosto** real: a webcam passa
+pelo extrator da Parte 1 e pelo estimador da Parte 2 na própria página, e as mensagens
+`sinal.v1` comandam o veículo simulado. Também recebe o estimador em Python por WebSocket e
+reproduz mensagens gravadas.
+
+```bash
+python simulador/servidor.py     # http://localhost:8000/simulador/  (WebSocket: pip install websockets)
+node --test testes/js/receptor.test.mjs
+```
+
+No cartão da câmera, **◉ Demonstrar** liga o scanner mostrando a malha do rosto e
+**◌ Invisível** mantém o scanner rodando sem desenho. Veja o [guia da Parte 3](docs/parte3.md).
+
 ## Parte 2 pronta para executar sem câmera
 
 A Parte 2 consome o CSV da visão, estima PERCLOS, índice e confiança e aplica
@@ -117,7 +132,8 @@ contratos/       contrato de métricas (v1) e exemplo
 config/          limiares e parâmetros do extrator
 entrada/         Python: fontes, geometria, confiança, extrator, linha de comando
 demo-navegador/  página, extrator.js (cálculo) e app.js (MediaPipe e interface)
+simulador/       Parte 3: simulador 2D/3D, canal de sinal, scanner e servidor local
 scripts/         preparação, servidor local e extração pelo navegador
 testes/          casos compartilhados, testes Python (entrada/) e JS (js/)
-treinamento/     geração de dados sintéticos, treino, avaliação e notebook Colab
+treinamento/     geração de dados sintéticos, treino, avaliação, exportação e notebook Colab
 ```

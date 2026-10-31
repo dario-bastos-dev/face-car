@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="theme-color" content="#030610" />
+<title>VIGIA — Simulador (Parte 3)</title>
+<link rel="icon" href="assets/favicon.ico" sizes="any" />
+<link rel="icon" type="image/png" href="assets/vigia_icon.png" />
+<link rel="apple-touch-icon" href="assets/vigia_icon.png" />
+<link rel="stylesheet" href="css/vigia.css?v=0.9.7" />
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <img class="brand-logo" src="assets/vigia_logo.png" alt="VIGIA" />
+    <div class="top-actions">
+      <button class="icon-button" id="fullscreenBtn" title="Tela cheia" aria-label="Tela cheia"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></button>
+      <button class="icon-button" id="settingsBtn" title="Configurações" aria-label="Configurações"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
+    </div>
+  </header>
+
+  <main class="app-grid">
+    <section class="card stage" id="stageCard" aria-label="Cenário da rodovia">
+      <div class="card-heading">
+        <div class="levels stage-levels" role="group" aria-label="Nível de alerta (modo manual)">
+          <button class="level-btn normal active" id="normalBtn">Normal</button>
+          <button class="level-btn attention" id="attentionBtn">Atenção</button>
+          <button class="level-btn critical" id="criticalBtn">Crítico</button>
+          <button class="level-btn intervention" id="interventionBtn">Intervenção</button>
+        </div>
+        <div class="view-switch" role="group" aria-label="Alternar visão da simulação">
+          <button id="view2dBtn" class="view-btn selected" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M4 15 6 9h12l2 6v4H4v-4ZM7 9l2-4h6l2 4"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg>VISÃO 2D</button>
+          <button id="view3dBtn" class="view-btn" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M3.5 10.5 10 12M20.5 10.5 14 12M12 14v7"/></svg>CABINE 3D</button>
+        </div>
+      </div>
+      <div class="scene" id="scene" data-level="normal">
+        <canvas id="view2d" class="view2d" aria-label="Rodovia vista de cima" role="img"></canvas>
+        <div id="view3d" class="view3d">
+          <canvas id="glCanvas" aria-label="Visão do motorista em 3D" role="img"></canvas>
+          <canvas id="cabinCanvas" class="cabin-canvas" aria-hidden="true"></canvas>
+          <div class="view3d-error" id="view3dError" hidden></div>
+        </div>
+        <div class="alert-vignette" aria-hidden="true"></div>
+
+        <div class="hud-vehicle"><span class="veh-btns compact" role="group" aria-label="Tipo de veículo"><button class="veh-btn active" data-vehicle="car" aria-pressed="true" title="Carro familiar" aria-label="Carro familiar"><svg viewBox="0 0 32 26"><path d="M4 16 7 9h18l3 7v6H4v-6ZM8 9l3-5h10l3 5M10 16h12M7 21v3m18-3v3"/></svg></button><button class="veh-btn" data-vehicle="truck" aria-pressed="false" title="Caminhão" aria-label="Caminhão"><svg viewBox="0 0 32 26"><path d="M2 7h18v15H2zM20 12h6l4 5v5H20zM7 22a2 2 0 1 0 4 0m13 0a2 2 0 1 0 4 0M4 4h14"/></svg></button></span></div>
+        <div class="cockpit-tag"><span class="dot"></span>VISÃO DO MOTORISTA / <b id="cockpitVehicleLabel">CARRO FAMILIAR</b></div>
+        <!-- Painéis da visão 2D -->
+        <div class="ov2d ov-left">
+          <div class="ov-card ov-dash">
+            <div class="ov-head"><svg viewBox="0 0 24 24"><path d="M4 15 6 9h12l2 6v4H4v-4ZM7 9l2-4h6l2 4M7 19v1.5M17 19v1.5"/></svg><b id="ovDashName">PAINEL - CARRO FAMILIAR</b><span class="veh-btns" role="group" aria-label="Tipo de veículo"><button class="veh-btn active" data-vehicle="car" aria-pressed="true" title="Carro familiar" aria-label="Carro familiar"><svg viewBox="0 0 32 26"><path d="M4 16 7 9h18l3 7v6H4v-6ZM8 9l3-5h10l3 5M10 16h12M7 21v3m18-3v3"/></svg></button><button class="veh-btn" data-vehicle="truck" aria-pressed="false" title="Caminhão" aria-label="Caminhão"><svg viewBox="0 0 32 26"><path d="M2 7h18v15H2zM20 12h6l4 5v5H20zM7 22a2 2 0 1 0 4 0m13 0a2 2 0 1 0 4 0M4 4h14"/></svg></button></span></div>
+            <div class="ov-dash-body">
+              <div class="ov-gauge">
+                <svg viewBox="0 0 200 200" role="img" aria-label="Velocímetro">
+                  <defs>
+                    <radialGradient id="ovgFace" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#11243d"/><stop offset="1" stop-color="#050b16"/></radialGradient>
+                    <linearGradient id="ovgGrad" x1="0" x2="1"><stop offset="0" stop-color="#1d6fff"/><stop offset=".7" stop-color="#36c6ff"/><stop offset="1" stop-color="#f4be75"/></linearGradient>
+                  </defs>
+                  <circle cx="100" cy="100" r="95" fill="url(#ovgFace)" stroke="#1f3a5a" stroke-width="2"/>
+                  <path id="ovGaugeTrack" class="ovg-track"/>
+                  <path id="ovGaugeArc" class="ovg-arc"/>
+                  <g id="ovGaugeTicks"></g>
+                  <g id="ovNeedle" transform="rotate(-125 100 100)"><path d="M97 104 100 30 103 104Z" class="ovg-needle"/></g>
+                  <circle cx="100" cy="100" r="9" class="ovg-cap"/>
+                </svg>
+                <div class="ov-gauge-num"><strong id="ovSpeed">80</strong><span>km/h</span></div>
+              </div>
+              <div class="ov-status"><small>STATUS DO VEÍCULO</small><strong id="ovStatus">NORMAL</strong><span id="ovTarget">ALVO: 80 km/h</span></div>
+            </div>
+            <div class="ov-tiles">
+              <div class="ov-tile" id="ovHazard"><svg viewBox="0 0 24 24"><path d="M3 12h8M3 12l3-3M3 12l3 3M21 12h-8M21 12l-3-3M21 12l-3 3"/></svg>PISCA</div>
+              <div class="ov-tile" id="ovBrake"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/><path d="M4.5 6.5a9 9 0 0 0 0 11M19.5 6.5a9 9 0 0 1 0 11M12 9v3.5M12 15h.01"/></svg>FREIO</div>
+              <div class="ov-tile on" id="ovSignal"><svg viewBox="0 0 24 24"><path d="M13 6h2a5 5 0 0 1 0 10h-2z M3 8h7M3 11h7M3 14h7"/></svg>SINAL</div>
+            </div>
+          </div>
+        </div>
+        <div class="paused-mask">SIMULAÇÃO PAUSADA</div>
+      </div>
+
+    </section>
+
+    <div class="right">
+      <section class="card monitor-card cam-big glass" id="monitorCard">
+            <div class="card-row cam-head"><div class="panel-label">01 / Monitoramento do motorista</div>
+              <label class="camera-switch" title="Ligar / desligar a câmera"><input id="cameraBtn" type="checkbox" role="switch" aria-label="Ligar ou desligar câmera" /><span class="switch-track"></span><b>CÂMERA</b></label>
+              <label class="camera-switch ir-switch" title="Filtro de câmera infravermelha (só visual; o scanner usa a imagem original)"><input id="irBtn" type="checkbox" role="switch" aria-label="Filtro infravermelho" /><span class="switch-track"></span><b>INFRAVERMELHO</b></label>
+              <span class="cam-status" id="camStatus">SIMULAÇÃO</span>
+              <button class="cam-close" id="camCloseBtn" title="Fechar (Esc)" aria-label="Fechar a câmera ampliada">✕</button>
+            </div>
+            <div class="ov-cam-body" title="Clique para ampliar a câmera" role="button" tabindex="0" aria-label="Ampliar a câmera">
+              <video id="cameraFeed" autoplay muted playsinline aria-label="Imagem da webcam"></video>
+              <canvas id="monitorOverlay" aria-hidden="true"></canvas>
+              <div class="cam-warning" id="camWarning" hidden></div>
+            </div>
+            <div class="scanner-bar"><span class="scanner-status" data-scanner-status>SCANNER DESLIGADO</span><button class="scanner-btn" data-scanner="demonstrar" title="Liga a câmera e o scanner, mostrando a malha do rosto">◉ Demonstrar</button><button class="scanner-btn" data-scanner="invisivel" title="O scanner continua rodando, sem desenho sobre a imagem">◌ Invisível</button></div>
+            <div class="cc-metrics">
+              <div class="metric" id="mEyes"><small>Olhos</small><span class="bar"><i></i></span><b>100%</b></div>
+              <div class="metric" id="mMouth" title="Abertura da boca (bocejo a partir de 70%)"><small>Boca</small><span class="bar"><i></i></span><b>0%</b></div>
+              <div class="metric" id="mHead"><small>Cabeça</small><span class="bar"><i></i></span><b>0°</b></div>
+              <div class="metric" id="mPerclos"><small>PERCLOS</small><span class="bar"><i></i></span><b>5%</b></div>
+              <div class="metric" id="mFatigue"><small>Fadiga</small><span class="bar"><i></i></span><b>10</b></div>
+            </div>
+            <div class="cc-foot" id="monitorSource">MÉTRICAS SIMULADAS</div>
+            <div class="cc-foot model-line" data-modelo>Modelo (Parte 4): ainda não treinado</div>
+          </section>
+    </div>
+  </main>
+
+  <section class="status-grid">
+    <div class="card footer-card">
+      <div class="footer-title"><b>REGISTRO DE EVENTOS</b><span id="eventCount">0 eventos</span></div>
+      <div class="log" id="log" role="log" aria-live="off"></div>
+      <div class="meta-actions"><button id="exportBtn">↓ Exportar JSONL</button><button id="importReplayBtn">↑ Importar replay</button><input class="visually-hidden" type="file" id="replayFile" accept=".json,.jsonl,application/json,application/x-ndjson" /><button id="metricsCsvBtn" disabled title="Métricas reais do scanner no contrato metricas.v1 (para a Parte 4)">↓ Métricas reais (CSV)</button><button id="clearLogBtn">Limpar histórico</button></div>
+    </div>
+  </section>
+  <footer class="app-foot">VIGIA · simulador acadêmico · nenhuma função comanda veículos reais</footer>
+</div>
+
+<div class="modal" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="dialog">
+    <h2 id="settingsTitle">Configurações da demonstração</h2>
+    <p>Os sons são sintetizados pelo próprio navegador e não precisam de arquivos externos.</p>
+    <label class="check"><span>Áudio do simulador</span><input type="checkbox" id="soundToggle" checked /></label>
+    <label for="volume">Volume geral <span id="volumeLabel">45%</span></label>
+    <input type="range" min="0" max="100" value="45" id="volume" />
+    <label for="trafficDensity">Frequência de tráfego <span id="densityLabel">Média</span></label>
+    <input type="range" min="1" max="3" value="2" id="trafficDensity" />
+    <label for="cycleMinutes">Duração do ciclo dia/noite <span id="cycleLabelSetting">4 min</span></label>
+    <input type="range" min="1" max="20" value="4" id="cycleMinutes" />
+    <label for="zoneSeconds">Troca campo ↔ cidade a cada <span id="zoneLabelSetting">30 s</span></label>
+    <input type="range" min="15" max="300" step="15" value="30" id="zoneSeconds" />
+    <label class="check"><span>Reduzir trepidação da câmera</span><input type="checkbox" id="reduceMotion" /></label>
+    <button id="closeSettings">Concluir</button>
+  </div>
+</div>
+
+<script src="vendor/three.min.js"></script>
+<script>window.THREE || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');</script>
+<script src="js/core.js?v=0.9.7"></script>
+<script src="js/scene2d.js?v=0.9.7"></script>
+<script src="js/world3d.js?v=0.9.7"></script>
+<script src="js/cabin.js?v=0.9.7"></script>
+<script src="js/audio.js?v=0.9.7"></script>
+<script src="js/driver-monitor.js?v=0.9.7"></script>
+<script src="js/overlay2d.js?v=0.9.7"></script>
+<!-- Parte 3: canal de sinal (sinal.v1) e scanner real (Partes 1 e 2 na página) -->
+<script type="module" src="js/sinal.js?v=0.9.7"></script>
+<script type="module" src="js/ia.js?v=0.9.7" onerror="VIGIA.log('Scanner indisponível: não foi possível carregar o MediaPipe', 'error')"></script>
+</body>
+</html>
