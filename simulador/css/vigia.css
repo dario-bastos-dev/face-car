@@ -14,20 +14,12 @@ svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-l
 .app{max-width:1760px;margin:0 auto;padding:18px}
 
 /* topo */
-.topbar{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;border:1px solid #2f65b858;border-radius:22px;padding:11px 16px;margin-bottom:16px;background:linear-gradient(120deg,#101c38b8,#050b19ce);box-shadow:0 12px 38px #0008,inset 0 1px #d0faff18;backdrop-filter:blur(18px)}
-.brand{display:flex;align-items:center;gap:14px}
-.logo{width:53px;height:53px;padding:4px;border:1px solid #2ac4ff88;background:linear-gradient(145deg,#1261d3,#051131);border-radius:15px;box-shadow:0 0 24px #0487ff55}
-.logo img{width:100%;height:100%;object-fit:contain}
-.brand-copy{display:flex;flex-direction:column;gap:4px}
-.wordmark{width:190px;height:44px;object-fit:contain;object-position:left center}
-.brand-sub{color:#93b5e9;font-size:9px;letter-spacing:.14em;font-weight:700}
-.top-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
-.badge{display:flex;align-items:center;gap:8px;border:1px solid #2f6fd0;border-radius:30px;padding:10px 14px;font-size:10px;font-weight:800;letter-spacing:.09em;color:#cfe2ff;background:#081631}
-.badge i{width:8px;height:8px;border-radius:50%;background:#0d3a73;box-shadow:inset 0 0 0 2px #1e6ad1}
-.control-button{display:flex;align-items:center;gap:8px;border:1px solid #2c4f80;border-radius:12px;background:#0b1830;padding:10px 13px;font-size:12px;font-weight:700;transition:.2s}
-.control-button svg{width:17px;height:17px}
-.control-button:hover{border-color:#3ebaff;box-shadow:0 0 19px #087bff35}
-.control-button.on{border-color:#30c6ff;background:#0d2b4a;color:#aef0ff;box-shadow:0 0 19px #066aff32}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:14px;padding:2px 4px}
+.brand-logo{height:46px;width:auto;display:block;filter:drop-shadow(0 0 14px #0487ff40)}
+.top-actions{display:flex;gap:9px;align-items:center}
+.icon-button{display:grid;place-items:center;width:42px;height:42px;padding:0;border:1px solid #2c4f80;border-radius:12px;background:#0b1830;color:#cfe2ff;transition:.2s}
+.icon-button svg{width:20px;height:20px}
+.icon-button:hover{border-color:#3ebaff;box-shadow:0 0 19px #087bff35;color:#fff}
 
 /* grade principal */
 .app-grid{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:16px;align-items:start}
@@ -46,20 +38,7 @@ svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-l
 .view-switch{display:flex;gap:4px;padding:4px;border-radius:12px;border:1px solid #2b66b57d;background:#0c1d2c}
 .view-btn{background:transparent;border:0;border-radius:8px;color:#92b0bf;font-size:11px;font-weight:800;letter-spacing:.03em;padding:10px 13px;white-space:nowrap}
 .view-btn.selected{background:linear-gradient(135deg,#1b645c,#16434b);color:#adffe4;box-shadow:inset 0 0 18px #0777fd28,0 0 19px #066aff32}
-.stage-stats{display:flex;gap:12px;align-items:center;padding:10px 18px;flex-wrap:wrap;border-bottom:1px solid #2569b044;background:#051329a8}
-.status-banner{flex:1;min-width:230px;display:flex;align-items:center;gap:12px;padding:9px 15px;background:linear-gradient(100deg,#112b4b99,#0a1728a8);border:1px solid #277bd562;border-radius:12px;transition:border-color .3s,background .3s}
-.status-banner strong{font-size:12px;letter-spacing:.065em;color:#6df6e3}
-.status-banner small{font-size:10.5px;color:#bbd1e9}
-.status-banner.attention{border-color:#f7bd6599;background:linear-gradient(100deg,#4b3a1199,#281f0aa8)}
-.status-banner.attention strong{color:#ffd58a}
-.status-banner.critical,.status-banner.intervention{border-color:#f8847bcc;background:linear-gradient(100deg,#5a161699,#2a0b0ba8);animation:pulseBorder 1s infinite}
-.status-banner.critical strong,.status-banner.intervention strong{color:#ff9b91}
-.status-banner.degraded{border-color:#ffb36b99}.status-banner.degraded strong{color:#ffc68e}
 @keyframes pulseBorder{50%{box-shadow:0 0 22px #ff3b3b66}}
-.cycle-display{margin-left:auto;border:1px solid #3476cf66;border-radius:12px;display:flex;align-items:center;gap:8px;color:#a7cdf5;font-size:10.5px;font-weight:800;padding:9px 11px;background:#0d1c35aa;letter-spacing:.035em;white-space:nowrap}
-.cycle-display small{color:#88c5ff;font-size:9px}
-.cycle-dot{width:9px;height:9px;border-radius:50%;background:#ffdf7a;box-shadow:0 0 12px currentColor;transition:background 1s}
-.cycle-toggle{font-size:11px;font-weight:800;color:#b5e7ff;border:1px solid #2977e79c;border-radius:10px;background:linear-gradient(135deg,#123c7a,#092045);padding:9px 12px}
 
 .scene{position:relative;aspect-ratio:16/9;min-height:360px;max-height:calc(100vh - 230px);width:100%;overflow:hidden;background:#0b1a12}
 .view2d,.view3d,#glCanvas,.cabin-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
@@ -111,11 +90,6 @@ svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-l
 .paused-mask{position:absolute;inset:0;z-index:20;display:none;place-items:center;background:#030812a6;font-size:20px;font-weight:900;letter-spacing:.2em;color:#cfe8ff}
 .scene.paused .paused-mask{display:grid}
 
-.stage-bottom{display:flex;align-items:center;gap:14px;padding:11px 18px;flex-wrap:wrap}
-.stage-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:#b9cde6;font-weight:600}
-.stage-legend span:before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:#14eaff;margin-right:7px}
-.stage-legend span:nth-child(2):before{background:#ffc44d}.stage-legend span:nth-child(3):before{background:#5f8dff}
-.stage-keys{margin-left:auto;font-size:10px;color:#7f9cbf}
 kbd{font-family:inherit;font-size:9.5px;border:1px solid #33557e;border-bottom-width:2px;border-radius:5px;padding:1px 5px;color:#cfe2ff;background:#0b1830}
 .tiny-btn{border:1px solid #2c4f80;border-radius:9px;background:#0b1830;padding:8px 12px;font-size:11px;font-weight:800}
 
@@ -163,49 +137,21 @@ kbd{font-family:inherit;font-size:9.5px;border:1px solid #33557e;border-bottom-w
 .speed-value{font-size:46px;font-weight:900;line-height:1;text-shadow:0 0 18px #23a8ff66}
 .speed-unit{font-size:10px;letter-spacing:.15em;color:#a3c3e2;margin-top:2px}
 .gauge-caption{text-align:center;font-size:9.5px;letter-spacing:.12em;color:#8fb1d4;font-weight:800;margin-top:-6px}
-.speed-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid #ffffff12}
-.square{width:38px;height:38px;border-radius:10px;border:1px solid #2c5384;background:#0d1d36;font-size:20px;font-weight:700}
-.cruise{font-size:11px;color:#a9c3de;font-weight:600;letter-spacing:.04em}
-.cruise b{color:#fff;font-size:15px}
 
-/* condição */
-.state-pill{font-size:10.5px;font-weight:900;letter-spacing:.08em;padding:6px 11px;border-radius:9px;border:1px solid #2fe08f88;color:#5ef0c7;background:#0b2b23}
-.state-pill.attention{border-color:#ffc44d99;color:#ffd58a;background:#33280b}
-.state-pill.critical,.state-pill.intervention{border-color:#ff5a4f99;color:#ff9b91;background:#3a1010}
-.state-pill.degraded{border-color:#ffb36b99;color:#ffc68e;background:#33210b}
-.state-description{font-size:12px;line-height:1.5;color:#c3d4e8;min-height:36px}
-.state-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:11px}
-.state-metric{border:1px solid #234068;border-radius:10px;padding:8px 10px;background:#0a1629}
-.state-metric small{display:block;font-size:9.5px;color:#89a6c6}
-.state-metric b{display:block;font-size:11.5px;margin-top:3px;font-weight:800}
-.state-metric b.warn{color:#ffd27b}.state-metric b.danger{color:#f5959d}
 
-/* comandos */
-.source{font-size:9.5px;font-weight:800;color:#5ef0c7}
 .levels{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
 .level-btn{border:1px solid #2a4870;border-radius:10px;background:#0b1830;padding:10px 4px;font-size:11.5px;font-weight:800}
 .level-btn.normal.active{border-color:#2fe08f!important;background:#0b2b23;color:#7ff5cd}
 .level-btn.attention.active{border-color:#ffc44d!important;background:#33280b;color:#ffd58a}
 .level-btn.critical.active,.level-btn.intervention.active{border-color:#ff5a4f!important;background:#3a1010;color:#ffaaa2}
-.second-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
-.action-btn{border:1px solid #2a4870;border-radius:10px;background:#0b1830;padding:10px 6px;font-size:11.5px;font-weight:800}
-.action-btn.ack{border-color:#2fe08f77;background:#0b2b23;color:#9ff7d9}
-.level-btn:hover,.action-btn:hover,.vehicle-tab:hover,.square:hover,.tiny-btn:hover,.view-btn:hover{border-color:#3ebaff;box-shadow:0 0 16px #087bff30}
+.level-btn:hover,.vehicle-tab:hover,.tiny-btn:hover,.view-btn:hover{border-color:#3ebaff;box-shadow:0 0 16px #087bff30}
 
 /* rodapé */
-.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+.status-grid{display:grid;gap:16px;margin-top:16px}
 .footer-card{padding:15px 17px}
 .footer-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px;font-size:12px}
 .footer-title span{font-size:10.5px;color:#8fb1d4}
-.ws-line{display:flex;gap:8px}
-.ws-line input{flex:1;min-width:0;border:1px solid #2a4870;border-radius:10px;background:#071226;color:#dcebff;padding:10px 12px;font:inherit;font-size:12px}
-.ws-line button,.meta-actions button{border:1px solid #2a6f8a;border-radius:10px;background:#0b2436;padding:9px 13px;font-size:11.5px;font-weight:800}
-.connection-status{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:11.5px;color:#b9cde6}
-.status-dot{width:9px;height:9px;border-radius:50%;background:#5d6f86}
-.status-dot.connected{background:#2fe08f;box-shadow:0 0 10px #2fe08f}
-.status-dot.degraded{background:#ffb36b;box-shadow:0 0 10px #ffb36b}
-.help-note{margin-top:10px;font-size:10.5px;color:#7f9cbf;line-height:1.5}
-.help-note code{color:#9fd4ff}
+.meta-actions button{border:1px solid #2a6f8a;border-radius:10px;background:#0b2436;padding:9px 13px;font-size:11.5px;font-weight:800}
 .log{height:132px;overflow:auto;border:1px solid #1d3558;border-radius:10px;background:#050c1a;padding:6px 8px;font-size:11px}
 .log-item{display:flex;gap:10px;padding:4px 2px;border-bottom:1px solid #ffffff08}
 .log-item time{color:#6f8db3;font-variant-numeric:tabular-nums;flex:none}
@@ -226,26 +172,27 @@ kbd{font-family:inherit;font-size:9.5px;border:1px solid #33557e;border-bottom-w
 .dialog #closeSettings{margin-top:18px;width:100%;border:1px solid #30c6ff;border-radius:11px;background:#0d2b4a;padding:11px;font-weight:800}
 
 /* tela cheia do palco */
-.stage:fullscreen{border-radius:0;display:flex;flex-direction:column;background:#030610}
-.stage:fullscreen .scene{flex:1;aspect-ratio:auto;max-height:none}
+.app-grid:fullscreen{grid-template-columns:minmax(0,1fr) minmax(340px,30vw);gap:14px;padding:14px;height:100vh;align-items:stretch;background:radial-gradient(ellipse at 90% -8%,#143bb35c,transparent 45%),#030610}
+.app-grid:fullscreen .stage{min-height:0}
+.app-grid:fullscreen .scene{flex:1;aspect-ratio:auto;max-height:none;min-height:0}
+.app-grid:fullscreen .right{display:flex;flex-direction:column;overflow:auto;min-height:0}
+/* tela cheia: só a simulação e a câmera; o resto do painel fica oculto */
+.app-grid:fullscreen .stage>:not(.scene),.app-grid:fullscreen .right>:not(#monitorCard),.app-grid:fullscreen .cam-big .cc-foot{display:none}
+.app-grid:fullscreen .right{justify-content:center;overflow:hidden}
+.app-grid:fullscreen .stage{border-radius:14px}
+.cam-big .view-switch{margin-top:12px}
+.cam-big .view-btn{flex:1;justify-content:center}
 
 /* responsivo */
 @media(max-width:1180px){
   .app-grid{grid-template-columns:1fr}
-  .right{display:grid;grid-template-columns:1fr 1fr}
+  .right{display:grid;grid-template-columns:minmax(0,560px);justify-content:center}
   .scene{max-height:none}
-}
-@media(max-width:900px){
-  .stage-keys{display:none}
-  .status-grid{grid-template-columns:1fr}
 }
 @media(max-width:720px){
   .app{padding:10px}
-  .right{grid-template-columns:1fr}
   .card-heading{flex-wrap:wrap;padding:12px 14px}
   .view-switch{width:100%}.view-btn{flex:1}
-  .status-banner{flex-basis:100%}
-  .cycle-display{margin-left:0}
   .scene{aspect-ratio:3/4;min-height:0}
   .hud-speed{top:10px;left:10px;padding:6px 10px 6px 6px;gap:8px}
   .hud-dial{width:74px;height:68px}
@@ -259,10 +206,7 @@ kbd{font-family:inherit;font-size:9.5px;border:1px solid #33557e;border-bottom-w
   .scene.cockpit-view .hud-speed{padding:5px;border-radius:50%;background:transparent;border:0;box-shadow:none}
   .scene.cockpit-view .hud-dial,.scene.cockpit-view .hud-limit small{display:none}
   .cockpit-tag{display:none!important}
-  .badge{display:none}
-  .control-button span{display:none}
-  .wordmark{width:140px;height:34px}
-  .brand-sub{font-size:7.5px}
+  .brand-logo{height:34px}
 }
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
 
@@ -280,14 +224,12 @@ kbd{font-family:inherit;font-size:9.5px;border:1px solid #33557e;border-bottom-w
 .ov2d{position:absolute;top:16px;bottom:16px;z-index:8;display:flex;flex-direction:column;gap:14px;pointer-events:none}
 .scene.cockpit-view .ov2d{display:none}
 .ov-left{left:16px;width:clamp(230px,26%,340px)}
-.ov-right{right:16px;width:clamp(215px,24%,330px)}
 .ov-card{position:relative;overflow:hidden;border:1px solid #2f8cff99;border-radius:12px;background:linear-gradient(160deg,#0c1d36e6,#06101fef);box-shadow:0 14px 30px #000a,0 0 18px #1478ff26,inset 0 1px #ffffff14;backdrop-filter:blur(10px);pointer-events:auto}
 .ov-head{display:flex;align-items:center;gap:8px;padding:11px 12px;border-bottom:1px solid #ffffff12;font-size:11.5px;letter-spacing:.02em}
 .ov-head svg{width:22px;height:22px;color:#e6f1ff;flex:none}
 .ov-head b{flex:1;font-weight:800;line-height:1.2;min-width:0}
-.ov-cam-status,.ov-live{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:800;flex:none}
-.ov-cam-status i,.ov-live i{width:8px;height:8px;border-radius:50%;background:#ff4d4d;box-shadow:0 0 8px #ff4d4d}
-.ov-live{color:#3ab4ff}.ov-live i{background:#3ab4ff;box-shadow:0 0 8px #3ab4ff}
+.ov-cam-status{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:800;flex:none}
+.ov-cam-status i{width:8px;height:8px;border-radius:50%;background:#ff4d4d;box-shadow:0 0 8px #ff4d4d}
 .ov-cam.live .ov-cam-status{color:#5ef0c7}.ov-cam.live .ov-cam-status i{background:#2fe08f;box-shadow:0 0 8px #2fe08f}
 .ov-cam-body{position:relative;display:block;width:calc(100% - 24px);margin:12px;aspect-ratio:16/10;border:1px solid #2a3c55;border-radius:8px;background:radial-gradient(ellipse at 50% 40%,#1a2738,#0d1520);padding:0;overflow:hidden}
 .ov-cam-body video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);opacity:0}
@@ -328,13 +270,6 @@ kbd{font-family:inherit;font-size:9.5px;border:1px solid #33557e;border-bottom-w
 .ov-route small{display:block;font-size:11px;color:#b9cde6;margin-top:4px}
 .ov-pin{width:30px;height:34px;flex:none;color:#3ab4ff;fill:#1f8fff33}
 .ov-route-bg{position:absolute;right:-6px;top:0;height:100%;width:60%;stroke:#3a6fa855;stroke-width:1.2}
-.ov-info{display:flex;align-items:center;gap:14px;padding:16px 18px;min-height:76px}
-.ov-info small{display:block;font-size:10px;color:#9ab3d5;font-weight:800;letter-spacing:.1em}
-.ov-info b{display:block;font-size:14px;font-weight:800;margin-top:4px}
-.ov-icon{width:34px;height:34px;flex:none;color:#3ab4ff}
-.ov-info-bg{position:absolute;right:0;bottom:0;width:45%;height:100%;fill:#1d3a5c55;stroke:none}
-.ov-cars{display:flex;flex-direction:column;gap:3px;margin-left:auto;padding-left:10px;border-left:1px solid #ffffff1c}
-.ov-cars svg{width:20px;height:16px;color:#9fb3c8}
 .limit-sign.small{width:44px;height:44px;border-width:6px;flex:none}
 .limit-sign.small b{font-size:16px}
 
@@ -344,45 +279,21 @@ kbd{font-family:inherit;font-size:9.5px;border:1px solid #33557e;border-bottom-w
   .ov2d{gap:10px;top:12px;bottom:12px}
   .ov-cam-body{width:72%;margin:8px auto}
   .ov-head{padding:8px 12px}
-  .ov-info{padding:10px 14px;min-height:0}
   .ov-route{padding:10px 14px}
   .ov-tiles{padding:6px 10px 10px}
 }
 @container (max-height:520px){
-  .ov-right .ov-info:nth-child(3){display:none}
   .ov-cam-body{width:55%}
   .monitor-card .cc-metrics{display:none}
   .ov-tile{padding:5px 2px}
 }
 @media(max-width:720px){
-  .ov-right,.ov-dash,.monitor-card .cc-metrics,.monitor-card .cc-foot{display:none}
+  .ov-dash{display:none}
   .ov-left{width:140px;top:8px;left:8px}
   .ov-head .camera-switch b{display:none}
   .view-btn{padding:10px 8px;justify-content:center}
 }
 
-.ov-env-icon{width:38px;height:38px;flex:none}
-
-/* câmera do motorista na cabine 3D (canto superior esquerdo) */
-.cockpit-cam{display:none;position:absolute;top:12px;left:12px;z-index:9;width:clamp(170px,17%,230px);border:1px solid #4f8fd08a;border-radius:12px;background:linear-gradient(150deg,#0b1a2fe8,#060e1bf0);box-shadow:0 12px 26px #0009,0 0 16px #1478ff26;backdrop-filter:blur(10px);overflow:hidden}
-.scene.cockpit-view .cockpit-cam{display:block}
-.cc-head{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:7px 10px;font-size:9.5px;letter-spacing:.07em}
-.cc-head b{font-weight:800}
-.cc-status{display:flex;align-items:center;gap:5px;font-size:8.5px;font-weight:900;color:#ffcf7a}
-.cc-status i{width:7px;height:7px;border-radius:50%;background:#ffcf7a}
-.cockpit-cam.live .cc-status{color:#5ef0c7}.cockpit-cam.live .cc-status i{background:#2fe08f;box-shadow:0 0 8px #2fe08f}
-.cc-view{position:relative;display:block;width:100%;aspect-ratio:4/3;padding:0;border:0;border-top:1px solid #ffffff12;border-bottom:1px solid #ffffff12;background:radial-gradient(ellipse at 50% 40%,#122640,#060d18)}
-.cc-view video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);opacity:0}
-.cockpit-cam.live .cc-view video{opacity:1}
-.cc-view canvas{position:absolute;inset:0;width:100%;height:100%}
-.cc-metrics{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;padding:7px 10px 4px}
-.cc-metrics .metric small{font-size:8.5px}
-.cc-metrics .metric b{font-size:10px;min-width:28px}
-.cc-metrics .metric .bar{height:4px}
-.cc-foot{padding:3px 10px 7px;font-size:8px;font-weight:900;letter-spacing:.08em;color:#ffcf7a}
-.cc-foot.real{color:#5ef0c7}
-@container (max-height:560px){.cc-metrics{display:none}.cockpit-cam{width:clamp(160px,18%,220px)}}
-@media(max-width:720px){.scene.cockpit-view .cockpit-cam{width:120px;top:8px;left:8px}.cc-metrics,.cc-foot,.cc-head b{display:none}}
 
 /* cartão de monitoramento na visão 2D (câmera + detecção simulada + métricas) */
 .monitor-card .ov-head{justify-content:space-between}
@@ -393,8 +304,6 @@ kbd{font-family:inherit;font-size:9.5px;border:1px solid #33557e;border-bottom-w
 .monitor-card .cc-metrics{padding:9px 12px 3px}
 .monitor-card .cc-foot{padding:2px 12px 9px}
 
-.cc-head .camera-switch{gap:6px;font-size:9.5px}.cc-head .switch-track{width:30px;height:17px}.cc-head .switch-track:after{width:11px;height:11px}.cc-head .camera-switch input:checked+.switch-track:after{transform:translateX(13px)}
-@media(max-width:720px){.cc-head{display:flex}.cc-head .camera-switch b,.cc-status{display:none}}
 
 /* scanner real (Partes 1 e 2 na página) */
 .scanner-bar{display:flex;align-items:center;gap:6px;padding:7px 12px 0;flex-wrap:wrap}
@@ -404,6 +313,70 @@ kbd{font-family:inherit;font-size:9.5px;border:1px solid #33557e;border-bottom-w
 .scanner-btn.on{border-color:#2fe08f;background:#0b2b23;color:#9ff7d9;box-shadow:0 0 12px #2fe08f33}
 .scanner-btn:disabled{opacity:.5}
 .model-line{color:#8fb1d4;font-weight:700;letter-spacing:.02em;text-transform:none;padding-top:0}
-.cockpit-cam .scanner-bar{padding:6px 10px 0}
-.cockpit-cam .scanner-btn{padding:4px 6px;font-size:9px}
-@container (max-height:560px){.cockpit-cam .scanner-bar .scanner-status{display:none}}
+
+/* câmera grande na coluna direita (no lugar do velocímetro) */
+.cam-big .cam-head{gap:8px;flex-wrap:wrap}
+.cam-big .cam-head .panel-label{flex:1 1 100%}
+.cam-big .camera-switch{font-size:10.5px;font-weight:800;letter-spacing:.08em}
+/* filtro infravermelho: monocromático e com o rosto realçado, como uma câmera IR de cabine */
+.ir-switch input:checked+.switch-track{background:#5a1f6e;border-color:#d27bff}
+/* Liquid Glass: vidro translúcido com desfoque, brilho especular nas bordas e realce interno */
+.cam-big.glass{position:relative;isolation:isolate;border-radius:26px;border:1px solid rgba(255,255,255,.2);background:linear-gradient(140deg,rgba(255,255,255,.13),rgba(255,255,255,.035) 38%,rgba(110,170,255,.07));-webkit-backdrop-filter:blur(26px) saturate(185%);backdrop-filter:blur(26px) saturate(185%);box-shadow:inset 0 1px 0 rgba(255,255,255,.5),inset 0 -1px 0 rgba(255,255,255,.1),inset 0 0 26px rgba(255,255,255,.06),0 22px 55px rgba(0,0,0,.45)}
+.cam-big.glass::before{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;background:radial-gradient(120% 55% at 15% -12%,rgba(255,255,255,.3),transparent 55%),radial-gradient(90% 60% at 105% 112%,rgba(120,190,255,.2),transparent 60%)}
+.cam-big.glass::after{content:'';position:absolute;inset:1px;border-radius:25px;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.16),transparent 18%,transparent 82%,rgba(255,255,255,.05));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;padding:1px}
+.cam-big.glass .ov-cam-body{border-radius:19px;border:1px solid rgba(255,255,255,.26);box-shadow:inset 0 0 0 1px rgba(255,255,255,.05),0 10px 28px rgba(0,0,0,.4)}
+.cam-big.glass .scanner-btn{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.22);border-radius:12px;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+.cam-big.glass .scanner-btn:hover{background:rgba(255,255,255,.16)}
+.cam-big.glass .metric .bar{background:rgba(255,255,255,.1)}
+.cam-big.glass .switch-track{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3)}
+/* câmera ampliada no centro da tela */
+.cam-big .ov-cam-body{cursor:zoom-in}
+.cam-close{display:none;width:30px;height:30px;padding:0;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#e8f2ff;font-size:13px;line-height:1}
+.cam-close:hover{background:rgba(255,255,255,.2)}
+.cam-big.expanded{position:fixed;z-index:1001;inset:0;margin:auto;width:min(780px,94vw);height:fit-content;max-height:none;overflow:hidden;padding:clamp(12px,2vh,20px)}
+.cam-big.expanded .ov-cam-body{cursor:default}
+.cam-big.expanded .cam-close{display:grid;place-items:center;margin-left:8px}
+.cam-big.expanded .cam-head .panel-label{font-size:12px}
+.cam-backdrop{position:fixed;inset:0;z-index:1000;background:rgba(2,6,16,.38);-webkit-backdrop-filter:blur(12px) saturate(120%);backdrop-filter:blur(12px) saturate(120%);opacity:0;transition:opacity .4s ease}
+.cam-backdrop.show{opacity:1}
+@media(prefers-reduced-motion:reduce){.cam-backdrop{transition:none}}
+.cam-big.ir .ov-cam-body video{filter:grayscale(1) brightness(1.35) contrast(1.45)}
+.cam-big.ir .ov-cam-body{background:radial-gradient(ellipse at 50% 40%,#3a3a3a,#0b0b0b)}
+.cam-big.ir .ov-cam-body:after{content:'IR';position:absolute;top:8px;left:10px;padding:2px 7px;border-radius:6px;background:#000a;color:#e6c4ff;font-size:10px;font-weight:900;letter-spacing:.1em;pointer-events:none}
+.cam-big .cam-status{margin-left:auto;font-size:10px;font-weight:900;letter-spacing:.08em;color:#ffcf7a}
+.cam-big.live .cam-status{color:#5ef0c7}
+.cam-big .ov-cam-body{position:relative;width:100%;aspect-ratio:4/3;margin:0;border:1px solid #4c9dffbb;border-radius:12px;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#122640,#060d18);box-shadow:0 0 0 1px #36baff30,0 0 20px #087fff30}
+.cam-big .ov-cam-body video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);opacity:0}
+.cam-big.live .ov-cam-body video{opacity:1}
+.cam-big .ov-cam-body canvas{position:absolute;inset:0;width:100%;height:100%}
+.cam-big .scanner-bar{padding:10px 0 0}
+.cam-big .scanner-status{font-size:9.5px}
+.cam-big .scanner-btn{padding:7px 11px;font-size:11px}
+.cam-big .cc-metrics{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;padding:10px 0 2px}
+.cam-big .cc-metrics #mFatigue{grid-column:1/-1}
+.cam-big .cc-metrics .metric small{font-size:9.5px}
+.cam-big .cc-metrics .metric b{font-size:11px}
+.cam-big .cc-foot{padding:4px 0 0;font-size:8.5px}
+
+/* carro/caminhão: só ícones (cartão Ambiente na 2D e canto da cabine 3D) */
+.veh-btns{display:inline-flex;gap:6px;margin-left:auto;flex:none;pointer-events:auto}
+.veh-btn{display:grid;place-items:center;width:40px;height:32px;padding:0;border:1px solid #2a4870;border-radius:9px;background:#0b1830;color:#9fc6ec;transition:.2s}
+.veh-btn svg{width:24px;height:20px}
+.veh-btn:hover{border-color:#3ebaff;box-shadow:0 0 14px #087bff30}
+.veh-btn.active{border-color:#30c6ff;background:#0d2a4c;color:#e8f6ff;box-shadow:inset 0 0 12px #0777fd33,0 0 14px #066aff40}
+.hud-vehicle{display:none;position:absolute;top:12px;right:12px;z-index:9;padding:6px;border:1px solid #4f8fd06b;border-radius:12px;background:linear-gradient(150deg,#0b1a2fd9,#060e1be6);box-shadow:0 12px 26px #0008;backdrop-filter:blur(10px)}
+.scene.cockpit-view .hud-vehicle{display:block}
+.veh-btns.compact .veh-btn{width:36px;height:30px}
+.ov-head .veh-btns{gap:4px}
+.ov-head .veh-btn{width:32px;height:28px}
+.ov-head .veh-btn svg{width:20px;height:17px}
+
+/* opções da simulação (título, visões, status, dia/noite) abaixo da cena */
+.stage{display:flex;flex-direction:column}
+.stage .scene{order:0}
+.stage .card-heading{order:1;border-bottom:0;border-top:1px solid #2d6ce744}
+
+/* níveis de alerta na barra abaixo da simulação, no lugar do título */
+.stage-levels{display:flex;flex:1;gap:8px;max-width:620px}
+.stage-levels .level-btn{flex:1;padding:11px 8px;font-size:12px}
+@media(max-width:720px){.stage-levels{max-width:none;flex-basis:100%}}

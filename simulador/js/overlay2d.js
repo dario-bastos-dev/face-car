@@ -3,7 +3,7 @@
 (() => {
 'use strict';
 const V = window.VIGIA;
-const { state, world, env, clamp, lerp } = V;
+const { state, world, clamp, lerp } = V;
 const $ = id => document.getElementById(id);
 
 const LEVEL_COLOR = { normal: '#2fe08f', attention: '#ffc44d', critical: '#ff5a4f', intervention: '#ff3b3b', degraded: '#ffb36b' };
@@ -57,13 +57,6 @@ function update(dt) {
   cls('ovBrake', 'alert', inter && state.speed > .3);
   cls('ovSignal', 'on', !state.degraded);
   cls('ovSignal', 'lost', state.degraded);
-  set('ovTraffic', 'text', String(world.traffic.filter(t => t.z > -20 && t.z < 300).length));
-  set('ovPhase', 'text', env.phase === 'DIA' ? 'Dia' : env.phase === 'NOITE' ? 'Noite' : env.phase[0] + env.phase.slice(1).toLowerCase());
-  set('ovClock', 'text', V.clockText());
-  set('ovTemp', 'text', env.temperature + '°C');
-  const city = V.cityAmount(world.distance) > .5;
-  set('ovEnvName', 'text', city ? 'PERÍMETRO URBANO · ' + V.zoneAt(world.distance).name : 'RODOVIA - MÃO DUPLA');
-  $('ovEnvIcon').dataset.phase = env.night > .5 ? 'night' : 'day';
 }
 
 V.on('ready', () => {

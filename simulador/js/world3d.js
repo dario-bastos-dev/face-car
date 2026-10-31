@@ -316,13 +316,78 @@ function buildTerrain() {
 
 // Faixa do mundo onde ficam os objetos que "rolam" em direção à câmera.
 // Ao entrar (à frente) eles crescem do chão; ao sair (atrás, nos retrovisores) encolhem suavemente.
-const Z_FAR = -560, Z_BACK = 300, WRAP = Z_BACK - Z_FAR, FADE = 80;
+const Z_FAR = -560, Z_BACK = 300, WRAP = Z_BACK - Z_FAR, FADE = 120;
 const FENCE_X = -19; // cerca do pasto (lado esquerdo)
 if (V.WORLD_WRAP !== WRAP) console.warn('VIGIA: WORLD_WRAP do núcleo difere da faixa do cenário 3D');
-function fadeAt(z) { return Math.min(V.smooth(clamp((z - Z_FAR) / FADE, 0, 1)), V.smooth(clamp((Z_BACK - z) / FADE, 0, 1))); }
+
+/* A rolagem acontece no shader: as matrizes das instâncias ficam fixas na GPU e cada vértice
+ * calcula a própria posição (z + deslocamento, com volta na faixa). Assim não há reenvio de
+ * milhares de matrizes por quadro, e cada objeto fica sempre inteiro: entra e sai da faixa
+ * se dissolvendo na névoa, em vez de crescer do chão. A zona (cidade/campo) de cada objeto é
+ * decidida pela posição dele na rodovia, no meio da transição, e não muda enquanto ele passa. */
+const SCROLL = { uScrollD: { value: 0 }, uZoneRel: { value: new Float32Array(8) }, uZoneCity: { value: new Float32Array(8) }, uZoneN: { value: 1 } };
+const ZONE_HALF = 45; // metade da faixa de transição entre cenários (ZONE_BLEND do núcleo)
+const SCROLL_HEAD = `
+uniform float uScrollD; uniform float uZoneRel[8]; uniform float uZoneCity[8]; uniform int uZoneN;
+varying float vScrollFade;
+float scrollZ(float zb) { return mod(zb + uScrollD - (${Z_FAR.toFixed(1)}), ${WRAP.toFixed(1)}) + (${Z_FAR.toFixed(1)}); }
+float scrollCity(float s) {
+  float c = uZoneCity[0], prev = c, st = -1e6;
+  for (int k = 1; k < 8; k++) { if (k >= uZoneN) break; if (uZoneRel[k] <= s) { prev = uZoneCity[k - 1]; c = uZoneCity[k]; st = uZoneRel[k]; } }
+  return s - st >= ${ZONE_HALF.toFixed(1)} ? c : prev;
+}
+float scrollKeep(float z) {
+#if SCROLL_ZONE == 1
+  return scrollCity(-z);
+#elif SCROLL_ZONE == 2
+  return 1.0 - scrollCity(-z);
+#else
+  return 1.0;
+#endif
+}
+float scrollFade(float z) { return min(smoothstep(0.0, 1.0, (z - (${Z_FAR.toFixed(1)})) / ${FADE.toFixed(1)}), smoothstep(0.0, 1.0, (${Z_BACK.toFixed(1)} - z) / ${FADE.toFixed(1)})); }
+`;
+// p = posição já multiplicada pela matriz da instância
+const SCROLL_MOVE = p => `
+  { float zb = instanceMatrix[3][2], sz = scrollZ(zb), keep = scrollKeep(sz);
+    ${p}.xyz = mix(instanceMatrix[3].xyz, ${p}.xyz, keep); ${p}.z += sz - zb; vScrollFade = scrollFade(sz); }`;
+const ZONE_CODE = { city: 1, field: 2 };
+function scrollShader(shader, mode, frag) {
+  Object.assign(shader.uniforms, SCROLL);
+  shader.vertexShader = `#define SCROLL_ZONE ${mode}\n` + SCROLL_HEAD + shader.vertexShader
+    .replace('#include <project_vertex>', THREE.ShaderChunk.project_vertex.replace('mvPosition = instanceMatrix * mvPosition;', 'mvPosition = instanceMatrix * mvPosition;' + SCROLL_MOVE('mvPosition')))
+    .replace('#include <worldpos_vertex>', THREE.ShaderChunk.worldpos_vertex.replace('worldPosition = instanceMatrix * worldPosition;', 'worldPosition = instanceMatrix * worldPosition;' + SCROLL_MOVE('worldPosition')));
+  if (frag) shader.fragmentShader = 'varying float vScrollFade;\n' + shader.fragmentShader
+    .replace('#include <fog_fragment>', '#include <fog_fragment>\n#ifdef USE_FOG\n  gl_FragColor.rgb = mix(fogColor, gl_FragColor.rgb, vScrollFade);\n#endif');
+}
+// Material com a rolagem; um material usado em zonas diferentes ganha uma cópia por zona.
+function scrollMaterial(mat, mode) {
+  const u = mat.userData;
+  if (u.scrollMode === undefined) {
+    u.scrollMode = mode;
+    mat.onBeforeCompile = sh => scrollShader(sh, mode, true);
+    mat.customProgramCacheKey = () => 'scroll' + mode;
+    return mat;
+  }
+  if (u.scrollMode === mode) return mat;
+  u.scrollCopies = u.scrollCopies || {};
+  if (!u.scrollCopies[mode]) { const m = mat.clone(); m.userData = {}; u.scrollCopies[mode] = scrollMaterial(m, mode); }
+  return u.scrollCopies[mode];
+}
+const depthMats = {};
+function scrollDepth(mode) {
+  if (!depthMats[mode]) {
+    const m = depthMats[mode] = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+    m.onBeforeCompile = sh => scrollShader(sh, mode, false);
+    m.customProgramCacheKey = () => 'scrolldepth' + mode;
+  }
+  return depthMats[mode];
+}
 
 function scroller(geo, mat, items, castShadow = false, zone = null) {
-  const mesh = new THREE.InstancedMesh(geo, mat, items.length);
+  const mode = ZONE_CODE[zone] || 0;
+  const mats = Array.isArray(mat) ? mat.map(m => scrollMaterial(m, mode)) : scrollMaterial(mat, mode);
+  const mesh = new THREE.InstancedMesh(geo, mats, items.length);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
   items.forEach((it, i) => {
     e.set(it.rx || 0, it.ry || 0, it.rz || 0); q.setFromEuler(e);
@@ -330,40 +395,26 @@ function scroller(geo, mat, items, castShadow = false, zone = null) {
     mesh.setMatrixAt(i, m);
     if (it.color && mesh.setColorAt) mesh.setColorAt(i, it.color);
   });
-  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   mesh.castShadow = castShadow; mesh.receiveShadow = true; mesh.frustumCulled = false;
-  mesh.userData = { items, zone, base: mesh.instanceMatrix.array.slice() };
+  if (castShadow) mesh.customDepthMaterial = scrollDepth(mode);
+  mesh.userData = { zone };
   scene.add(mesh); (R.scrollers = R.scrollers || []).push(mesh);
   return mesh;
 }
-// Peso da cidade ao longo da faixa, amostrado uma vez por quadro (2 m), em vez de por instância.
-const ZONE_STEP = 2, zoneSamples = new Float32Array(Math.ceil(WRAP / ZONE_STEP) + 2);
-function sampleZones() {
-  let min = 1, max = 0;
-  for (let k = 0; k < zoneSamples.length; k++) {
-    const c = V.cityAmount(world.distance - (Z_FAR + k * ZONE_STEP));
-    zoneSamples[k] = c; if (c < min) min = c; if (c > max) max = c;
-  }
-  return { min, max };
-}
+// Por quadro: só o deslocamento, as zonas próximas e quais grupos têm algo na faixa.
 function updateScrollers() {
-  const d = world.distance % WRAP, hasCity = world.zones.length > 1 || world.zones[0].type === 'city';
-  const { min, max } = hasCity ? sampleZones() : { min: 0, max: 0 };
+  const D = world.distance, z = world.zones, U = SCROLL;
+  U.uScrollD.value = ((D % WRAP) + WRAP) % WRAP;
+  const n = Math.min(z.length, 8);
+  for (let k = 0; k < n; k++) { U.uZoneRel.value[k] = k ? z[k].start - D : -1e6; U.uZoneCity.value[k] = z[k].type === 'city' ? 1 : 0; }
+  U.uZoneN.value = n;
+  // trechos urbanos (já deslocados para o meio da transição) dentro da faixa visível
+  const from = D - Z_BACK, to = D - Z_FAR;
+  const city = V.cityRanges(from - ZONE_HALF, to - ZONE_HALF);
+  const anyCity = city.length > 0, allCity = city.some(([a, b]) => a + ZONE_HALF <= from && b + ZONE_HALF >= to);
   for (const mesh of R.scrollers) {
-    const { items, base, zone } = mesh.userData, arr = mesh.instanceMatrix.array;
-    // nada desta zona na faixa visível: esconde e não reenvia matrizes para a GPU
-    const hidden = (zone === 'city' && max <= 0) || (zone === 'field' && min >= 1);
-    if (hidden) { if (mesh.visible) mesh.visible = false; continue; }
-    mesh.visible = true;
-    for (let i = 0, o = 0; i < items.length; i++, o += 16) {
-      let z = items[i].z + d;
-      if (z > Z_BACK) z -= WRAP;
-      let f = fadeAt(z);
-      if (zone && hasCity) { const c = zoneSamples[Math.round((z - Z_FAR) / ZONE_STEP)]; f *= zone === 'city' ? c : 1 - c; }
-      for (let k = 0; k < 11; k++) arr[o + k] = base[o + k] * f;
-      arr[o + 12] = base[o + 12]; arr[o + 13] = base[o + 13] * f; arr[o + 14] = z; arr[o + 15] = 1;
-    }
-    mesh.instanceMatrix.needsUpdate = true;
+    const zone = mesh.userData.zone;
+    mesh.visible = zone === 'city' ? anyCity : zone === 'field' ? !allCity : true;
   }
 }
 
@@ -1181,19 +1232,42 @@ function updateCamera(dt) {
 }
 
 // Retângulos dos retrovisores fornecidos pelo desenho da cabine (cabin.js).
-function renderMirror(cam, rect, flipX, cx) {
-  const H = container.clientHeight;
-  renderer.setViewport(rect.x, H - rect.y - rect.h, rect.w, rect.h);
-  renderer.setScissor(rect.x, H - rect.y - rect.h, rect.w, rect.h);
-  cam.aspect = rect.w / rect.h; cam.updateProjectionMatrix();
-  // espelhamento horizontal: reflete o mundo no plano x = posição da câmera
-  scene.scale.x = -1; scene.position.x = 2 * cx; scene.updateMatrixWorld(true);
-  renderer.render(scene, cam);
-  scene.scale.x = 1; scene.position.x = 0; scene.updateMatrixWorld(true);
+// Cada retrovisor é renderizado numa textura própria, em resolução reduzida e em quadros
+// alternados (metade de cada vez), e copiado para a tela em todo quadro, invertido na horizontal.
+const mirrorRT = {};
+let blitCam;
+function mirrorTarget(key, rect) {
+  const pr = renderer.getPixelRatio() * .8, w = Math.max(16, Math.round(rect.w * pr)), h = Math.max(16, Math.round(rect.h * pr));
+  let m = mirrorRT[key];
+  if (!m) {
+    const rt = new THREE.WebGLRenderTarget(w, h);
+    const geo = new THREE.PlaneGeometry(2, 2);
+    const uv = geo.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setX(i, 1 - uv.getX(i)); // espelho
+    const quad = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: rt.texture, depthTest: false, depthWrite: false, toneMapped: false }));
+    const sc = new THREE.Scene(); sc.add(quad);
+    m = mirrorRT[key] = { rt, scene: sc, fresh: false };
+    blitCam = blitCam || new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  }
+  if (m.rt.width !== w || m.rt.height !== h) { m.rt.setSize(w, h); m.fresh = false; }
+  return m;
 }
-function placeRear(cam, pos, target, cx) {
-  cam.position.set(pos[0], pos[1], pos[2]);
-  cam.lookAt(2 * cx - target[0], target[1], target[2]);
+function renderMirror(key, cam, rect, pos, target) {
+  const m = mirrorTarget(key, rect);
+  cam.position.set(pos[0], pos[1], pos[2]); cam.lookAt(target[0], target[1], target[2]);
+  cam.aspect = rect.w / rect.h; cam.updateProjectionMatrix();
+  renderer.setRenderTarget(m.rt); renderer.render(scene, cam); renderer.setRenderTarget(null);
+  m.fresh = true;
+}
+// A imagem sai 2 px maior que o vidro em cada lado; o excesso fica sob a carcaça, então
+// arredondamentos de meio pixel ao sacudir nunca abrem fresta entre o reflexo e a moldura.
+const OVERSCAN = 2;
+function blitMirror(key, rect) {
+  const m = mirrorRT[key]; if (!m || !m.fresh) return;
+  const H = container.clientHeight, e = OVERSCAN;
+  const x = rect.x - e, y = H - rect.y - rect.h - e, w = rect.w + e * 2, h = rect.h + e * 2;
+  renderer.setViewport(x, y, w, h);
+  renderer.setScissor(x, y, w, h);
+  renderer.render(m.scene, blitCam);
 }
 
 /* ---------- inicialização ---------- */
@@ -1206,7 +1280,7 @@ function init() {
     renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true, powerPreference: 'high-performance' });
   } catch (e) { fail('WebGL indisponível neste navegador.'); return; }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.shadowMap.autoUpdate = false;
   renderer.autoClear = true;
 
@@ -1294,29 +1368,33 @@ function render(dt) {
   renderer.shadowMap.needsUpdate = true;
   renderer.render(scene, camera);
 
-  // retrovisores (atualizados em quadros alternados para economizar GPU)
+  // retrovisores: metade atualizada por quadro (30 Hz cada), todos copiados para a tela
   const layout = V.cabin?.layout;
   if (layout && layout.mirrors) {
-    renderer.setScissorTest(true);
-    R.farVeg.forEach(m => { m.visible = false; });
     const e = eye(), truck = state.vehicle === 'truck';
     const halfW = truck ? 1.38 : 1.0;
     const cx = V.ROAD.egoLaneX;
     // retrovisores acompanham o balanço vertical da cabine
-    const m = {}; for (const [k, r] of Object.entries(layout.mirrors)) m[k] = { ...r, y: r.y + V.motion.bob };
+    const bob = V.cabin.snap ? V.cabin.snap(V.motion.bob) : V.motion.bob; // o mesmo deslocamento da moldura
+    const m = {}; for (const [k, r] of Object.entries(layout.mirrors)) m[k] = { ...r, y: r.y + bob };
+    const odd = mirrorFrame & 1;
+    R.farVeg.forEach(v => { v.visible = false; });
     // retrovisor interno fica no centro do veículo (não na posição do motorista)
-    if (m.center) { placeRear(rearCams.center, [cx, e.y + .1, e.z + .4], [cx, e.y - .9, 60], cx); renderMirror(rearCams.center, m.center, true, cx); }
-    if (m.left) { const p = [cx - halfW - .25, e.y - .25, e.z - (truck ? .2 : .6)]; placeRear(rearCams.left, p, [p[0] - 1.4, p[1] - 1.2, 60], p[0]); renderMirror(rearCams.left, m.left, true, p[0]); }
-    if (m.right) { const p = [cx + halfW + .25, e.y - .25, e.z - (truck ? .2 : .6)]; placeRear(rearCams.right, p, [p[0] + 1.2, p[1] - 1.2, 60], p[0]); renderMirror(rearCams.right, m.right, true, p[0]); }
-    if (m.lowL) { const p = [cx - halfW - .3, e.y - .6, e.z - .2]; placeRear(rearCams.lowL, p, [p[0] - 4, 0, 24], p[0]); renderMirror(rearCams.lowL, m.lowL, true, p[0]); }
-    if (m.lowR) { const p = [cx + halfW + .3, e.y - .6, e.z - .2]; placeRear(rearCams.lowR, p, [p[0] + 4, 0, 24], p[0]); renderMirror(rearCams.lowR, m.lowR, true, p[0]); }
+    if (m.center && !odd) renderMirror('center', rearCams.center, m.center, [cx, e.y + .1, e.z + .4], [cx, e.y - .9, 60]);
+    if (m.left && !odd) { const p = [cx - halfW - .25, e.y - .25, e.z - (truck ? .2 : .6)]; renderMirror('left', rearCams.left, m.left, p, [p[0] - 1.4, p[1] - 1.2, 60]); }
+    if (m.lowL && !odd) { const p = [cx - halfW - .3, e.y - .6, e.z - .2]; renderMirror('lowL', rearCams.lowL, m.lowL, p, [p[0] - 4, 0, 24]); }
+    if (m.right && odd) { const p = [cx + halfW + .25, e.y - .25, e.z - (truck ? .2 : .6)]; renderMirror('right', rearCams.right, m.right, p, [p[0] + 1.2, p[1] - 1.2, 60]); }
+    if (m.lowR && odd) { const p = [cx + halfW + .3, e.y - .6, e.z - .2]; renderMirror('lowR', rearCams.lowR, m.lowR, p, [p[0] + 4, 0, 24]); }
+    R.farVeg.forEach(v => { v.visible = true; });
+    renderer.setScissorTest(true);
+    for (const k of Object.keys(m)) blitMirror(k, m[k]);
     renderer.setScissorTest(false);
-    R.farVeg.forEach(m => { m.visible = true; });
+    renderer.setViewport(0, 0, w, h);
   }
   mirrorFrame++;
 }
 
-V.world3d = { init, render,
+V.world3d = { init, render, info: () => renderer && { ...renderer.info.render, programs: renderer.info.programs?.length },
   // diagnóstico: posição dos animais em relação ao motorista (z < 0 = à frente)
   animals: () => (R.animals || []).map(a => ({ kind: a.kind, x: +a.x.toFixed(1), z: +(-(a.S - world.distance)).toFixed(1), state: a.state, visible: a.g.visible })), get ready() { return ready; }, get failed() { return failed; } };
 V.on('ready', init);

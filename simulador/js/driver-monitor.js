@@ -12,8 +12,35 @@ const $ = id => document.getElementById(id);
 
 const M = V.monitor = { cameraActive: false, external: false, setMetrics, startCamera, stopCamera };
 let stream = null, canvas, ctx, W = 0, H = 0, dpr = 1;
-const m = { eyesOpen: 1, headPitch: 0, headYaw: 0, yawn: 0, perclos: 4, fatigue: 8, confidence: .97, face: { x: .33, y: .2, w: .34, h: .52 } };
+const m = { eyesOpen: 1, headPitch: 0, headYaw: 0, mouth: .04, perclos: 4, fatigue: 8, confidence: .97, face: { x: .33, y: .2, w: .34, h: .52 } };
 let blinkT = 0, blinkPhase = 0, externalAt = 0, eyesBase = 1;
+// Abertura da boca (abertura_boca do contrato metricas.v1: altura interna dos lábios / largura).
+// 100% = BOCA_REF; bocejo = boca acima de BOCEJO_LIMIAR por BOCEJO_MIN_MS. Ainda não calibrado.
+const BOCA_REF = .7, BOCEJO_LIMIAR = .5, BOCEJO_MIN_MS = 1500;
+let bocaDesde = 0, bocejoAtivo = false;
+function bocejo(v, registrar) {
+  const agora = performance.now();
+  if (v == null || v < BOCEJO_LIMIAR) { bocaDesde = 0; bocejoAtivo = false; return false; }
+  if (!bocaDesde) bocaDesde = agora;
+  if (!bocejoAtivo && agora - bocaDesde >= BOCEJO_MIN_MS) {
+    bocejoAtivo = true;
+    if (registrar) V.log('Bocejo detectado', 'monitor', { abertura_boca: Number(v.toFixed(3)) });
+  }
+  return bocejoAtivo;
+}
+function mouthBar(v) {
+  const yawn = bocejo(v, V.ia?.ativo);
+  setBar('mMouth', clamp((v ?? 0) / BOCA_REF * 100, 0, 100), v == null ? '—' : Math.round(clamp(v / BOCA_REF, 0, 1) * 100) + '%',
+    v == null ? 'warn' : yawn ? 'bad' : v >= BOCEJO_LIMIAR ? 'warn' : 'ok');
+  return yawn;
+}
+// Selo "BOCEJO" logo abaixo do rosto.
+function yawnTag(c, cx, y) {
+  c.font = '800 10px Inter, system-ui, sans-serif';
+  const tw = c.measureText('BOCEJO').width + 16; y = Math.min(y, H - 52);
+  c.fillStyle = 'rgba(60,8,8,.85)'; c.beginPath(); c.roundRect ? c.roundRect(cx - tw / 2, y, tw, 18, 9) : c.rect(cx - tw / 2, y, tw, 18); c.fill();
+  c.fillStyle = '#ff5a4f'; c.textAlign = 'center'; c.fillText('BOCEJO', cx, y + 12.5); c.textAlign = 'left';
+}
 
 function setMetrics(data) {
   M.external = true; externalAt = performance.now();
@@ -22,13 +49,12 @@ function setMetrics(data) {
 }
 
 async function startCamera() {
-  $('camWarning').hidden = $('camWarning3d').hidden = true;
+  $('camWarning').hidden = true;
   if (stream) { stopCamera(); return; }
   if (!navigator.mediaDevices?.getUserMedia) { camError('Abra pelo endereço http://localhost:8000 (ou HTTPS) em um navegador compatível.'); return; }
   try {
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
     $('cameraFeed').srcObject = stream;
-    for (const id of ['cameraFeed3d']) { $(id).srcObject = stream; $(id).play().catch(() => {}); }
     await $('cameraFeed').play().catch(() => {});
     M.cameraActive = true;
     $('monitorCard').classList.add('live');
@@ -42,23 +68,23 @@ async function startCamera() {
 }
 function stopCamera() {
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-  $('cameraFeed').srcObject = null; $('cameraFeed3d').srcObject = null; M.cameraActive = false;
+  $('cameraFeed').srcObject = null; M.cameraActive = false;
   $('monitorCard').classList.remove('live');
   $('camStatus').textContent = 'SIMULAÇÃO'; setSwitches(false);
   V.emit('cameraOff'); // o scanner (ia.js) para junto com a câmera
 }
 // interruptores da câmera na visão 2D e na cabine 3D ficam sempre sincronizados
-function setSwitches(on) { for (const id of ['cameraBtn', 'cameraBtn3d']) $(id).checked = on; }
+function setSwitches(on) { $('cameraBtn').checked = on; }
 function camError(msg) {
-  for (const id of ['camWarning', 'camWarning3d']) { $(id).textContent = msg; $(id).hidden = false; }
+  $('camWarning').textContent = msg; $('camWarning').hidden = false;
   V.log('Webcam: ' + msg, 'error');
 }
 
 // Métricas simuladas por nível (alvo para onde os valores convergem suavemente).
 const TARGET = {
   normal: { eyes: 1, pitch: 0, yawn: 0, perclos: 5, fatigue: 10 },
-  attention: { eyes: .72, pitch: 9, yawn: .55, perclos: 22, fatigue: 48 },
-  critical: { eyes: .38, pitch: 18, yawn: .2, perclos: 46, fatigue: 74 },
+  attention: { eyes: .72, pitch: 9, yawn: .75, perclos: 22, fatigue: 48 },
+  critical: { eyes: .38, pitch: 18, yawn: .6, perclos: 46, fatigue: 74 },
   intervention: { eyes: .05, pitch: 30, yawn: 0, perclos: 82, fatigue: 95 },
   degraded: { eyes: 1, pitch: 0, yawn: 0, perclos: 5, fatigue: 10 }
 };
@@ -71,12 +97,12 @@ function simulate(dt, t) {
   if (blinkT < 0) { blinkPhase = .18; blinkT = V.effectiveLevel() === 'normal' ? 2.5 + Math.random() * 3 : 1.2 + Math.random() * 1.5; }
   blinkPhase = Math.max(0, blinkPhase - dt);
   const blink = blinkPhase > 0 ? Math.sin(blinkPhase / .18 * Math.PI) : 0;
-  const yawnWave = T.yawn ? Math.max(0, Math.sin(t / 1400)) * T.yawn : 0;
   eyesBase = lerp(eyesBase, T.eyes, k);
   m.eyesOpen = eyesBase * (1 - blink * .95);
   m.headPitch = lerp(m.headPitch, T.pitch + Math.sin(t / 900) * (T.pitch ? 3 : .8), k);
   m.headYaw = Math.sin(t / 2300) * 4;
-  m.yawn = lerp(m.yawn, yawnWave, k * 2);
+  const yawnWave = T.yawn ? Math.max(0, Math.sin(t / 1400)) ** 2 * T.yawn : 0;
+  m.mouth = lerp(m.mouth, .04 + yawnWave, k * 2);
   m.perclos = lerp(m.perclos, T.perclos, k * .5);
   m.fatigue = lerp(m.fatigue, T.fatigue, k * .5);
   m.confidence = .95 + Math.sin(t / 700) * .02;
@@ -87,8 +113,60 @@ function simulate(dt, t) {
 // Resolução fixa 4:3: a sobreposição é desenhada mesmo com o cartão oculto,
 // porque o cartão da cabine 3D copia esta imagem.
 function resize() {
-  W = 320; H = 240; dpr = 2;
-  canvas.width = W * dpr; canvas.height = H * dpr;
+  // coordenadas sempre 320×240; a resolução acompanha o tamanho exibido (cartão ampliado fica nítido)
+  W = 320; H = 240; dpr = Math.max(2, Math.ceil((canvas.clientWidth || W) * (window.devicePixelRatio || 1) / W));
+  if (canvas.width !== W * dpr) { canvas.width = W * dpr; canvas.height = H * dpr; }
+}
+
+/* ---------- câmera ampliada ----------
+ * Clicar na imagem leva o cartão da câmera, com todas as opções, do canto para o centro da tela;
+ * o resto da página fica desfocado e continua rodando. A animação parte da posição atual (FLIP). */
+let backdrop = null, placeholder = null;
+// Largura do cartão ampliado para caber inteiro na janela, sem rolagem: a imagem é 4:3,
+// então a altura livre (janela menos cabeçalho, botões e métricas) define a largura.
+function fitExpanded() {
+  const card = $('monitorCard'), body = card.querySelector('.ov-cam-body');
+  const cs = getComputedStyle(card), padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+  const maxW = Math.min(780, innerWidth * .94), maxH = innerHeight * .94;
+  let w = maxW;
+  for (let i = 0; i < 3; i++) { // o texto pode quebrar linha conforme a largura: refaz a conta
+    card.style.width = w + 'px';
+    const other = card.offsetHeight - body.offsetHeight;
+    w = Math.max(240, Math.min(maxW, (maxH - other) * 4 / 3 + padX));
+  }
+  card.style.width = w + 'px';
+}
+function flip(card, from) {
+  const to = card.getBoundingClientRect(), k = from.width / to.width;
+  card.animate([
+    { transformOrigin: '0 0', transform: `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${k})` },
+    { transformOrigin: '0 0', transform: 'none' }
+  ], { duration: 520, easing: 'cubic-bezier(.2,.85,.25,1)' });
+}
+function expandCamera(open) {
+  const card = $('monitorCard');
+  if (open === card.classList.contains('expanded')) return;
+  const from = card.getBoundingClientRect();
+  if (open) {
+    placeholder = document.createElement('div');
+    placeholder.className = 'cam-placeholder'; placeholder.style.height = from.height + 'px';
+    card.before(placeholder);
+    backdrop = document.createElement('div'); backdrop.className = 'cam-backdrop';
+    backdrop.onclick = () => expandCamera(false);
+    card.parentNode.closest('.app-grid').append(backdrop); // dentro da área de tela cheia, se ativa
+    requestAnimationFrame(() => backdrop?.classList.add('show'));
+    card.classList.add('expanded');
+    fitExpanded();
+    V.log('Câmera ampliada', 'camera');
+  } else {
+    card.classList.remove('expanded');
+    card.style.width = '';
+    placeholder?.remove(); placeholder = null;
+    const b = backdrop; backdrop = null;
+    if (b) { b.classList.remove('show'); setTimeout(() => b.remove(), 400); }
+  }
+  resize();
+  flip(card, from);
 }
 function corner(c, x, y, w, h, len) {
   c.beginPath();
@@ -153,12 +231,28 @@ function drawReal(c, color) {
   c.strokeStyle = color; c.lineWidth = 2; corner(c, x0 * W - 6, y0 * H - 6, (x1 - x0) * W + 12, (y1 - y0) * H + 12, 12);
   c.font = '700 10px Inter, system-ui, sans-serif'; c.fillStyle = color; c.textAlign = 'left';
   c.fillText(`ROSTO · CONF. ${Math.round(r.registro.confianca * 100)}%`, x0 * W - 6, y0 * H - 11);
+  perclosTag(c, x1 * W + 14, y0 * H - 6, r.estimativa?.perclos, color);
+  if (bocejoAtivo) yawnTag(c, (x0 + x1) / 2 * W, y1 * H + 10);
   const est = r.estado || 'DEGRADADO';
   const lab = { NORMAL: 'MOTORISTA ATENTO', ATENCAO: 'SINAIS DE FADIGA', ALERTA: 'ALERTA DE SONOLÊNCIA', INTERVENCAO: 'INTERVENÇÃO', DEGRADADO: 'COLETANDO EVIDÊNCIA…' }[est];
   c.font = '800 10px Inter, system-ui, sans-serif';
   const tw = c.measureText(lab).width + 16;
   c.fillStyle = 'rgba(3,10,20,.75)'; c.beginPath(); c.roundRect ? c.roundRect(W / 2 - tw / 2, H - 26, tw, 19, 9) : c.rect(W / 2 - tw / 2, H - 26, tw, 19); c.fill();
   c.fillStyle = color; c.textAlign = 'center'; c.fillText(lab, W / 2, H - 13);
+}
+// Anel com o PERCLOS (fração do tempo com olhos fechados na janela); null = sem evidência.
+function perclosTag(c, x, y, v, color) {
+  const R = 17;
+  x = Math.min(x, W - R * 2 - 6); y = clamp(y, 6, H - R * 2 - 40);
+  const cx = x + R, cy = y + R;
+  const tone = v == null ? '#7f9cbf' : v > .4 ? '#ff5a4f' : v > .15 ? '#ffc44d' : color;
+  c.fillStyle = 'rgba(3,10,20,.72)'; c.beginPath(); c.arc(cx, cy, R + 3, 0, 7); c.fill();
+  c.lineWidth = 3; c.strokeStyle = 'rgba(255,255,255,.14)'; c.beginPath(); c.arc(cx, cy, R - 2, 0, 7); c.stroke();
+  if (v != null) { c.strokeStyle = tone; c.beginPath(); c.arc(cx, cy, R - 2, -Math.PI / 2, -Math.PI / 2 + clamp(v, 0, 1) * Math.PI * 2); c.stroke(); }
+  c.textAlign = 'center'; c.fillStyle = tone;
+  c.font = '800 10px Inter, system-ui, sans-serif'; c.fillText(v == null ? '—' : Math.round(v * 100) + '%', cx, cy + 3.5);
+  c.font = '800 8px Inter, system-ui, sans-serif'; c.fillText('PERCLOS', cx, cy + R + 13);
+  c.textAlign = 'left';
 }
 function realBars() {
   const r = V.ia.ultimo, reg = r?.registro, est = r?.estimativa;
@@ -169,6 +263,7 @@ function realBars() {
   setBar('mHead', clamp((p ?? 0) / 35 * 100, 0, 100), f(p, 1, '°'), p == null ? 'warn' : p > 20 ? 'bad' : p > 8 ? 'warn' : 'ok');
   const pc = est?.perclos;
   setBar('mPerclos', (pc ?? 0) * 100, f(pc, 100, '%'), pc == null ? 'warn' : pc > .4 ? 'bad' : pc > .15 ? 'warn' : 'ok');
+  mouthBar(reg?.abertura_boca);
   const ix = est?.indice;
   setBar('mFatigue', ix ?? 0, f(ix), ix == null ? 'warn' : ix > 65 ? 'bad' : ix > 35 ? 'warn' : 'ok');
   $('monitorSource').textContent = 'IA REAL · MEDIAPIPE' + (V.ia.visivel ? '' : ' · OCULTO');
@@ -195,9 +290,11 @@ function draw(dt, t) {
   const ey = fy + fh * .4 + m.headPitch * .4, ew = fw * .2;
   eyeShape(c, fx + fw * .3, ey, ew, clamp(m.eyesOpen, .04, 1), color);
   eyeShape(c, fx + fw * .7, ey, ew, clamp(m.eyesOpen, .04, 1), color);
-  // boca (bocejo)
-  const my = fy + fh * .78 + m.headPitch * .3, mw = fw * .22, mh = 2 + m.yawn * fh * .14;
+  // boca (abre com a abertura medida) e PERCLOS ao lado do rosto
+  const my = fy + fh * .78 + m.headPitch * .3, mw = fw * .22, mh = Math.max(3, m.mouth * mw);
   c.strokeStyle = color; c.lineWidth = 1.4; c.beginPath(); c.ellipse(fx + fw / 2, my, mw / 2, mh / 2, 0, 0, 7); c.stroke();
+  perclosTag(c, fx + fw + 8, fy, m.perclos / 100, color);
+  if (mouthBar(m.mouth)) yawnTag(c, fx + fw / 2, fy + fh + 8);
   // eixo de orientação da cabeça
   const nx = fx + fw / 2, ny = fy + fh * .55;
   c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 1.5;
@@ -232,30 +329,19 @@ function setBar(id, pct, text, cls) {
 V.on('ready', () => {
   canvas = $('monitorOverlay'); ctx = canvas.getContext('2d');
   resize();
-  for (const id of ['cameraBtn', 'cameraBtn3d']) $(id).onchange = e => e.target.checked ? startCamera() : stopCamera();
+  $('cameraBtn').onchange = e => e.target.checked ? startCamera() : stopCamera();
+  const body = document.querySelector('#monitorCard .ov-cam-body');
+  body.onclick = () => expandCamera(true);
+  body.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); expandCamera(true); } };
+  $('camCloseBtn').onclick = () => expandCamera(false);
+  addEventListener('keydown', e => { if (e.key === 'Escape') expandCamera(false); });
+  addEventListener('resize', () => { if ($('monitorCard').classList.contains('expanded')) { fitExpanded(); resize(); } });
+  document.addEventListener('fullscreenchange', () => { if ($('monitorCard').classList.contains('expanded')) { fitExpanded(); resize(); } });
+  // Filtro infravermelho: só muda a imagem exibida (o MediaPipe lê o vídeo original).
+  $('irBtn').onchange = e => {
+    $('monitorCard').classList.toggle('ir', e.target.checked);
+    V.log(e.target.checked ? 'Filtro de câmera: infravermelho' : 'Filtro de câmera: normal', 'camera');
+  };
 });
 V.addRenderer(draw);
-})();
-
-/* Cópia compacta para a cabine 3D: vídeo + sobreposição + métricas. */
-(() => {
-const V = window.VIGIA, $ = id => document.getElementById(id);
-let ctx, w = 0, h = 0;
-V.on('ready', () => {
-  const cv = $('ccOverlay'); ctx = cv.getContext('2d');
-  new ResizeObserver(() => { w = cv.clientWidth; h = cv.clientHeight; const d = Math.min(devicePixelRatio || 1, 2); cv.width = w * d; cv.height = h * d; }).observe(cv);
-  $('ccView').onclick = () => V.monitor.cameraActive ? V.monitor.stopCamera() : V.monitor.startCamera();
-});
-V.addRenderer(() => {
-  if (V.state.viewMode !== '3d' || !ctx || !w) return;
-  const src = $('monitorOverlay');
-  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-  if (src.width) ctx.drawImage(src, 0, 0, ctx.canvas.width, ctx.canvas.height);
-  const live = V.monitor.cameraActive;
-  $('cockpitCam').classList.toggle('live', live);
-  const st = live ? 'AO VIVO' : 'SIMULAÇÃO';
-  if ($('ccStatus').dataset.s !== st) { $('ccStatus').dataset.s = st; $('ccStatus').innerHTML = '<i></i>' + st; }
-  const srcLabel = V.monitor.external ? 'IA CONECTADA' : 'MÉTRICAS SIMULADAS';
-  if ($('ccSource').textContent !== srcLabel) { $('ccSource').textContent = srcLabel; $('ccSource').classList.toggle('real', V.monitor.external); }
-});
 })();

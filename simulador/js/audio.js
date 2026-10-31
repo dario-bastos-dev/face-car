@@ -71,11 +71,7 @@ function disable() {
   V.log('Áudio desligado', 'audio');
   syncButton();
 }
-function syncButton() {
-  const b = document.getElementById('soundBtn');
-  b.classList.toggle('on', A.enabled); b.setAttribute('aria-pressed', A.enabled);
-  b.querySelector('span').textContent = A.enabled ? 'Áudio ligado' : 'Ativar áudio';
-}
+function syncButton() { document.getElementById('soundToggle').checked = A.enabled; }
 
 /* ---------- efeitos pontuais ---------- */
 function tone(freq, dur, type = 'sine', vol = .12, delay = 0, endFreq = null, dest = bus.alert, pan = 0) {
@@ -165,7 +161,14 @@ function update(dt) {
 }
 
 /* ---------- ligações com o núcleo ---------- */
-V.on('ready', () => { document.getElementById('soundBtn').onclick = () => A.enabled ? disable() : enable(); });
+// Áudio ligado por padrão. O navegador só libera o som após a primeira interação
+// (clique ou tecla); até lá o contexto fica suspenso e é retomado nesse momento.
+V.on('ready', () => {
+  document.getElementById('soundToggle').onchange = e => e.target.checked ? enable() : disable();
+  enable();
+  const liberar = () => { if (A.enabled && ctx?.state === 'suspended') ctx.resume(); };
+  for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, liberar, { capture: true });
+});
 V.on('pass', t => passing(t));
 V.on('blink', on => blink(on));
 V.on('horn', () => { if (!A.enabled) enable(); horn(1); });

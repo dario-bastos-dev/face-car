@@ -11,7 +11,10 @@ let under, over; // camadas estáticas pré-renderizadas
 const emblem = new Image(); emblem.src = 'assets/vigia_v.png'; // "V" do volante, sem fundo
 emblem.onload = () => { if (W) buildStatic(); };
 
-const cabin = V.cabin = { layout: null, resize };
+// Balanço da cabine arredondado para pixels inteiros da tela: deslocamentos fracionários
+// reamostram as bordas (colunas, molduras) e deixam frestas claras piscando ao sacudir.
+const snap = v => Math.round(v * dpr) / dpr;
+const cabin = V.cabin = { layout: null, resize, snap };
 
 function rr(c, x, y, w, h, r) { c.beginPath(); c.roundRect ? c.roundRect(x, y, w, h, r) : (c.moveTo(x + r, y), c.arcTo(x + w, y, x + w, y + h, r), c.arcTo(x + w, y + h, x, y + h, r), c.arcTo(x, y + h, x, y, r), c.arcTo(x, y, x + w, y, r), c.closePath()); }
 function grad(c, x0, y0, x1, y1, stops) { const g = c.createLinearGradient(x0, y0, x1, y1); stops.forEach(([o, col]) => g.addColorStop(o, col)); return g; }
@@ -19,19 +22,32 @@ function txt(c, s, x, y, size, color, weight = 700, align = 'left', base = 'alph
   c.font = `${weight} ${size}px Inter, "Segoe UI", system-ui, sans-serif`; c.fillStyle = color; c.textAlign = align; c.textBaseline = base; c.fillText(s, x, y);
 }
 
+// borda externa (lado da janela) da coluna A esquerda na altura y; a direita é simétrica
+function pillarOuter(y, dt = H * (state.vehicle === 'truck' ? .6 : .625)) { return W * .155 - W * .022 - W * .028 * clamp(y / (dt + H * .02), 0, 1); }
+
 function computeLayout() {
   const truck = state.vehicle === 'truck';
   const narrow = W < 680;
   const dashTop = H * (truck ? .6 : .625);
   const L = { truck, narrow, dashTop, mirrors: {} };
-  // Retrovisores laterais logo abaixo do cartão da câmera (canto superior esquerdo).
-  const below = id => { const el = document.getElementById(id); return el && el.offsetHeight ? el.offsetTop + el.offsetHeight + 16 : 0; };
-  const my = Math.round(Math.max(H * .3, narrow ? 0 : below('cockpitCam')));
-  const mw = clamp(W * .105, 64, 150);
-  const mh = Math.round(clamp(Math.min(H * (truck ? .22 : .19), dashTop + H * .06 - my), 50, 170));
-  L.mirrors.left = { x: Math.round(W * .016), y: my, w: Math.round(mw), h: mh };
-  L.mirrors.right = { x: Math.round(W - W * .016 - mw), y: my, w: Math.round(mw), h: mh };
   if (truck) {
+    // caminhão: espelhos altos presos por braços tubulares
+    const my = Math.round(H * .3);
+    const mw = clamp(W * .095, 60, 140);
+    const mh = Math.round(clamp(Math.min(H * .22, dashTop + H * .06 - my), 50, 170));
+    L.mirrors.left = { x: Math.round(W * .016), y: my, w: Math.round(mw), h: mh };
+    L.mirrors.right = { x: Math.round(W - W * .016 - mw), y: my, w: Math.round(mw), h: mh };
+  } else {
+    // carro: espelho largo e baixo, no canto inferior da janela, encostado na coluna A
+    const x0 = Math.round(W * .012);
+    const mw = clamp(pillarOuter(dashTop - H * .1) - W * .014 - x0, 64, 185);
+    const mh = Math.round(mw * .66);
+    const my = Math.round(dashTop - mh - H * .03);
+    L.mirrors.left = { x: x0, y: my, w: Math.round(mw), h: mh };
+    L.mirrors.right = { x: Math.round(W - x0 - mw), y: my, w: Math.round(mw), h: mh };
+  }
+  if (truck) {
+    const mw = L.mirrors.left.w, mh = L.mirrors.left.h;
     const lh = Math.round(mh * .62);
     L.mirrors.lowL = { x: L.mirrors.left.x + 4, y: L.mirrors.left.y + L.mirrors.left.h + 14, w: Math.round(mw - 8), h: lh };
     L.mirrors.lowR = { x: L.mirrors.right.x + 4, y: L.mirrors.right.y + L.mirrors.right.h + 14, w: Math.round(mw - 8), h: lh };
@@ -43,9 +59,7 @@ function computeLayout() {
   const cmX = Math.min(vehCenter - cmW / 2, W * .83 - cmW);
   L.mirrors.center = { x: Math.round(cmX), y: Math.round(H * .025), w: Math.round(cmW), h: Math.round(clamp(H * .115, 40, 90)) };
   // quebra-sóis: o do motorista à esquerda (onde fica a câmera VIGIA) e o do passageiro à direita do retrovisor
-  const card = document.getElementById('cockpitCam');
-  const cardRight = card && card.offsetWidth ? card.offsetLeft + card.offsetWidth + 14 : 0;
-  const vx = Math.max(W * .19, cardRight), rvx = L.mirrors.center.x + cmW + W * .012;
+  const vx = W * .19, rvx = L.mirrors.center.x + cmW + W * .012;
   L.visors = [{ x: vx, y: H * .035, w: Math.min(W * .17, L.mirrors.center.x - 14 - vx), h: H * .05 }];
   if (W * .835 - rvx > W * .04) L.visors.push({ x: rvx, y: H * .035, w: W * .835 - rvx, h: H * .05 });
   if (narrow) { delete L.mirrors.lowL; delete L.mirrors.lowR; }
@@ -63,17 +77,12 @@ function computeLayout() {
 function resize(w, h) {
   canvas = canvas || document.getElementById('cabinCanvas');
   ctx = ctx || canvas.getContext('2d');
-  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  dpr = Math.min(window.devicePixelRatio || 1, 1.5); // igual ao WebGL: camadas menores, cópia por quadro mais leve
   W = w; H = h;
   canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
   buildStatic();
 }
 V.on('vehicle', () => { if (W) buildStatic(); });
-// os cartões dos cantos mudam de altura (fontes, câmera): reposiciona os retrovisores
-V.on('ready', () => {
-  const ro = new ResizeObserver(() => { if (W) buildStatic(); });
-  ro.observe(document.getElementById('cockpitCam'));
-});
 
 function layer() { const c = document.createElement('canvas'); c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); const x = c.getContext('2d'); x.scale(dpr, dpr); return [c, x]; }
 
@@ -110,17 +119,21 @@ function buildStatic() {
   // painel
   const binL = L.cluster.x - W * .02, binR = L.cluster.x + L.cluster.w + W * .02;
   c.fillStyle = grad(c, 0, dt - H * .05, 0, H, [[0, '#3a3f45'], [.08, '#24282c'], [1, '#0e1012']]);
+  // borda superior: começa na base das colunas A e segue alta até o quadro de instrumentos,
+  // encostando no para-brisa (não sobra vão entre o painel e o vidro)
+  const edge = () => {
+    c.lineTo(W * .1, dt - H * .012);
+    c.quadraticCurveTo(W * .2, dt - H * .032, binL, dt - H * .03);
+    c.quadraticCurveTo(binL + W * .02, dt - H * .075, (binL + binR) / 2, dt - H * .08);
+    c.quadraticCurveTo(binR - W * .02, dt - H * .075, binR, dt - H * .03);
+    c.quadraticCurveTo(W * .8, dt - H * .032, W * .9, dt - H * .012);
+  };
   c.beginPath();
-  c.moveTo(0, H); c.lineTo(0, dt + H * .14);
-  c.lineTo(W * .14, dt + H * .02);
-  c.quadraticCurveTo(W * .2, dt - H * .005, binL, dt);
-  c.quadraticCurveTo(binL + W * .02, dt - H * .065, (binL + binR) / 2, dt - H * .07);
-  c.quadraticCurveTo(binR - W * .02, dt - H * .065, binR, dt);
-  c.quadraticCurveTo(W * .8, dt - H * .005, W * .86, dt + H * .02);
-  c.lineTo(W, dt + H * .14); c.lineTo(W, H); c.closePath(); c.fill();
-  // brilho na borda superior do painel
+  c.moveTo(0, H); c.lineTo(0, dt + H * .1); edge(); c.lineTo(W, dt + H * .1); c.lineTo(W, H); c.closePath(); c.fill();
+  // vedação do para-brisa (faixa escura) e brilho na borda do painel
+  c.strokeStyle = '#08090a'; c.lineWidth = 3; c.beginPath(); c.moveTo(W * .1, dt - H * .012); edge(); c.stroke();
   c.strokeStyle = 'rgba(160,175,190,.22)'; c.lineWidth = 1.5;
-  c.beginPath(); c.moveTo(W * .14, dt + H * .02); c.quadraticCurveTo(W * .2, dt - H * .005, binL, dt); c.quadraticCurveTo(binL + W * .02, dt - H * .065, (binL + binR) / 2, dt - H * .07); c.quadraticCurveTo(binR - W * .02, dt - H * .065, binR, dt); c.quadraticCurveTo(W * .8, dt - H * .005, W * .86, dt + H * .02); c.stroke();
+  c.save(); c.translate(0, 2.5); c.beginPath(); c.moveTo(W * .1, dt - H * .012); edge(); c.stroke(); c.restore();
   // textura granulada do plástico
   for (let i = 0; i < 2400; i++) { c.fillStyle = `rgba(255,255,255,${Math.random() * .025})`; c.fillRect(Math.random() * W, dt + Math.random() * (H - dt), 1, 1); }
 
@@ -142,21 +155,10 @@ function buildStatic() {
     c.strokeStyle = '#444b53'; rr(c, s.x - 7, s.y - 7, s.w + 14, s.h + 14, 14); c.stroke();
   }
 
-  // carcaças dos retrovisores
+  // retrovisores
   for (const [key, m] of Object.entries(L.mirrors)) {
-    const pad = key === 'center' ? 7 : 8;
-    if (key !== 'center') {
-      const side = key.endsWith('L') || key === 'left' ? -1 : 1;
-      const ax = side < 0 ? m.x + m.w + pad - 2 : m.x - pad + 2, ay = m.y + m.h * .55;
-      c.strokeStyle = '#1a1c1f'; c.lineWidth = 7; c.beginPath(); c.moveTo(ax, ay); c.lineTo(side < 0 ? W * .16 : W * .84, ay + H * .04); c.stroke();
-    } else {
-      c.fillStyle = '#1b1d20'; c.fillRect(m.x + m.w / 2 - 6, 0, 12, m.y + 4);
-    }
-    c.fillStyle = grad(c, m.x, m.y, m.x + m.w, m.y + m.h, [[0, '#2c3035'], [1, '#121416']]);
-    rr(c, m.x - pad, m.y - pad, m.w + pad * 2, m.h + pad * 2, key === 'center' ? 14 : 12); c.fill();
-    c.strokeStyle = '#4a5058'; c.lineWidth = 1.2; rr(c, m.x - pad, m.y - pad, m.w + pad * 2, m.h + pad * 2, key === 'center' ? 14 : 12); c.stroke();
-    // furo transparente para o vidro
-    c.save(); c.globalCompositeOperation = 'destination-out'; rr(c, m.x, m.y, m.w, m.h, key === 'center' ? 9 : 7); c.fill(); c.restore();
+    if (key === 'center') drawCenterMirror(c, m);
+    else drawSideMirror(c, L, key, m);
   }
 
   drawDmsCamera(c, L);
@@ -200,6 +202,76 @@ function buildStatic() {
     c.drawImage(emblem, w.cx - ew / 2, w.cy - hubR * .6 - eh / 2, ew, eh);
     c.restore();
   }
+}
+
+/* ---------- retrovisores ----------
+ * Moldura desenhada em volta do retângulo onde o WebGL pinta o reflexo; o vidro é um furo
+ * transparente com cantos concêntricos aos da carcaça. */
+// contorno arredondado com raios por canto: [sup. esq., sup. dir., inf. dir., inf. esq.]
+function shape(c, x, y, w, h, [a, b, d, e]) {
+  c.beginPath(); c.moveTo(x + a, y);
+  c.lineTo(x + w - b, y); c.arcTo(x + w, y, x + w, y + b, b);
+  c.lineTo(x + w, y + h - d); c.arcTo(x + w, y + h, x + w - d, y + h, d);
+  c.lineTo(x + e, y + h); c.arcTo(x, y + h, x, y + h - e, e);
+  c.lineTo(x, y + a); c.arcTo(x, y, x + a, y, a); c.closePath();
+}
+function drawCenterMirror(c, m) {
+  const pad = 7;
+  c.fillStyle = '#1b1d20'; c.fillRect(m.x + m.w / 2 - 6, 0, 12, m.y + 4);
+  c.fillStyle = grad(c, m.x, m.y, m.x + m.w, m.y + m.h, [[0, '#2c3035'], [1, '#121416']]);
+  rr(c, m.x - pad, m.y - pad, m.w + pad * 2, m.h + pad * 2, 14); c.fill();
+  c.strokeStyle = '#4a5058'; c.lineWidth = 1.2; rr(c, m.x - pad, m.y - pad, m.w + pad * 2, m.h + pad * 2, 14); c.stroke();
+  c.save(); c.globalCompositeOperation = 'destination-out'; rr(c, m.x, m.y, m.w, m.h, 9); c.fill(); c.restore();
+}
+function tube(c, x0, y0, x1, y1, t) {
+  c.lineCap = 'round';
+  c.strokeStyle = '#121416'; c.lineWidth = t; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke();
+  c.strokeStyle = 'rgba(190,200,210,.28)'; c.lineWidth = Math.max(1, t * .22); c.beginPath(); c.moveTo(x0, y0 - t * .2); c.lineTo(x1, y1 - t * .2); c.stroke();
+}
+function drawSideMirror(c, L, key, m) {
+  const left = key === 'left' || key === 'lowL', side = left ? -1 : 1;
+  const mirrorX = x => left ? x : W - x; // espelha coordenadas do lado esquerdo
+  const pad = Math.max(6, Math.round(m.h * (L.truck ? .07 : .11)));
+  // lado de fora mais arredondado; o raio é limitado para a carcaça ainda cobrir os 2 px de
+  // sobra da imagem do espelho (OVERSCAN em world3d.js) também nos cantos
+  const rMax = (pad - 2) * 3.4 - 1;
+  const Ro = Math.min(L.truck ? pad * 1.6 : pad * 3.2, rMax), Ri = Math.min(L.truck ? pad * 1.4 : pad * 2.1, rMax);
+  const inner = left ? m.x + m.w + pad : m.x - pad; // borda da carcaça voltada para o carro
+  if (L.truck) {
+    // braços tubulares: dois apoios presos à porta e uma haste vertical ao longo dos espelhos
+    if (key === 'left' || key === 'right') {
+      const t = Math.max(5, W * .0055), low = L.mirrors[left ? 'lowL' : 'lowR'];
+      const rodX = inner + side * t * .2, top = m.y + m.h * .12, bot = (low ? low.y + low.h : m.y + m.h) - m.h * .1;
+      const doorX = mirrorX(pillarOuter(top) - W * .004);
+      tube(c, rodX, top, rodX, bot, t);
+      tube(c, rodX, top, doorX, top + H * .03, t);
+      tube(c, rodX, bot, mirrorX(pillarOuter(bot) - W * .01), bot - H * .02, t);
+    }
+  } else {
+    // base triangular (peça da porta no canto da janela) que segura o espelho, sem haste
+    const yTop = m.y + m.h * .18, yBot = L.dashTop + H * .02;
+    c.fillStyle = grad(c, inner, yTop, mirrorX(pillarOuter(yBot)), yBot, [[0, '#24282d'], [1, '#121417']]);
+    c.beginPath();
+    c.moveTo(inner + side * pad * .5, m.y + m.h * .35);
+    c.lineTo(mirrorX(pillarOuter(yTop) + W * .004), yTop);
+    c.lineTo(mirrorX(pillarOuter(yBot) + W * .004), yBot);
+    c.lineTo(inner + side * pad * .5, m.y + m.h + pad * .4);
+    c.closePath(); c.fill();
+    c.strokeStyle = 'rgba(120,130,140,.25)'; c.lineWidth = 1; c.stroke();
+  }
+  const x = m.x - pad, y = m.y - pad, w = m.w + pad * 2, h = m.h + pad * 2;
+  const radii = left ? [Ro, Ri, Ri, Ro] : [Ri, Ro, Ro, Ri];
+  // carcaça: corpo escuro com volume (mais claro em cima, como plástico pintado)
+  c.save();
+  c.shadowColor = 'rgba(0,0,0,.45)'; c.shadowBlur = 10; c.shadowOffsetY = 3;
+  c.fillStyle = grad(c, 0, y, 0, y + h, [[0, '#3a3f45'], [.45, '#24282d'], [1, '#121417']]);
+  shape(c, x, y, w, h, radii); c.fill();
+  c.restore();
+  c.strokeStyle = 'rgba(150,160,170,.35)'; c.lineWidth = 1.2; shape(c, x, y, w, h, radii); c.stroke();
+  // borda interna (aro de borracha) e furo do vidro
+  const glass = radii.map(r => Math.max(3, r - pad));
+  c.strokeStyle = '#0a0b0c'; c.lineWidth = 2.2; shape(c, m.x - 1, m.y - 1, m.w + 2, m.h + 2, glass.map(r => r + 1)); c.stroke();
+  c.save(); c.globalCompositeOperation = 'destination-out'; shape(c, m.x, m.y, m.w, m.h, glass); c.fill(); c.restore();
 }
 
 /* ---------- câmera de monitoramento do motorista (DMS) ----------
@@ -433,7 +505,7 @@ function drawScreen(L) {
 
 function draw(dt, t) {
   if (state.viewMode !== '3d' || !under || !V.world3d?.ready) return;
-  const L = cabin.layout, dy = V.motion.bob; // balanço vertical da cabine (suspensão)
+  const L = cabin.layout, dy = snap(V.motion.bob); // balanço vertical da cabine (suspensão)
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(under, 0, dy * dpr);

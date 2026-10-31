@@ -70,7 +70,6 @@ function enviar(obj) {
 function fecharWS(anunciar = true) {
   if (!ws) return;
   const w = ws; ws = null; w.onclose = null; w.close();
-  $("wsDot").className = "status-dot"; $("wsStatus").textContent = "Desconectado · modo manual disponível"; $("wsBtn").textContent = "Conectar";
   if (anunciar) V.log("WebSocket desconectado", "connection");
 }
 function conectarWS(url) {
@@ -79,11 +78,10 @@ function conectarWS(url) {
   let w;
   try { w = new WebSocket(url); } catch (e) { V.log("Erro ao criar WebSocket: " + e.message, "error"); return; }
   ws = w;
-  $("wsStatus").textContent = "Conectando a " + url + " …";
+  V.log("Conectando ao estimador em " + url, "connection");
   w.onopen = () => {
     if (ws !== w) return;
     abrirCanal("websocket");
-    $("wsDot").className = "status-dot connected"; $("wsStatus").textContent = "Conectado · aguardando o estimador"; $("wsBtn").textContent = "Desconectar";
   };
   w.onmessage = (e) => {
     for (const linha of String(e.data).split(/\r?\n/)) {
@@ -95,11 +93,10 @@ function conectarWS(url) {
   w.onclose = () => {
     if (ws !== w) return;
     ws = null;
-    $("wsDot").className = "status-dot degraded"; $("wsStatus").textContent = "Conexão encerrada · modo manual disponível"; $("wsBtn").textContent = "Conectar";
     if (canal === "websocket") { canal = null; V.state.channel = null; V.setDegraded("Conexão com o estimador perdida: sistema degradado, sem frenagem"); }
     V.log("WebSocket desconectado", "connection");
   };
-  w.onerror = () => { $("wsStatus").textContent = "Erro de conexão · verifique o servidor local"; };
+  w.onerror = () => V.log("Erro de conexão com o estimador: verifique o servidor local", "error");
 }
 
 /* ---------- replay de mensagens gravadas ---------- */
@@ -113,18 +110,6 @@ function reproduzir(mensagens, nome) {
   for (const m of mensagens) timers.push(setTimeout(() => receber(m, "replay"), Math.max(0, m.ts - t0)));
   const fim = mensagens[mensagens.length - 1].ts - t0;
   timers.push(setTimeout(() => fecharCanal(`Replay ${nome} concluído`), fim + 300));
-}
-// Demonstração: NORMAL → ATENCAO → ALERTA → INTERVENCAO → NORMAL, com ação e heartbeat a cada 500 ms.
-function replayGuiado() {
-  const etapas = [[0, "NORMAL", 12], [2500, "ATENCAO", 42], [6000, "ALERTA", 72], [10500, "INTERVENCAO", 88], [22000, "NORMAL", 15]];
-  const fim = 25000, msgs = [];
-  let seq = 0;
-  for (let t = 0; t <= fim; t += 500) {
-    const [, estado, indice] = etapas.filter(([at]) => at <= t).pop();
-    const [nivel, acao] = { NORMAL: [0, "monitorar"], ATENCAO: [1, "aviso_visual"], ALERTA: [2, "alarme_sonoro"], INTERVENCAO: [3, "desacelerar_simulado"] }[estado];
-    for (const tipo of ["acao", "heartbeat"]) msgs.push({ versao: 1, sessao: "replay-guiado", tipo, seq: ++seq, ts: t, ttl: 2000, estado, nivel, acao, indice, confianca: .9 });
-  }
-  reproduzir(msgs, "guiado");
 }
 async function importarReplay(arquivo) {
   if (!arquivo) return;
@@ -145,7 +130,11 @@ V.on("resposta", () => {
   if (canal === "ia") V.ia?.responder();
 });
 
+// Estimador em Python: abra a página com ?ws=ws://localhost:8765
+const wsInicial = new URLSearchParams(location.search).get("ws");
+if (wsInicial) conectarWS(wsInicial);
+
 V.sinal = {
-  receber, abrirCanal, fecharCanal, conectarWS, replayGuiado, importarReplay,
+  receber, abrirCanal, fecharCanal, conectarWS, importarReplay,
   get canal() { return canal; }, receptor,
 };

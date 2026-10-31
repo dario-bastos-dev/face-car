@@ -134,6 +134,7 @@ async def principal(args) -> None:
     config = carregar_config()
     metricas = [asdict(m) for m in ler_metricas(args.metricas)]
     print(f"Estimador em Python: ws://localhost:{args.porta_ws} · {len(metricas)} métricas de {args.metricas}")
+    print(f"Para comandar o simulador por ele: http://localhost:{args.porta}/simulador/?ws=ws://localhost:{args.porta_ws}")
     async with serve(partial(sessao_estimador, metricas=metricas, config=config, repetir=not args.sem_repetir),
                      "127.0.0.1", args.porta_ws):
         await asyncio.Future()

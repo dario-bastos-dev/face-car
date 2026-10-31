@@ -13,20 +13,6 @@ const now = () => Date.now();
 
 const LEVELS = ['normal', 'attention', 'critical', 'intervention'];
 const LABEL = { normal: 'NORMAL', attention: 'ATENÇÃO', critical: 'CRÍTICO', intervention: 'INTERVENÇÃO', degraded: 'DEGRADADO' };
-const DESCRIPTION = {
-  normal: 'Condução simulada dentro das condições normais. Sem frenagem automática.',
-  attention: 'Sinais de fadiga simulados. Aviso inicial ao motorista, sem reduzir a velocidade.',
-  critical: 'Risco elevado de sonolência. Solicitação de confirmação do motorista.',
-  intervention: 'Comando explícito de intervenção: pisca-alerta ligado e desaceleração simulada.',
-  degraded: 'Comunicação perdida com a Parte 2. Nenhum comando novo de frenagem é aplicado.'
-};
-const BANNER = {
-  normal: ['CONDUÇÃO NORMAL', 'Monitoramento em demonstração'],
-  attention: ['ATENÇÃO · POSSÍVEL FADIGA', 'Atenção do motorista solicitada'],
-  critical: ['ALERTA CRÍTICO', 'Confirme que está atento'],
-  intervention: ['INTERVENÇÃO · POSSÍVEL SONOLÊNCIA', 'Pisca-alerta ligado · desaceleração simulada'],
-  degraded: ['SISTEMA DEGRADADO', 'Sem frenagem por perda de sinal']
-};
 
 const VEHICLES = {
   car: { name: 'CARRO FAMILIAR', maxSpeed: 160, cruise: 90, decel: 2.2, accel: 2.4 },
@@ -94,7 +80,7 @@ function log(message, kind = 'info', extra = {}, silent = false) {
  * para a cidade (ou o campo) chegar pela estrada. Zonas em metros ao longo da rodovia (S). */
 const WORLD_WRAP = 860;                     // padrão de repetição do cenário 3D (m)
 const CROSSINGS = [120, 335, 550, 765];     // cruzamentos urbanos: posições S mod WORLD_WRAP
-const CITY_NAMES = ['MANHUAÇU', 'MATIPÓ'];
+const CITY_NAMES = ['MATIPÓ', 'MANHUAÇU']; // Matipó é a primeira cidade da viagem
 const ZONE_BLEND = 90;                      // faixa de transição entre cenários (m)
 world.zones = [{ type: 'field', start: -1e9 }];
 world.inCity = false;
@@ -411,70 +397,8 @@ function effectiveLevel() { return state.degraded ? 'degraded' : state.level; }
 /* ---------- interface ---------- */
 function refreshUI() {
   const l = effectiveLevel();
-  const pill = $('statePill');
-  pill.textContent = LABEL[l]; pill.className = 'state-pill ' + l;
-  $('stateDescription').textContent = DESCRIPTION[l];
-  const banner = $('roadAlert');
-  banner.className = 'status-banner ' + l;
-  $('roadAlertTitle').textContent = BANNER[l][0];
-  $('roadAlertCaption').textContent = BANNER[l][1];
-  const inter = !state.degraded && state.level === 'intervention';
-  $('hazardLabel').textContent = inter ? 'LIGADO' : 'DESLIGADO';
-  $('hazardLabel').className = inter ? 'warn' : '';
-  $('brakeLabel').textContent = inter && state.speed > .3 ? 'ATIVA' : 'INATIVA';
-  $('brakeLabel').className = inter ? 'danger' : '';
-  $('driverLabel').textContent = state.driver;
-  $('speedCaption').textContent = state.degraded ? 'SINAL DEGRADADO' : inter ? 'REDUÇÃO CONTROLADA' : 'VELOCIDADE ATUAL';
-  $('speedMode').textContent = inter ? 'INTERVENÇÃO EM CURSO' : state.degraded ? 'MODO SEGURO · SEM FREIO' : 'CRUZEIRO SIMULADO';
-  $('sourceLabel').textContent = '● ' + ({ ia: 'IA NA PÁGINA', websocket: 'WEBSOCKET', replay: 'REPLAY' }[state.channel] || 'MODO MANUAL');
-  if (state.degraded) $('roadAlertCaption').textContent = state.degradedReason || BANNER.degraded[1];
   LEVELS.forEach(a => $(a + 'Btn').classList.toggle('active', state.level === a && !state.degraded));
-  $('moreSpeed').disabled = $('lessSpeed').disabled = inter;
   $('scene').dataset.level = l;
-}
-
-// Velocímetro do painel lateral (SVG).
-function angleToPoint(a, r, cx = 160, cy = 120) { const d = a * Math.PI / 180; return [cx + Math.sin(d) * r, cy - Math.cos(d) * r]; }
-function arcPath(start, end, r = 94) {
-  const steps = Math.max(1, Math.ceil(Math.abs(end - start) / 5)); let p = '';
-  for (let i = 0; i <= steps; i++) { const [x, y] = angleToPoint(start + (end - start) * i / steps, r); p += (i ? 'L' : 'M') + x.toFixed(2) + ' ' + y.toFixed(2) + ' '; }
-  return p;
-}
-function renderGaugeScales() {
-  const a = -125, b = 125, max = VEHICLES[state.vehicle].maxSpeed, ns = 'http://www.w3.org/2000/svg';
-  $('gaugeTrack').setAttribute('d', arcPath(a, b));
-  const ticks = $('gaugeTicks'); ticks.replaceChildren();
-  for (let val = 0; val <= max; val += 10) {
-    const deg = a + (b - a) * val / max, major = val % 20 === 0;
-    const [x1, y1] = angleToPoint(deg, major ? 78 : 82), [x2, y2] = angleToPoint(deg, 87);
-    const line = document.createElementNS(ns, 'line');
-    Object.entries({ x1, y1, x2, y2, stroke: val > max * .78 ? '#c98a7d' : '#84b7c4', 'stroke-width': major ? 2.4 : 1.2 }).forEach(([k, v]) => line.setAttribute(k, v));
-    ticks.append(line);
-    if (major) {
-      const [tx, ty] = angleToPoint(deg, 66);
-      const text = document.createElementNS(ns, 'text');
-      Object.entries({ x: tx, y: ty + 3.5, 'text-anchor': 'middle', fill: '#9fb8c6', 'font-size': 10, 'font-weight': 600 }).forEach(([k, v]) => text.setAttribute(k, v));
-      text.textContent = String(val); ticks.append(text);
-    }
-  }
-}
-let lastGauge = -1;
-function renderGauge() {
-  const max = VEHICLES[state.vehicle].maxSpeed, frac = clamp(state.speed / max, 0, 1);
-  const key = Math.round(state.speed * 4) + '|' + state.target;
-  if (key === lastGauge) return; lastGauge = key;
-  $('needleGroup').setAttribute('transform', `rotate(${(-125 + 250 * frac).toFixed(2)} 160 120)`);
-  $('gaugeProgress').setAttribute('d', arcPath(-125, -125 + 250 * Math.max(.002, frac)));
-  $('speedValue').textContent = String(Math.round(state.speed));
-  $('targetSpeed').textContent = String(Math.round(state.target));
-}
-
-let hudCache = {};
-function setText(id, text) { if (hudCache[id] !== text) { hudCache[id] = text; $(id).textContent = text; } }
-function updateHud() {
-  setText('cycleLabel', (env.phase === 'DIA' ? 'DIA' : env.phase) + ' · ' + clockText());
-  setText('cycleSub', env.warp ? 'TRANSIÇÃO…' : env.night > .15 ? 'FARÓIS ALTOS' : 'FARÓIS ACESOS');
-  $('cycleDot').style.background = env.night > .5 ? '#8eb5ff' : env.night > .1 ? '#ffa45c' : '#ffdf7a';
 }
 
 /* ---------- comandos ---------- */
@@ -484,17 +408,11 @@ function setVehicle(v) {
   state.target = state.speed = cruiseFor(); state.manualTarget = false;
   state.driver = 'AGUARDANDO'; state.ackDone = false; state.ackDeadline = 0;
   seedTraffic();
-  $('carBtn').classList.toggle('active', v === 'car'); $('truckBtn').classList.toggle('active', v === 'truck');
-  $('carBtn').setAttribute('aria-pressed', v === 'car'); $('truckBtn').setAttribute('aria-pressed', v === 'truck');
+  document.querySelectorAll('[data-vehicle]').forEach(b => { b.classList.toggle('active', b.dataset.vehicle === v); b.setAttribute('aria-pressed', b.dataset.vehicle === v); });
   $('cockpitVehicleLabel').textContent = VEHICLES[v].name;
-  renderGaugeScales(); lastGauge = -1; renderGauge(); refreshUI();
+  refreshUI();
   emit('vehicle', v);
   log('Veículo selecionado: ' + (v === 'car' ? 'carro familiar' : 'caminhão'), 'vehicle');
-}
-function changeTarget(delta) {
-  const max = VEHICLES[state.vehicle].maxSpeed;
-  state.target = clamp(state.target + delta, 0, max); state.manualTarget = true;
-  lastGauge = -1; renderGauge();
 }
 function setViewMode(v) {
   if (!['2d', '3d'].includes(v)) return;
@@ -502,14 +420,12 @@ function setViewMode(v) {
   $('scene').classList.toggle('cockpit-view', v === '3d');
   $('view2dBtn').classList.toggle('selected', v === '2d'); $('view3dBtn').classList.toggle('selected', v === '3d');
   $('view2dBtn').setAttribute('aria-pressed', v === '2d'); $('view3dBtn').setAttribute('aria-pressed', v === '3d');
-  $('stageTitle').textContent = v === '3d' ? 'Simulação de direção • visão do motorista' : 'Simulação de direção • visão 2D';
   emit('view', v);
   log(v === '3d' ? 'Modo cabine 3D ativado' : 'Visão superior 2D ativada', 'view');
 }
 function setPaused(p) {
   state.paused = p;
   $('scene').classList.toggle('paused', p);
-  $('pauseBtn').textContent = p ? '▶ Continuar' : 'Ⅱ Pausar';
   log(p ? 'Simulação pausada' : 'Simulação retomada', 'pause');
 }
 function reset() {
@@ -518,7 +434,7 @@ function reset() {
   state.target = state.speed = cruiseFor(); state.manualTarget = false;
   seedTraffic();
   if (state.paused) setPaused(false);
-  lastGauge = -1; renderGauge(); refreshUI(); emit('level', 'normal');
+  refreshUI(); emit('level', 'normal');
   log('Cenário reiniciado', 'reset');
 }
 function exportLog() {
@@ -572,30 +488,17 @@ function frame(time) {
       state.ackDeadline = 0; state.driver = 'SEM RESPOSTA'; refreshUI();
       log('Prazo de resposta do motorista excedido', 'timeout');
     }
-    if (inter && Math.random() < dt * 2) refreshUI(); // atualiza "Frenagem ativa/inativa"
   }
-  renderGauge();
-  updateHud();
   for (const r of renderers) { try { r(dt, time); } catch (e) { console.error(e); } }
   requestAnimationFrame(frame);
 }
 
 function bind() {
-  $('carBtn').onclick = () => setVehicle('car');
-  $('truckBtn').onclick = () => setVehicle('truck');
-  $('moreSpeed').onclick = () => changeTarget(5);
-  $('lessSpeed').onclick = () => changeTarget(-5);
+  document.querySelectorAll('[data-vehicle]').forEach(b => b.onclick = () => setVehicle(b.dataset.vehicle));
   // botões manuais assumem o comando: fecham o canal de sinal ativo
   LEVELS.forEach(l => $(l + 'Btn').onclick = () => { VIGIA.sinal?.fecharCanal('Modo manual: canal de sinal fechado'); setLevel(l, 'manual'); });
-  $('ackBtn').onclick = acknowledge;
-  $('hornBtn').onclick = () => { emit('horn'); log('Buzina testada', 'audio'); };
-  $('replayBtn').onclick = () => VIGIA.sinal?.replayGuiado();
-  $('resetBtn').onclick = reset;
-  $('pauseBtn').onclick = () => setPaused(!state.paused);
   $('view2dBtn').onclick = () => setViewMode('2d');
   $('view3dBtn').onclick = () => setViewMode('3d');
-  $('cycleToggle').onclick = toggleDayNight;
-  $('wsBtn').onclick = () => VIGIA.sinal?.conectarWS($('wsUrl').value.trim());
   $('exportBtn').onclick = exportLog;
   $('importReplayBtn').onclick = () => $('replayFile').click();
   $('replayFile').onchange = e => VIGIA.sinal?.importarReplay(e.target.files[0]);
@@ -612,10 +515,17 @@ function bind() {
   $('cycleMinutes').oninput = e => { state.cycleMinutes = Number(e.target.value); syncSettingsLabels(); };
   $('zoneSeconds').oninput = e => { state.zoneSeconds = Number(e.target.value); syncSettingsLabels(); };
   $('reduceMotion').onchange = e => { state.reduceMotion = e.target.checked; };
+  // Tela cheia dividida: simulação à esquerda e câmera/controles à direita (a câmera nunca some).
   $('fullscreenBtn').onclick = () => {
-    const el = $('stageCard');
-    if (document.fullscreenElement) document.exitFullscreen?.(); else el.requestFullscreen?.().catch(() => {});
+    if (document.fullscreenElement) document.exitFullscreen?.();
+    else document.querySelector('.app-grid').requestFullscreen?.().catch(() => {});
   };
+  const viewSwitch = document.querySelector('.view-switch'), viewHome = viewSwitch.parentNode;
+  document.addEventListener('fullscreenchange', () => {
+    const fsLabel = document.fullscreenElement ? 'Sair da tela cheia' : 'Tela cheia';
+    $('fullscreenBtn').title = fsLabel; $('fullscreenBtn').setAttribute('aria-label', fsLabel);
+    (document.fullscreenElement ? $('monitorCard') : viewHome).appendChild(viewSwitch);
+  });
   document.addEventListener('keydown', e => {
     if (e.target.closest('input,textarea')) return;
     const k = e.key.toLowerCase();
@@ -654,7 +564,7 @@ document.addEventListener('DOMContentLoaded', () => {
   bind();
   state.target = state.speed = cruiseFor();
   seedTraffic(); initPeds();
-  renderGaugeScales(); renderGauge(); refreshUI(); syncSettingsLabels();
+  refreshUI(); syncSettingsLabels();
   emit('ready');
   log('Simulador VIGIA (Parte 3) pronto · scanner e câmera opcionais', 'startup');
   requestAnimationFrame(frame);
