@@ -51,16 +51,22 @@ uv sync                      # Python 3.12, mediapipe, opencv-contrib-python, nu
 ### Análise em tempo real com o modelo de imagens
 
 Cada quadro da câmera vai, na memória, para o modelo `cnn_sonolencia.keras`; **nada é gravado**.
-Uma vez por segundo, o terminal mostra a média das probabilidades dos últimos 2 s, e o painel da
-janela mostra a mesma média:
+O terminal mostra, para cada quadro, o vetor que o modelo devolveu, a classe escolhida e o tempo da
+previsão; uma vez por segundo, mostra a média das probabilidades dos últimos 2 s, que é também o que
+aparece no painel da janela:
 
 ```
-[rgb    0,6 s] alerta 94,1%  (sonolento 5,9%)
-[rgb    1,6 s] alerta 95,7%  (sonolento 4,3%)  · 17 q/s
+[rgb    0,890 s] saída [0,6069 0,3931] → alerta (27 ms)
+[rgb    0,938 s] saída [0,9641 0,0359] → alerta (26 ms)
+[rgb    1,038 s] saída [0,0027 0,9973] → sonolento (25 ms)
+[rgb    2,6 s] média 2 s: alerta 73,4%  (sonolento 26,6%)  · 20 q/s
 ```
 
-A média separa uma piscada, que dura uma fração de segundo, do olho que fica fechado; `q/s` é
-quantos quadros por segundo estão sendo analisados.
+O vetor segue a ordem de `classificador.classes` (`alerta`, `sonolento`). A saída de um quadro
+oscila bastante de um quadro para o seguinte; a média separa uma piscada, que dura uma fração de
+segundo, do olho que fica fechado. `q/s` é quantos quadros por segundo estão sendo analisados, e
+`--sem-log` mostra só as médias. Os avisos internos do TensorFlow ficam desligados; para vê-los,
+rode com `TF_CPP_MIN_LOG_LEVEL=0`.
 
 ```bash
 uv run python -m entrada webcam                         # pergunta a câmera; abre a janela
@@ -74,6 +80,7 @@ uv run python -m entrada video <seu-video.mp4> [--mostrar]
 | `--camera` | menu (webcam), `rgb` (vídeo) | webcam: `rgb`, `ir` ou `todas` (repetível); vídeo: nome mostrado no terminal |
 | `--segundos` | sem limite | webcam: parar depois deste tempo |
 | `--sem-janela` | — | webcam: analisar sem abrir a janela |
+| `--sem-log` | — | mostrar só as médias, sem a saída do modelo em cada quadro |
 | `--mostrar` | ligado na webcam, desligado no vídeo | janela com o resultado e o mapeamento do rosto |
 
 #### O modelo

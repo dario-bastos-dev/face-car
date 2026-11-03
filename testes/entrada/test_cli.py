@@ -56,11 +56,15 @@ def test_video_mostra_uma_linha_por_segundo_e_nao_grava_nada(tmp_path, capsys, m
     antes = sorted(p for p in RAIZ.rglob("*") if p.is_file() and ".git" not in p.parts)
     monkeypatch.chdir(tmp_path)
     assert main(["video", str(VIDEO)]) == 0
-    linhas = [l for l in capsys.readouterr().out.splitlines() if l.startswith("[rgb")]
+    saida = capsys.readouterr().out.splitlines()
+    linhas = [l for l in saida if l.startswith("[rgb") and "média" in l]
     assert [l[:14] for l in linhas] == ["[rgb    0,0 s]", "[rgb    1,0 s]", "[rgb    2,0 s]",
                                          "[rgb    3,0 s]"]
     assert all("alerta" in l or "sonolento" in l for l in linhas)
     assert "q/s" not in linhas[0] and all("30 q/s" in l for l in linhas[1:])  # 1 por quadro
+    # Uma linha por quadro com o que o modelo devolveu.
+    logs = [l for l in saida if "saída [" in l]
+    assert len(logs) == 120 and logs[1].startswith("[rgb    0,033 s] saída [")
     depois = sorted(p for p in RAIZ.rglob("*") if p.is_file() and ".git" not in p.parts)
     novos = [p for p in set(depois) - set(antes) if "__pycache__" not in p.parts
              and ".pytest_cache" not in p.parts]
@@ -227,3 +231,10 @@ def test_video_so_abre_a_janela_com_mostrar():
 def test_sem_tela_nao_abre_a_janela_e_avisa(capsys):
     assert not janela_ativa(analisar("webcam"), {})
     assert "sem tela" in capsys.readouterr().err
+
+
+@tem_modelo_ia
+def test_sem_log_mostra_so_as_medias(capsys):
+    assert main(["video", str(VIDEO), "--sem-log"]) == 0
+    saida = capsys.readouterr().out
+    assert "saída [" not in saida and saida.count("média") == 4

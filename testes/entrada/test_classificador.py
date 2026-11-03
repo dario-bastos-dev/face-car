@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from entrada.classificador import (ClassificadorSonolencia, MediaTemporal, Resultado, formatar,
-                                   preparar)
+                                   formatar_saida, preparar)
 from entrada.contexto import RAIZ
 
 CLASSES = ["sonolento", "alerta"]
@@ -99,3 +99,15 @@ def test_media_temporal_mede_quadros_por_segundo():
 
 def test_media_temporal_vazia():
     assert MediaTemporal(janela_ms=2000).resumo() == (None, 0.0)
+
+
+def test_resultado_guarda_a_saida_bruta_do_modelo_e_o_tempo():
+    c = ClassificadorSonolencia(["alerta", "sonolento"], modelo=ModeloFalso((0.8125, 0.1875)))
+    r = c.classificar(np.zeros((480, 640, 3), np.uint8))
+    assert r.saida == pytest.approx([0.8125, 0.1875])   # exatamente o que o modelo devolveu
+    assert r.ms is not None and r.ms >= 0
+
+
+def test_formatar_saida_mostra_o_vetor_a_classe_e_o_tempo():
+    r = Resultado("alerta", {"alerta": 0.98134, "sonolento": 0.01866}, saida=[0.98134, 0.01866], ms=21.6)
+    assert formatar_saida(r) == "saída [0,9813 0,0187] → alerta (22 ms)"

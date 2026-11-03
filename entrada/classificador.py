@@ -4,6 +4,7 @@ O modelo foi treinado com o quadro inteiro da câmera, em RGB, redimensionado pa
 96x96, com os pixels de 0 a 255: a normalização é uma camada dentro dele.
 """
 
+import time
 from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
@@ -14,8 +15,16 @@ import numpy as np
 
 @dataclass
 class Resultado:
+    """Classe escolhida e probabilidades por classe.
+
+    `saida` é o vetor exatamente como o modelo devolveu e `ms` o tempo da previsão;
+    ficam vazios nas médias, que não vêm de uma previsão só.
+    """
+
     classe: str
     probabilidades: dict
+    saida: list | None = None
+    ms: float | None = None
 
 
 def preparar(quadro_bgr, tamanho: int) -> np.ndarray:
@@ -35,6 +44,12 @@ def formatar(resultado: Resultado) -> str:
     outras = [f"{c} {pct(p)}" for c, p in resultado.probabilidades.items()
               if c != resultado.classe]
     return f"{resultado.classe} {pct(resultado.probabilidades[resultado.classe])}  ({', '.join(outras)})"
+
+
+def formatar_saida(resultado: Resultado) -> str:
+    """Ex.: "saída [0,9813 0,0187] → alerta (22 ms)"."""
+    vetor = " ".join(f"{v:.4f}".replace(".", ",") for v in resultado.saida)
+    return f"saída [{vetor}] → {resultado.classe} ({resultado.ms:.0f} ms)"
 
 
 class ClassificadorSonolencia:
@@ -64,10 +79,14 @@ class ClassificadorSonolencia:
     def classificar(self, quadro_bgr) -> Resultado:
         # predict_on_batch roda o grafo compilado: ~22 ms por quadro nesta máquina, contra
         # ~160 ms de modelo(x), que executa camada por camada.
-        saida = self.modelo.predict_on_batch(preparar(quadro_bgr, self.tamanho))
+        entrada = preparar(quadro_bgr, self.tamanho)
+        inicio = time.perf_counter()
+        saida = self.modelo.predict_on_batch(entrada)
+        ms = (time.perf_counter() - inicio) * 1000
         probabilidades = np.asarray(saida, dtype=float)[0]
         return Resultado(self.classes[int(np.argmax(probabilidades))],
-                         dict(zip(self.classes, probabilidades.tolist())))
+                         dict(zip(self.classes, probabilidades.tolist())),
+                         probabilidades.tolist(), ms)
 
 
 class MediaTemporal:

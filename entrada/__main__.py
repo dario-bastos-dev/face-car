@@ -5,7 +5,8 @@
     uv run python -m entrada metricas video|webcam ...   (métricas em CSV para as Partes 2 e 3)
 
 Cada quadro vai, na memória, para o modelo Keras da configuração (cnn_sonolencia.keras);
-nada é gravado. O terminal mostra uma vez por segundo a média dos últimos segundos.
+nada é gravado. O terminal mostra o que o modelo devolve em cada quadro e, uma vez por
+segundo, a média dos últimos segundos (--sem-log mostra só a média).
 """
 
 import argparse
@@ -16,7 +17,8 @@ from contextlib import ExitStack
 
 import cv2
 
-from entrada.classificador import ClassificadorSonolencia, MediaTemporal, formatar
+from entrada.classificador import (ClassificadorSonolencia, MediaTemporal, formatar,
+                                   formatar_saida)
 from entrada.contexto import CAMINHO_CONFIG, RAIZ, carregar_config, carregar_pontos_rosto
 from entrada.mapa import desenhar_mapa
 
@@ -37,14 +39,17 @@ class Analisador:
         self.media = MediaTemporal(janela_ms)
         self.intervalo_terminal_ms = intervalo_terminal_ms
         self.qps = 0.0
+        self.ultimo = None
         self._ultima_linha = None
 
     def processar(self, quadro, t_ms: int):
         """(rosto ou None, resumo da janela, se é hora de mostrar no terminal).
 
-        A imagem do modelo sai do quadro antes de qualquer desenho na janela.
+        A imagem do modelo sai do quadro antes de qualquer desenho na janela; o
+        resultado deste quadro fica em `ultimo`.
         """
-        self.media.adicionar(t_ms, self.classificador.classificar(quadro))
+        self.ultimo = self.classificador.classificar(quadro)
+        self.media.adicionar(t_ms, self.ultimo)
         resumo, self.qps = self.media.resumo()
         rosto = self.detector.detectar(quadro, t_ms) if self.detector is not None else None
         mostrar = (self._ultima_linha is None
@@ -90,8 +95,8 @@ def _carregar_classificador(config: dict) -> ClassificadorSonolencia:
     return ClassificadorSonolencia.carregar(caminho, cfg["classes"])
 
 
-def _segundos(t_ms: int) -> str:
-    return f"{t_ms / 1000:6.1f} s".replace(".", ",")
+def _segundos(t_ms: int, casas: int = 1) -> str:
+    return f"{t_ms / 1000:{5 + casas}.{casas}f} s".replace(".", ",")
 
 
 def _analisar(args, config: dict, classificador, cameras: list, quadros) -> int:
@@ -105,6 +110,7 @@ def _analisar(args, config: dict, classificador, cameras: list, quadros) -> int:
 
     mostrar = janela_ativa(args)
     cfg = config["classificador"]
+    janela_s = f"{cfg['janela_ms'] / 1000:g}".replace(".", ",")
     pontos_rosto = carregar_pontos_rosto()
     with ExitStack() as pilha:
         analisadores = {
@@ -117,9 +123,12 @@ def _analisar(args, config: dict, classificador, cameras: list, quadros) -> int:
             for camera, quadro, t_ms in quadros:
                 analisador = analisadores[camera]
                 rosto, resumo, hora_de_mostrar = analisador.processar(quadro, t_ms)
+                if not args.sem_log:
+                    print(f"[{camera} {_segundos(t_ms, 3)}] {formatar_saida(analisador.ultimo)}")
                 if hora_de_mostrar:
                     taxa = f"  · {analisador.qps:.0f} q/s" if analisador.qps else ""
-                    print(f"[{camera} {_segundos(t_ms)}] {formatar(resumo)}{taxa}", flush=True)
+                    print(f"[{camera} {_segundos(t_ms)}] média {janela_s} s: {formatar(resumo)}"
+                          f"{taxa}", flush=True)
                 if mostrar:
                     cv2.imshow(f"{camera} - {JANELA}",
                                desenhar(quadro, resumo, rosto, pontos_rosto))
@@ -264,6 +273,8 @@ def main(argv=None) -> int:
     p.add_argument("--camera", help="nome da câmera que gravou o vídeo, no terminal (padrão: rgb)")
     p.add_argument("--mostrar", action="store_true",
                    help="abrir a janela com o resultado e o mapeamento")
+    p.add_argument("--sem-log", action="store_true",
+                   help="não mostrar a saída do modelo em cada quadro, só a média")
     p.set_defaults(func=cmd_video)
 
     p = sub.add_parser("webcam", help="analisar as webcams da configuração em tempo real")
@@ -273,6 +284,8 @@ def main(argv=None) -> int:
     p.add_argument("--segundos", type=float, help="parar depois deste tempo")
     p.add_argument("--sem-janela", action="store_true", help="analisar sem abrir a janela")
     p.add_argument("--mostrar", action="store_true", help="(a janela já abre por padrão)")
+    p.add_argument("--sem-log", action="store_true",
+                   help="não mostrar a saída do modelo em cada quadro, só a média")
     p.set_defaults(func=cmd_webcam)
 
     args = parser.parse_args(argv)
