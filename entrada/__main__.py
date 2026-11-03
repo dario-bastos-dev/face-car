@@ -2,6 +2,7 @@
 
     uv run python -m entrada webcam --rotulo alerta --pessoa p01 [--camera rgb|ir|todas] [--sem-janela]
     uv run python -m entrada video <seu-video.mp4> --rotulo sonolento --pessoa p07 [--camera ir]
+    uv run python -m entrada metricas video|webcam ...   (métricas em CSV para as Partes 2 e 3)
 
 Os recortes vão para <saida>/<camera>/<rotulo>/<pessoa>_<origem>_<t_ms>ms.jpg e ficam
 só neste computador. A cada captura, o quadro inteiro vai para o modelo Keras da
@@ -274,6 +275,14 @@ def _silenciar_bibliotecas() -> None:
 
 def main(argv=None) -> int:
     _silenciar_bibliotecas()
+    argv = sys.argv[1:] if argv is None else list(argv)
+    # Métricas em CSV (contrato metricas.v1) para as Partes 2 e 3: linha de comando própria.
+    if argv[:1] == ["metricas"]:
+        from entrada import metricas_cli
+        return metricas_cli.main(argv[1:])
+    if argv[:1] == ["comparar"]:
+        from entrada import metricas_cli
+        return metricas_cli.main(argv)
     parser = argparse.ArgumentParser(prog="python -m entrada", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--config", default=CAMINHO_CONFIG, help="arquivo de configuração")
@@ -293,6 +302,12 @@ def main(argv=None) -> int:
                        help="abrir a janela com o mapeamento (padrão na webcam)")
         p.add_argument("--sem-modelo", action="store_true",
                        help="não enviar as capturas para o modelo de sonolência")
+
+    # Só para aparecerem na ajuda: são tratados acima, por entrada/metricas_cli.py.
+    sub.add_parser("metricas", add_help=False,
+                   help="extrair métricas em CSV (contrato metricas.v1) para as Partes 2 e 3: "
+                        "metricas video|webcam ...")
+    sub.add_parser("comparar", add_help=False, help="comparar dois CSVs de métricas")
 
     p = sub.add_parser("video", help="capturar recortes de um arquivo de vídeo")
     p.add_argument("video")

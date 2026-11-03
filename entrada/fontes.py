@@ -75,7 +75,8 @@ class FonteWebcam:
         self._thread = threading.Thread(target=self._ler, name="captura-webcam", daemon=True)
         self._thread.start()
 
-    def _agora_ms(self) -> float:
+    def agora_ms(self) -> float:
+        """Milissegundos no relógio desta webcam (o mesmo do t_ms dos quadros)."""
         return (time.monotonic() - self._t0) * 1000
 
     def _ler(self) -> None:
@@ -89,7 +90,7 @@ class FonteWebcam:
                 if not ok:
                     break
                 with self._condicao:
-                    self._ultimo = (quadro, int(self._agora_ms()), indice)
+                    self._ultimo = (quadro, int(self.agora_ms()), indice)
                     self._condicao.notify_all()
                 indice += 1
         finally:

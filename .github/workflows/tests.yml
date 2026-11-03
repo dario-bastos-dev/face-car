@@ -29,3 +29,18 @@ jobs:
 
       - name: Executar testes Python
         run: uv run pytest
+
+  javascript:
+    name: Testes JavaScript
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Executar testes JavaScript
+        run: npm test

@@ -1,0 +1,1868 @@
+{
+  "casos": [
+    {
+      "nome": "vazio",
+      "metricas": [],
+      "esperado": {
+        "indice": null,
+        "confianca": 0,
+        "perclos": null,
+        "tempo_valido_ms": 0
+      }
+    },
+    {
+      "nome": "primeiro_quadro",
+      "metricas": [
+        {
+          "t_ms": 0,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        }
+      ],
+      "esperado": {
+        "indice": null,
+        "confianca": 0,
+        "perclos": null
+      }
+    },
+    {
+      "nome": "aberto",
+      "metricas": [
+        {
+          "t_ms": 0,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 100,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 200,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 300,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 400,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 500,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 600,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 700,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 800,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 900,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1000,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1100,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1200,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1300,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1400,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1500,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1600,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1700,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1800,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1900,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2000,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        }
+      ],
+      "esperado": {
+        "indice": 0,
+        "perclos": 0,
+        "confianca": 1,
+        "cobertura": 1,
+        "tempo_valido_ms": 2000,
+        "amostras_validas": 20
+      }
+    },
+    {
+      "nome": "fechado_80_limite",
+      "metricas": [
+        {
+          "t_ms": 0,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 100,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 200,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 300,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 400,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 500,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 600,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 700,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 800,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 900,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1000,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1100,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1200,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1300,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1400,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1500,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1600,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1700,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1800,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1900,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2000,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2100,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2200,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2300,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2400,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2500,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2600,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2700,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2800,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2900,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 3000,
+          "rosto_visivel": true,
+          "ear_esq": 0.1,
+          "ear_dir": 0.1,
+          "confianca": 1,
+          "atraso_ms": 0
+        }
+      ],
+      "esperado": {
+        "indice": 100,
+        "perclos": 1,
+        "confianca": 1,
+        "fechamento_continuo_ms": 3000
+      }
+    },
+    {
+      "nome": "piscada_200ms",
+      "metricas": [
+        {
+          "t_ms": 0,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 100,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 200,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 300,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 400,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 500,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 600,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 700,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 800,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 900,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1000,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1100,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1200,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1300,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1400,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1500,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1600,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1700,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1800,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1900,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2000,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        }
+      ],
+      "esperado": {
+        "perclos": 0,
+        "indice": 0,
+        "confianca": 1
+      }
+    },
+    {
+      "nome": "episodio_300ms",
+      "metricas": [
+        {
+          "t_ms": 0,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 100,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 200,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 300,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 400,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 500,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 600,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 700,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 800,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 900,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1000,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1100,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1200,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1300,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1400,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1500,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1600,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1700,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1800,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1900,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2000,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        }
+      ],
+      "esperado": {
+        "perclos": 0.15,
+        "indice": 15,
+        "tempo_fechado_ms": 300
+      }
+    },
+    {
+      "nome": "fps_irregular",
+      "metricas": [
+        {
+          "t_ms": 0,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 200,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 400,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 500,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 750,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1000,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        }
+      ],
+      "esperado": {
+        "perclos": 0.4,
+        "indice": 40,
+        "tempo_valido_ms": 1000,
+        "confianca": 0.5
+      }
+    },
+    {
+      "nome": "nao_interpolar_lacuna",
+      "metricas": [
+        {
+          "t_ms": 0,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1000,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        }
+      ],
+      "esperado": {
+        "perclos": 0,
+        "confianca": 0.03125,
+        "cobertura": 0.25,
+        "tempo_valido_ms": 250
+      }
+    },
+    {
+      "nome": "expirado",
+      "metricas": [
+        {
+          "t_ms": 0,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 100,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 200,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 300,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 400,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 500,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 600,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 700,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 800,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 900,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1000,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1100,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1200,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1300,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1400,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1500,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1600,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1700,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1800,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1900,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2000,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        }
+      ],
+      "agora_ms": 2300,
+      "esperado": {
+        "confianca": 0,
+        "tempo_valido_ms": 2250
+      }
+    },
+    {
+      "nome": "janela_recortada",
+      "config_patch": {
+        "janela_s": 3
+      },
+      "metricas": [
+        {
+          "t_ms": 0,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 100,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 200,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 300,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 400,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 500,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 600,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 700,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 800,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 900,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1000,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1100,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1200,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1300,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1400,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1500,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1600,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1700,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1800,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1900,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2000,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2100,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2200,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2300,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2400,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2500,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2600,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2700,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2800,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2900,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.05,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 3000,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 3100,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 3200,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 3300,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 3400,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 3500,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 3600,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 3700,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 3800,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 3900,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 4000,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 4100,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 4200,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 4300,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 4400,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 4500,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 4600,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 4700,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 4800,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 4900,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 5000,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        }
+      ],
+      "esperado": {
+        "perclos": 0.3333333333333333,
+        "tempo_valido_ms": 3000,
+        "tempo_fechado_ms": 1000,
+        "confianca": 1
+      }
+    },
+    {
+      "nome": "um_olho_aberto",
+      "metricas": [
+        {
+          "t_ms": 0,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 100,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 200,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 300,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 400,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 500,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 600,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 700,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 800,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 900,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1000,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1100,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1200,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1300,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1400,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1500,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1600,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1700,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1800,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1900,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2000,
+          "rosto_visivel": true,
+          "ear_esq": 0.05,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        }
+      ],
+      "esperado": {
+        "perclos": 0,
+        "indice": 0
+      }
+    },
+    {
+      "nome": "rosto_ausente_final",
+      "metricas": [
+        {
+          "t_ms": 0,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 100,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 200,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 300,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 400,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 500,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 600,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 700,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 800,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 900,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1000,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1100,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1200,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1300,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1400,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1500,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1600,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1700,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1800,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 1900,
+          "rosto_visivel": true,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        },
+        {
+          "t_ms": 2000,
+          "rosto_visivel": false,
+          "ear_esq": 0.3,
+          "ear_dir": 0.3,
+          "confianca": 1,
+          "atraso_ms": 0
+        }
+      ],
+      "esperado": {
+        "confianca": 0,
+        "perclos": 0
+      }
+    }
+  ]
+}

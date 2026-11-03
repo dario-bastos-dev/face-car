@@ -1,0 +1,19 @@
+{
+  "contrato": "metricas",
+  "versao": 1,
+  "descricao": "Um registro por quadro, produzido pelo extrator e consumido pelo estimador e pelo treino. Campos de métrica ficam vazios quando o rosto não é detectado.",
+  "formato": "csv",
+  "colunas": [
+    {"nome": "t_ms", "tipo": "inteiro", "unidade": "ms", "descricao": "Marca de tempo do quadro: posição no vídeo, ou relógio monotônico desde o início da captura na webcam."},
+    {"nome": "quadro", "tipo": "inteiro", "descricao": "Índice do quadro na fonte, a partir de 0."},
+    {"nome": "rosto_visivel", "tipo": "booleano", "descricao": "1 se o rosto foi detectado, 0 caso contrário."},
+    {"nome": "ear_esq", "tipo": "real", "casas": 4, "descricao": "Eye Aspect Ratio do olho esquerdo do motorista."},
+    {"nome": "ear_dir", "tipo": "real", "casas": 4, "descricao": "Eye Aspect Ratio do olho direito do motorista."},
+    {"nome": "abertura_boca", "tipo": "real", "casas": 4, "descricao": "Média das três distâncias verticais internas dos lábios dividida pela largura interna da boca."},
+    {"nome": "yaw", "tipo": "real", "casas": 2, "unidade": "graus", "descricao": "Giro da cabeça em torno do eixo vertical. Positivo: rosto virado para a direita da imagem."},
+    {"nome": "pitch", "tipo": "real", "casas": 2, "unidade": "graus", "descricao": "Inclinação da cabeça. Positivo: cabeça para baixo."},
+    {"nome": "roll", "tipo": "real", "casas": 2, "unidade": "graus", "descricao": "Rolagem da cabeça. Positivo: rotação anti-horária na imagem."},
+    {"nome": "confianca", "tipo": "real", "casas": 3, "descricao": "Confiança do rastreio de 0 a 1: zero sem rosto; com rosto, cai quando os pontos rígidos tremem entre quadros."},
+    {"nome": "atraso_ms", "tipo": "real", "casas": 1, "unidade": "ms", "descricao": "Arquivo: tempo de processamento do quadro. Webcam: tempo entre a captura e a chegada do resultado."}
+  ]
+}

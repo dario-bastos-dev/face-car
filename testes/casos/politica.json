@@ -1,0 +1,1891 @@
+{
+  "descricao": "Casos comuns Python/JavaScript; tempos em ms e limites inclusivos.",
+  "casos": [
+    {
+      "nome": "recupera_normal",
+      "inicial": "DEGRADADO",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 24.999,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        },
+        {
+          "t_ms": 250,
+          "indice": 24.999,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        },
+        {
+          "t_ms": 500,
+          "indice": 24.999,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        },
+        {
+          "t_ms": 750,
+          "indice": 24.999,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        },
+        {
+          "t_ms": 1000,
+          "indice": 24.999,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        },
+        {
+          "t_ms": 1250,
+          "indice": 24.999,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        },
+        {
+          "t_ms": 1500,
+          "indice": 24.999,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        },
+        {
+          "t_ms": 1750,
+          "indice": 24.999,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        },
+        {
+          "t_ms": 1999,
+          "indice": 24.999,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        },
+        {
+          "t_ms": 2000,
+          "indice": 24.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        }
+      ]
+    },
+    {
+      "nome": "recupera_atencao_limite",
+      "inicial": "DEGRADADO",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        },
+        {
+          "t_ms": 250,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        },
+        {
+          "t_ms": 500,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        },
+        {
+          "t_ms": 750,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        },
+        {
+          "t_ms": 1000,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        },
+        {
+          "t_ms": 1250,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        },
+        {
+          "t_ms": 1500,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        },
+        {
+          "t_ms": 1750,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        },
+        {
+          "t_ms": 1999,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        },
+        {
+          "t_ms": 2000,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        }
+      ]
+    },
+    {
+      "nome": "normal_atencao_limite",
+      "inicial": "NORMAL",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 35,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 250,
+          "indice": 35,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 500,
+          "indice": 35,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 750,
+          "indice": 35,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 999,
+          "indice": 35,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 1000,
+          "indice": 35,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        }
+      ]
+    },
+    {
+      "nome": "atencao_normal_limite",
+      "inicial": "ATENCAO",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 250,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 500,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 750,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 1000,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 1250,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 1500,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 1750,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 2000,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 2250,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 2500,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 2750,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 2999,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 3000,
+          "indice": 25,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        }
+      ]
+    },
+    {
+      "nome": "atencao_alerta_limite",
+      "inicial": "ATENCAO",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 250,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 500,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 750,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 1000,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 1250,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 1499,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 1500,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        }
+      ]
+    },
+    {
+      "nome": "alerta_atencao_limite",
+      "inicial": "ALERTA",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 250,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 500,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 750,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 1000,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 1250,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 1500,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 1750,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 2000,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 2250,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 2500,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 2750,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 2999,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 3000,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        }
+      ]
+    },
+    {
+      "nome": "alerta_intervencao_prazo",
+      "inicial": "ALERTA",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 250,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 500,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 750,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 1000,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 1250,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 1500,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 1750,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 2000,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 2250,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 2500,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 2750,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 3000,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 3250,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 3500,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 3750,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 4000,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 4250,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 4500,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 4750,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 4999,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 5000,
+          "indice": 65,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        }
+      ]
+    },
+    {
+      "nome": "intervencao_atencao_limite",
+      "inicial": "INTERVENCAO",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 250,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 500,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 750,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 1000,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 1250,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 1500,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 1750,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 2000,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 2250,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 2500,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 2750,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 2999,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 3000,
+          "indice": 45,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        }
+      ]
+    },
+    {
+      "nome": "falha_NORMAL",
+      "inicial": "NORMAL",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 99,
+          "confianca": 0.649999,
+          "estado_esperado": "DEGRADADO"
+        }
+      ]
+    },
+    {
+      "nome": "falha_ATENCAO",
+      "inicial": "ATENCAO",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 99,
+          "confianca": 0.649999,
+          "estado_esperado": "DEGRADADO"
+        }
+      ]
+    },
+    {
+      "nome": "falha_ALERTA",
+      "inicial": "ALERTA",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 99,
+          "confianca": 0.649999,
+          "estado_esperado": "DEGRADADO"
+        }
+      ]
+    },
+    {
+      "nome": "falha_INTERVENCAO",
+      "inicial": "INTERVENCAO",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 99,
+          "confianca": 0.649999,
+          "estado_esperado": "DEGRADADO"
+        }
+      ]
+    },
+    {
+      "nome": "histerese_NORMAL",
+      "inicial": "NORMAL",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 250,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 500,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 750,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 1000,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 1250,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 1500,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 1750,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 2000,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 2250,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 2500,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 2750,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 3000,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 3250,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 3500,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 3750,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 4000,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 4250,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 4500,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 4750,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 5000,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 5250,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 5500,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 5750,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 5999,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 6000,
+          "indice": 34.999,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        }
+      ]
+    },
+    {
+      "nome": "histerese_ATENCAO",
+      "inicial": "ATENCAO",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 250,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 500,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 750,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 1000,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 1250,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 1500,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 1750,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 2000,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 2250,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 2500,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 2750,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 3000,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 3250,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 3500,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 3750,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 4000,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 4250,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 4500,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 4750,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 5000,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 5250,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 5500,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 5750,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 5999,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        },
+        {
+          "t_ms": 6000,
+          "indice": 25.001,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        }
+      ]
+    },
+    {
+      "nome": "histerese_ALERTA",
+      "inicial": "ALERTA",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 250,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 500,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 750,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 1000,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 1250,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 1500,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 1750,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 2000,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 2250,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 2500,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 2750,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 3000,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 3250,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 3500,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 3750,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 4000,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 4250,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 4500,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 4750,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 5000,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 5250,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 5500,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 5750,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 5999,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 6000,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        }
+      ]
+    },
+    {
+      "nome": "histerese_INTERVENCAO",
+      "inicial": "INTERVENCAO",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 250,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 500,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 750,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 1000,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 1250,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 1500,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 1750,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 2000,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 2250,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 2500,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 2750,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 3000,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 3250,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 3500,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 3750,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 4000,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 4250,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 4500,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 4750,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 5000,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 5250,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 5500,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 5750,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 5999,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        },
+        {
+          "t_ms": 6000,
+          "indice": 45.001,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        }
+      ]
+    },
+    {
+      "nome": "pendencia_interrompida",
+      "inicial": "NORMAL",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 35,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 500,
+          "indice": 35,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 750,
+          "indice": 34,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 1000,
+          "indice": 35,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 1500,
+          "indice": 35,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 1999,
+          "indice": 35,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 2000,
+          "indice": 35,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        }
+      ]
+    },
+    {
+      "nome": "lacuna_reinicia_duracao",
+      "inicial": "NORMAL",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 35,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 501,
+          "indice": 35,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 1001,
+          "indice": 35,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 1500,
+          "indice": 35,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 1501,
+          "indice": 35,
+          "confianca": 1,
+          "estado_esperado": "ATENCAO"
+        }
+      ]
+    },
+    {
+      "nome": "estimativa_expirada",
+      "inicial": "NORMAL",
+      "passos": [
+        {
+          "t_ms": 250,
+          "estimativa_t_ms": 0,
+          "indice": 20,
+          "confianca": 1,
+          "estado_esperado": "NORMAL"
+        },
+        {
+          "t_ms": 251,
+          "estimativa_t_ms": 0,
+          "indice": 20,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        }
+      ]
+    },
+    {
+      "nome": "sem_indice",
+      "inicial": "INTERVENCAO",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": null,
+          "confianca": 1,
+          "estado_esperado": "DEGRADADO"
+        }
+      ]
+    },
+    {
+      "nome": "resposta_renova_prazo_sem_apagar_risco",
+      "inicial": "ALERTA",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 250,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 500,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 750,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 1000,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 1250,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 1500,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 1750,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 2000,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 2250,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 2500,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 2750,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 3000,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 3250,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 3500,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 3750,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 4000,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 4250,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 4500,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 4750,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 5000,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": true,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 5250,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 5500,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 5750,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 6000,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 6250,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 6500,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 6750,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 7000,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 7250,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 7500,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 7750,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 8000,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 8250,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 8500,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 8750,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 9000,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 9250,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 9500,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 9750,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 9999,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 10000,
+          "indice": 80,
+          "confianca": 1,
+          "resposta_motorista": false,
+          "estado_esperado": "INTERVENCAO"
+        }
+      ]
+    },
+    {
+      "nome": "lacuna_reinicia_prazo",
+      "inicial": "ALERTA",
+      "passos": [
+        {
+          "t_ms": 0,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 6000,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 6250,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 6500,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 6750,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 7000,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 7250,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 7500,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 7750,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 8000,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 8250,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 8500,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 8750,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 9000,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 9250,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 9500,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 9750,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 10000,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 10250,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 10500,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 10750,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "ALERTA"
+        },
+        {
+          "t_ms": 11000,
+          "indice": 80,
+          "confianca": 1,
+          "estado_esperado": "INTERVENCAO"
+        }
+      ]
+    }
+  ]
+}
