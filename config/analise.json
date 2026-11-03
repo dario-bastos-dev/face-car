@@ -1,5 +1,5 @@
 {
-  "versao": 6,
+  "versao": 7,
   "mediapipe": {
     "modelo": "modelos/face_landmarker.task",
     "min_confianca_deteccao": 0.5,
@@ -32,5 +32,12 @@
     ],
     "janela_ms": 2000,
     "intervalo_terminal_ms": 1000
+  },
+  "rosto": {
+    "ear_olho_fechado": 0.18,
+    "piscada_max_ms": 400,
+    "olhos_fechados_alerta_ms": 1000,
+    "abertura_boca_aberta": 0.4,
+    "bocejo_min_ms": 1500
   }
 }

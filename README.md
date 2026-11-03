@@ -56,17 +56,36 @@ previsão; uma vez por segundo, mostra a média das probabilidades dos últimos 
 aparece no painel da janela:
 
 ```
-[rgb    0,890 s] saída [0,6069 0,3931] → alerta (27 ms)
-[rgb    0,938 s] saída [0,9641 0,0359] → alerta (26 ms)
-[rgb    1,038 s] saída [0,0027 0,9973] → sonolento (25 ms)
+[rgb    0,790 s] saída [1,0000 0,0000] → alerta (34 ms) | olhos abertos (EAR 0,24) · boca fechada (0,01) · cabeça frente
+[rgb    0,838 s] saída [0,0027 0,9973] → sonolento (17 ms) | olhos fechados (EAR 0,09) · boca fechada (0,01) · cabeça baixo
+[rgb    1,042 s] evento: piscada (0,20 s)
 [rgb    2,6 s] média 2 s: alerta 73,4%  (sonolento 26,6%)  · 20 q/s
 ```
 
 O vetor segue a ordem de `classificador.classes` (`alerta`, `sonolento`). A saída de um quadro
 oscila bastante de um quadro para o seguinte; a média separa uma piscada, que dura uma fração de
 segundo, do olho que fica fechado. `q/s` é quantos quadros por segundo estão sendo analisados, e
-`--sem-log` mostra só as médias. Os avisos internos do TensorFlow ficam desligados; para vê-los,
-rode com `TF_CPP_MIN_LOG_LEVEL=0`.
+`--sem-log` mostra só os eventos e as médias. Os avisos internos do TensorFlow ficam desligados;
+para vê-los, rode com `TF_CPP_MIN_LOG_LEVEL=0`.
+
+#### Olhos, boca e cabeça
+
+Depois da barra `|`, cada linha mostra o estado do rosto. Ele **não vem do modelo**, que só diz
+alerta ou sonolento: vem da geometria do rosto (MediaPipe), com as mesmas fórmulas do extrator de
+métricas. O EAR mede a abertura do olho e a abertura da boca é a distância interna dos lábios
+dividida pela largura da boca. Os eventos aparecem numa linha própria, também com `--sem-log`:
+
+| Evento | Quando |
+| --- | --- |
+| `piscada (0,20 s)` | olhos fechados por até 0,4 s e reabertos |
+| `olhos fechados há mais de 1 s` | enquanto continuam fechados; ao reabrir, `olhos reabertos após …` |
+| `olhos fechados por …` | fechados por mais que uma piscada e menos de 1 s |
+| `bocejo` | boca aberta por mais de 1,5 s (menos que isso é fala) |
+
+Os limiares ficam em `rosto`, em `config/analise.json`: EAR abaixo de 0,18 é olho fechado
+(`ear_olho_fechado`) e abertura acima de 0,40 é boca aberta (`abertura_boca_aberta`). São pontos de
+partida: o EAR de olho aberto muda com a pessoa, a câmera, a luz e os óculos (na webcam colorida
+ficou entre 0,21 e 0,30), então convém ajustá-los olhando os valores do log.
 
 ```bash
 uv run python -m entrada webcam                         # pergunta a câmera; abre a janela
@@ -80,7 +99,7 @@ uv run python -m entrada video <seu-video.mp4> [--mostrar]
 | `--camera` | menu (webcam), `rgb` (vídeo) | webcam: `rgb`, `ir` ou `todas` (repetível); vídeo: nome mostrado no terminal |
 | `--segundos` | sem limite | webcam: parar depois deste tempo |
 | `--sem-janela` | — | webcam: analisar sem abrir a janela |
-| `--sem-log` | — | mostrar só as médias, sem a saída do modelo em cada quadro |
+| `--sem-log` | — | mostrar só os eventos e as médias, sem uma linha por quadro |
 | `--mostrar` | ligado na webcam, desligado no vídeo | janela com o resultado e o mapeamento do rosto |
 
 #### O modelo

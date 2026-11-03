@@ -5,8 +5,10 @@
     uv run python -m entrada metricas video|webcam ...   (métricas em CSV para as Partes 2 e 3)
 
 Cada quadro vai, na memória, para o modelo Keras da configuração (cnn_sonolencia.keras);
-nada é gravado. O terminal mostra o que o modelo devolve em cada quadro e, uma vez por
-segundo, a média dos últimos segundos (--sem-log mostra só a média).
+nada é gravado. O terminal mostra, em cada quadro, o que o modelo devolve e o estado dos
+olhos, da boca e da cabeça (pela geometria do rosto); avisa piscadas, olhos fechados e
+bocejos; e, uma vez por segundo, mostra a média dos últimos segundos (--sem-log mostra só
+os eventos e a média).
 """
 
 import argparse
@@ -20,6 +22,7 @@ import cv2
 from entrada.classificador import (ClassificadorSonolencia, MediaTemporal, formatar,
                                    formatar_saida)
 from entrada.contexto import CAMINHO_CONFIG, RAIZ, carregar_config, carregar_pontos_rosto
+from entrada.estado_rosto import LimiaresRosto, MonitorRosto, formatar_estado
 from entrada.mapa import desenhar_mapa
 
 JANELA = "analise (q para sair)"
@@ -28,14 +31,16 @@ JANELA = "analise (q para sair)"
 class Analisador:
     """Classifica todo quadro e resume os resultados de uma câmera.
 
-    O detector de rosto é opcional: só serve ao mapeamento na janela, porque o modelo
-    recebe o quadro inteiro.
+    O modelo recebe o quadro inteiro. O detector de rosto e o monitor, opcionais,
+    acompanham olhos, boca e cabeça pela geometria do rosto e alimentam o mapeamento.
     """
 
     def __init__(self, classificador, detector=None, janela_ms: int = 2000,
-                 intervalo_terminal_ms: int = 1000):
+                 intervalo_terminal_ms: int = 1000, monitor: MonitorRosto | None = None):
         self.classificador = classificador
         self.detector = detector
+        self.monitor = monitor
+        self.estado = None
         self.media = MediaTemporal(janela_ms)
         self.intervalo_terminal_ms = intervalo_terminal_ms
         self.qps = 0.0
@@ -46,12 +51,14 @@ class Analisador:
         """(rosto ou None, resumo da janela, se é hora de mostrar no terminal).
 
         A imagem do modelo sai do quadro antes de qualquer desenho na janela; o
-        resultado deste quadro fica em `ultimo`.
+        resultado deste quadro fica em `ultimo` e o estado do rosto em `estado`.
         """
         self.ultimo = self.classificador.classificar(quadro)
         self.media.adicionar(t_ms, self.ultimo)
         resumo, self.qps = self.media.resumo()
         rosto = self.detector.detectar(quadro, t_ms) if self.detector is not None else None
+        if self.monitor is not None:
+            self.estado = self.monitor.atualizar(t_ms, rosto)
         mostrar = (self._ultima_linha is None
                    or t_ms - self._ultima_linha >= self.intervalo_terminal_ms)
         if mostrar:
@@ -59,9 +66,11 @@ class Analisador:
         return rosto, resumo, mostrar
 
 
-def desenhar(quadro, resumo, rosto=None, pontos_rosto=None):
-    """Mostra o resultado do modelo e o mapeamento do rosto."""
+def desenhar(quadro, resumo, rosto=None, pontos_rosto=None, estado=None):
+    """Mostra o resultado do modelo, o estado dos olhos e da boca e o mapeamento do rosto."""
     linhas = [f"modelo: {formatar(resumo).split('  (')[0]}" if resumo else "modelo: ..."]
+    if estado is not None and estado.olhos is not None:
+        linhas += [f"olhos: {estado.olhos}", f"boca: {estado.boca}"]
     if rosto is not None:
         linhas += desenhar_mapa(quadro, rosto.pontos, rosto.matriz, pontos_rosto)
     cv2.rectangle(quadro, (0, 0), (280, 10 + 22 * len(linhas)), (0, 0, 0), -1)
@@ -110,28 +119,33 @@ def _analisar(args, config: dict, classificador, cameras: list, quadros) -> int:
 
     mostrar = janela_ativa(args)
     cfg = config["classificador"]
+    limiares = LimiaresRosto(**config["rosto"])
     janela_s = f"{cfg['janela_ms'] / 1000:g}".replace(".", ",")
     pontos_rosto = carregar_pontos_rosto()
     with ExitStack() as pilha:
         analisadores = {
-            camera: Analisador(classificador,
-                               pilha.enter_context(DetectorRosto(config)) if mostrar else None,
-                               cfg["janela_ms"], cfg["intervalo_terminal_ms"])
+            camera: Analisador(classificador, pilha.enter_context(DetectorRosto(config)),
+                               cfg["janela_ms"], cfg["intervalo_terminal_ms"],
+                               MonitorRosto(limiares, pontos_rosto))
             for camera in cameras
         }
         try:
             for camera, quadro, t_ms in quadros:
                 analisador = analisadores[camera]
                 rosto, resumo, hora_de_mostrar = analisador.processar(quadro, t_ms)
+                instante = f"[{camera} {_segundos(t_ms, 3)}]"
                 if not args.sem_log:
-                    print(f"[{camera} {_segundos(t_ms, 3)}] {formatar_saida(analisador.ultimo)}")
+                    print(f"{instante} {formatar_saida(analisador.ultimo)} | "
+                          f"{formatar_estado(analisador.estado)}")
+                for evento in analisador.estado.eventos:
+                    print(f"{instante} evento: {evento}", flush=True)
                 if hora_de_mostrar:
                     taxa = f"  · {analisador.qps:.0f} q/s" if analisador.qps else ""
                     print(f"[{camera} {_segundos(t_ms)}] média {janela_s} s: {formatar(resumo)}"
                           f"{taxa}", flush=True)
                 if mostrar:
                     cv2.imshow(f"{camera} - {JANELA}",
-                               desenhar(quadro, resumo, rosto, pontos_rosto))
+                               desenhar(quadro, resumo, rosto, pontos_rosto, analisador.estado))
                     if cv2.waitKey(1) & 0xFF == ord("q"):
                         break
         except KeyboardInterrupt:
@@ -274,7 +288,7 @@ def main(argv=None) -> int:
     p.add_argument("--mostrar", action="store_true",
                    help="abrir a janela com o resultado e o mapeamento")
     p.add_argument("--sem-log", action="store_true",
-                   help="não mostrar a saída do modelo em cada quadro, só a média")
+                   help="não mostrar cada quadro, só os eventos e a média")
     p.set_defaults(func=cmd_video)
 
     p = sub.add_parser("webcam", help="analisar as webcams da configuração em tempo real")
@@ -285,7 +299,7 @@ def main(argv=None) -> int:
     p.add_argument("--sem-janela", action="store_true", help="analisar sem abrir a janela")
     p.add_argument("--mostrar", action="store_true", help="(a janela já abre por padrão)")
     p.add_argument("--sem-log", action="store_true",
-                   help="não mostrar a saída do modelo em cada quadro, só a média")
+                   help="não mostrar cada quadro, só os eventos e a média")
     p.set_defaults(func=cmd_webcam)
 
     args = parser.parse_args(argv)

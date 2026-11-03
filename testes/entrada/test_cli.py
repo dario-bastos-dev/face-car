@@ -45,6 +45,19 @@ def test_analisador_classifica_todo_quadro_e_resume_uma_vez_por_segundo():
     assert resumo.probabilidades["alerta"] == pytest.approx(0.6, abs=0.02)  # média de 0,9 e 0,3
 
 
+class DetectorSemRosto:
+    def detectar(self, _quadro, _t_ms):
+        return None
+
+
+def test_analisador_guarda_o_estado_do_rosto_do_quadro():
+    from entrada.estado_rosto import LimiaresRosto, MonitorRosto
+    analisador = Analisador(ClassificadorFalso(), DetectorSemRosto(),
+                            monitor=MonitorRosto(LimiaresRosto()))
+    analisador.processar(np.zeros((8, 8, 3), np.uint8), 0)
+    assert analisador.estado.olhos is None and analisador.estado.eventos == []
+
+
 def test_analisador_sem_detector_nao_procura_o_rosto():
     analisador = Analisador(ClassificadorFalso(), janela_ms=2000, intervalo_terminal_ms=1000)
     rosto, _, _ = analisador.processar(np.zeros((8, 8, 3), np.uint8), 0)
@@ -62,9 +75,12 @@ def test_video_mostra_uma_linha_por_segundo_e_nao_grava_nada(tmp_path, capsys, m
                                          "[rgb    3,0 s]"]
     assert all("alerta" in l or "sonolento" in l for l in linhas)
     assert "q/s" not in linhas[0] and all("30 q/s" in l for l in linhas[1:])  # 1 por quadro
-    # Uma linha por quadro com o que o modelo devolveu.
+    # Uma linha por quadro com o que o modelo devolveu e o estado do rosto.
     logs = [l for l in saida if "saída [" in l]
     assert len(logs) == 120 and logs[1].startswith("[rgb    0,033 s] saída [")
+    assert all(" | " in l for l in logs)
+    assert "olhos abertos (EAR " in logs[0] and "boca fechada" in logs[0] and "cabeça " in logs[0]
+    assert all("rosto não detectado" in l for l in logs[30:46])   # tela preta do vídeo
     depois = sorted(p for p in RAIZ.rglob("*") if p.is_file() and ".git" not in p.parts)
     novos = [p for p in set(depois) - set(antes) if "__pycache__" not in p.parts
              and ".pytest_cache" not in p.parts]
@@ -238,3 +254,11 @@ def test_sem_log_mostra_so_as_medias(capsys):
     assert main(["video", str(VIDEO), "--sem-log"]) == 0
     saida = capsys.readouterr().out
     assert "saída [" not in saida and saida.count("média") == 4
+
+
+def test_desenho_mostra_olhos_e_boca_no_painel():
+    from entrada.estado_rosto import EstadoRosto
+    estado = EstadoRosto("fechados", 0.05, "aberta", 0.6, "baixo")
+    quadro = np.zeros((320, 400, 3), np.uint8)
+    desenhar(quadro, None, None, None, estado)
+    assert quadro[50:80, :200].any()   # linhas extras no painel
