@@ -1,5 +1,5 @@
 {
-  "versao": 3,
+  "versao": 4,
   "mediapipe": {
     "modelo": "modelos/face_landmarker.task",
     "min_confianca_deteccao": 0.5,
@@ -32,5 +32,12 @@
       "largura": null,
       "altura": null
     }
-  ]
+  ],
+  "classificador": {
+    "modelo": "cnn_sonolencia.keras",
+    "classes": [
+      "sonolento",
+      "alerta"
+    ]
+  }
 }

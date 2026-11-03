@@ -11,3 +11,4 @@ detalhes/
 /treinamento/resultados/*
 /treinamento/resultados_cnn/*
 /treinamento/dados/reais/
+*.keras

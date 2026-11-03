@@ -188,3 +188,36 @@ def test_video_so_abre_a_janela_com_mostrar():
 def test_sem_tela_nao_abre_a_janela_e_avisa(capsys):
     assert not janela_ativa(analisar("webcam"), {})
     assert "sem tela" in capsys.readouterr().err
+
+
+MODELO_IA = RAIZ / "cnn_sonolencia.keras"
+tem_modelo_ia = pytest.mark.skipif(not (MODELO_IA.exists() and VIDEO.exists() and MODELO.exists()),
+                                   reason="precisa de cnn_sonolencia.keras e de scripts/preparar.sh")
+
+
+@tem_modelo_ia
+def test_cada_captura_mostra_o_resultado_do_modelo(tmp_path, capsys):
+    assert main(["video", str(VIDEO), "--saida", str(tmp_path), "--intervalo-ms", "1000"]) == 0
+    linhas = [l for l in capsys.readouterr().out.splitlines() if l.startswith("[rgb")]
+    assert len(linhas) == 4  # uma por captura: 0, 1,533, 2,533 e 3,533 s
+    assert linhas[1].startswith("[rgb    1,5 s] ")
+    assert all(("alerta" in l or "sonolento" in l) and "%" in l for l in linhas)
+
+
+@tem_dados
+def test_sem_modelo_nao_classifica(tmp_path, capsys):
+    assert main(["video", str(VIDEO), "--saida", str(tmp_path), "--sem-modelo"]) == 0
+    assert not any(l.startswith("[rgb") for l in capsys.readouterr().out.splitlines())
+
+
+@tem_dados
+def test_modelo_ausente_avisa_e_segue_capturando(tmp_path, capsys):
+    import json
+    config = carregar_config()
+    config["classificador"]["modelo"] = "nao_existe.keras"
+    arquivo = tmp_path / "config.json"
+    arquivo.write_text(json.dumps(config))
+    assert main(["--config", str(arquivo), "video", str(VIDEO), "--saida", str(tmp_path / "s")]) == 0
+    saida = capsys.readouterr()
+    assert "modelo não encontrado" in saida.err
+    assert len(list((tmp_path / "s").rglob("*.jpg"))) == 4

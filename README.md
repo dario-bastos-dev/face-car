@@ -31,6 +31,7 @@ uv run python -m entrada video <seu-video.mp4> --rotulo sonolento --pessoa p07  
 | `--segundos` | sem limite | webcam: parar depois deste tempo |
 | `--mostrar` | ligado na webcam, desligado no vídeo | janela por câmera com o mapeamento; o quadrado pisca em verde a cada captura |
 | `--sem-janela` | — | webcam: capturar sem abrir a janela |
+| `--sem-modelo` | — | não enviar as capturas para o modelo |
 
 Os arquivos ficam em `<saida>/<camera>/<rotulo>/<pessoa>_<origem>_<t_ms>ms.jpg`. Uma pasta por classe é o formato que as bibliotecas de treino
 de imagens leem direto, e a pessoa no nome permite separar treino e teste por pessoa, para o
@@ -61,6 +62,23 @@ computador, veja os caminhos com `ls -l /dev/v4l/by-path/` e `v4l2-ctl --list-de
   a parte fora da imagem é preenchida de preto, e o rosto continua centrado.
 - Quadros sem rosto não geram imagem e não consomem a vez: a captura acontece no primeiro quadro
   com rosto depois que o intervalo passou.
+
+## Resultado do modelo
+
+A cada captura, o **quadro inteiro** da câmera vai para o modelo `cnn_sonolencia.keras` (na raiz do
+projeto, fora do git por ser grande) e o resultado aparece no terminal e no painel da janela:
+
+```
+[rgb    5,7 s] alerta 99,9%  (sonolento 0,1%)
+[rgb    6,7 s] sonolento 87,2%  (alerta 12,8%)
+```
+
+O modelo foi treinado com o quadro inteiro em RGB, redimensionado para 96×96, com os pixels de 0 a 255
+(a normalização é uma camada dele); a captura prepara a imagem do mesmo jeito, antes de qualquer
+desenho na janela. As saídas são, na ordem, `sonolento` e `alerta` (`classificador.classes` em
+`config/captura.json`). Sem o arquivo, a captura avisa e segue sem classificar; `--sem-modelo`
+desliga a classificação. A câmera infravermelha entrega imagens em cinza, diferentes das coloridas
+do treino, então o resultado dela tende a valer pouco.
 
 ## Mapeamento na janela
 
@@ -97,7 +115,7 @@ uv run pytest                # os testes com MediaPipe precisam de ./scripts/pre
 
 ```
 config/          parâmetros da captura e das câmeras
-entrada/         fontes de vídeo, detector, recortes, mapeamento, agendamento e gravação, linha de comando
+entrada/         fontes de vídeo, detector, recortes, mapeamento, classificador, gravação, linha de comando
 scripts/         preparação do modelo e do vídeo de teste
 testes/          testes (entrada/) e dados gerados pelo preparar.sh (dados/)
 ```

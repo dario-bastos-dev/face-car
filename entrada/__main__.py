@@ -1,10 +1,11 @@
-"""Captura recortes do rosto completo do motorista para modelos de imagem.
+"""Captura recortes do rosto do motorista e mostra o estado previsto pelo modelo.
 
     uv run python -m entrada webcam --rotulo alerta --pessoa p01 [--camera rgb|ir|todas] [--sem-janela]
     uv run python -m entrada video <seu-video.mp4> --rotulo sonolento --pessoa p07 [--camera ir]
 
 Os recortes vão para <saida>/<camera>/<rotulo>/<pessoa>_<origem>_<t_ms>ms.jpg e ficam
-só neste computador.
+só neste computador. A cada captura, o quadro inteiro vai para o modelo Keras da
+configuração (cnn_sonolencia.keras), e o resultado aparece no terminal.
 """
 
 import argparse
@@ -17,6 +18,7 @@ from pathlib import Path
 import cv2
 
 from entrada.captura import Agendador, GravadorImagens
+from entrada.classificador import ClassificadorSonolencia, formatar
 from entrada.contexto import CAMINHO_CONFIG, RAIZ, carregar_config, carregar_pontos_rosto
 from entrada.mapa import desenhar_mapa
 from entrada.recorte import caixa_do_rosto, recortar
@@ -25,19 +27,23 @@ JANELA = "captura (q para sair)"
 
 
 class Capturador:
-    """Detecta o rosto em cada quadro e grava um recorte dele a cada intervalo."""
+    """Detecta o rosto em cada quadro; a cada intervalo, grava o recorte e classifica."""
 
-    def __init__(self, config: dict, detector, gravador: GravadorImagens, intervalo_ms: int):
+    def __init__(self, config: dict, detector, gravador: GravadorImagens, intervalo_ms: int,
+                 classificador: ClassificadorSonolencia | None = None):
         self.recorte = config["recorte"]
         self.pontos_rosto = carregar_pontos_rosto()
         self.detector = detector
         self.gravador = gravador
         self.agendador = Agendador(intervalo_ms)
+        self.classificador = classificador
+        self.ultimo_resultado = None
 
     def processar(self, quadro, t_ms: int):
         """Devolve o rosto (ou None), a caixa do recorte e se o quadro virou captura.
 
-        O recorte sai do quadro antes de qualquer desenho na janela.
+        O recorte e a imagem do modelo saem do quadro antes de qualquer desenho na
+        janela. O modelo recebe o quadro inteiro, como no treino.
         """
         rosto = self.detector.detectar(quadro, t_ms)
         if rosto is None:
@@ -46,13 +52,18 @@ class Capturador:
         if not self.agendador.pronto(t_ms):
             return rosto, caixa, False
         self.gravador.salvar(recortar(quadro, caixa, self.recorte["tamanho"]), t_ms)
+        if self.classificador is not None:
+            self.ultimo_resultado = self.classificador.classificar(quadro)
         self.agendador.registrar(t_ms)
         return rosto, caixa, True
 
 
-def desenhar(quadro, caixa, capturou: bool, total: int, rosto=None, pontos_rosto=None):
-    """Mostra o mapeamento do rosto, o quadrado do recorte e as capturas feitas."""
+def desenhar(quadro, caixa, capturou: bool, total: int, rosto=None, pontos_rosto=None,
+             resultado=None):
+    """Mostra o mapeamento do rosto, o quadrado do recorte, as capturas e o modelo."""
     linhas = [f"capturas: {total}" if caixa is not None else f"capturas: {total}  (sem rosto)"]
+    if resultado is not None:
+        linhas.append(f"modelo: {formatar(resultado).split('  (')[0]}")
     if rosto is not None:
         linhas += desenhar_mapa(quadro, rosto.pontos, rosto.matriz, pontos_rosto)
     if caixa is not None:
@@ -61,7 +72,7 @@ def desenhar(quadro, caixa, capturou: bool, total: int, rosto=None, pontos_rosto
         p1 = (int(caixa.cx + metade), int(caixa.cy + metade))
         cor, espessura = ((0, 255, 0), 4) if capturou else ((0, 200, 255), 1)
         cv2.rectangle(quadro, p0, p1, cor, espessura)
-    cv2.rectangle(quadro, (0, 0), (260, 10 + 22 * len(linhas)), (0, 0, 0), -1)
+    cv2.rectangle(quadro, (0, 0), (280, 10 + 22 * len(linhas)), (0, 0, 0), -1)
     for n, texto in enumerate(linhas):
         cv2.putText(quadro, texto, (8, 24 + 22 * n), cv2.FONT_HERSHEY_SIMPLEX, 0.55,
                     (255, 255, 255), 1, cv2.LINE_AA)
@@ -88,6 +99,27 @@ def janela_ativa(args, ambiente=os.environ) -> bool:
     return quer
 
 
+def _carregar_classificador(args, config: dict):
+    """O classificador da configuração, ou None com --sem-modelo ou sem o arquivo.
+
+    O .keras não vai para o git (é grande); sem ele, a captura segue e avisa.
+    """
+    if args.sem_modelo:
+        return None
+    cfg = config["classificador"]
+    caminho = RAIZ / cfg["modelo"]
+    if not caminho.is_file():
+        print(f"aviso: modelo não encontrado ({caminho}); capturando sem classificar",
+              file=sys.stderr)
+        return None
+    print(f"Carregando o modelo {caminho.name}...")
+    return ClassificadorSonolencia.carregar(caminho, cfg["classes"])
+
+
+def _segundos(t_ms: int) -> str:
+    return f"{t_ms / 1000:6.1f} s".replace(".", ",")
+
+
 def _capturar(args, config: dict, gravadores: dict, quadros) -> int:
     """Laço comum aos dois comandos, para uma ou várias câmeras.
 
@@ -99,19 +131,23 @@ def _capturar(args, config: dict, gravadores: dict, quadros) -> int:
 
     intervalo = args.intervalo_ms or config["captura"]["intervalo_ms"]
     mostrar = janela_ativa(args)
+    classificador = _carregar_classificador(args, config)
     with ExitStack() as pilha:
         capturadores = {
             camera: Capturador(config, pilha.enter_context(DetectorRosto(config)), gravador,
-                               intervalo)
+                               intervalo, classificador)
             for camera, gravador in gravadores.items()
         }
         try:
             for camera, quadro, t_ms in quadros:
                 capturador = capturadores[camera]
                 rosto, caixa, capturou = capturador.processar(quadro, t_ms)
+                if capturou and capturador.ultimo_resultado is not None:
+                    print(f"[{camera} {_segundos(t_ms)}] {formatar(capturador.ultimo_resultado)}",
+                          flush=True)
                 if mostrar:
                     imagem = desenhar(quadro, caixa, capturou, gravadores[camera].total, rosto,
-                                      capturador.pontos_rosto)
+                                      capturador.pontos_rosto, capturador.ultimo_resultado)
                     cv2.imshow(f"{camera} - {JANELA}", imagem)
                     if cv2.waitKey(1) & 0xFF == ord("q"):
                         break
@@ -244,6 +280,8 @@ def main(argv=None) -> int:
         p.add_argument("--intervalo-ms", type=int, help="tempo entre capturas (padrão: config)")
         p.add_argument("--mostrar", action="store_true",
                        help="abrir a janela com o mapeamento (padrão na webcam)")
+        p.add_argument("--sem-modelo", action="store_true",
+                       help="não enviar as capturas para o modelo de sonolência")
 
     p = sub.add_parser("video", help="capturar recortes de um arquivo de vídeo")
     p.add_argument("video")
