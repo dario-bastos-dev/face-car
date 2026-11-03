@@ -37,8 +37,8 @@ são sintéticos e os parâmetros são experimentais para simulação.
 
 A visão usa o MediaPipe Face Landmarker de duas formas, que convivem:
 
-- **Captura do rosto com o modelo de imagens:** grava recortes do rosto e classifica cada
-  captura com `cnn_sonolencia.keras` (`python -m entrada webcam|video`).
+- **Análise em tempo real com o modelo de imagens:** cada quadro vai para
+  `cnn_sonolencia.keras`, sem gravar nada (`python -m entrada webcam|video`).
 - **Métricas faciais em CSV:** uma linha por quadro no contrato `metricas.v1`, que alimenta o
   estimador da Parte 2 e o simulador da Parte 3 (`python -m entrada metricas webcam|video`).
 
@@ -48,114 +48,71 @@ uv sync                      # Python 3.12, mediapipe, opencv-contrib-python, nu
 ./scripts/preparar.sh        # baixa o modelo e gera os vídeos de teste (precisa de ffmpeg)
 ```
 
-### Captura do rosto e modelo de imagens
+### Análise em tempo real com o modelo de imagens
 
-Lê as webcams (a colorida e a infravermelha) ou um vídeo, encontra o rosto com o MediaPipe Face
-Landmarker e grava, a cada intervalo fixo, um recorte do **rosto completo** (224×224 px, JPEG).
-Os recortes formam o conjunto de dados para treinar, neste computador, um modelo de imagens
-que classifica o estado do motorista.
+Cada quadro da câmera vai, na memória, para o modelo `cnn_sonolencia.keras`; **nada é gravado**.
+Uma vez por segundo, o terminal mostra a média das probabilidades dos últimos 2 s, e o painel da
+janela mostra a mesma média:
 
-#### Capturar
+```
+[rgb    0,6 s] alerta 94,1%  (sonolento 5,9%)
+[rgb    1,6 s] alerta 95,7%  (sonolento 4,3%)  · 17 q/s
+```
+
+A média separa uma piscada, que dura uma fração de segundo, do olho que fica fechado; `q/s` é
+quantos quadros por segundo estão sendo analisados.
 
 ```bash
-uv run python -m entrada webcam --rotulo alerta --pessoa p01                        # pergunta a câmera
-uv run python -m entrada webcam --camera ir --rotulo alerta --pessoa p01             # só a infravermelha
-uv run python -m entrada webcam --camera todas --rotulo alerta --pessoa p01          # as duas
-uv run python -m entrada video <seu-video.mp4> --rotulo sonolento --pessoa p07       # vídeo gravado
+uv run python -m entrada webcam                         # pergunta a câmera; abre a janela
+uv run python -m entrada webcam --camera ir --sem-janela
+uv run python -m entrada webcam --camera todas --segundos 60
+uv run python -m entrada video <seu-video.mp4> [--mostrar]
 ```
 
 | Opção | Padrão | Efeito |
 | --- | --- | --- |
-| `--rotulo` | `sem_rotulo` | classe das imagens; vira a pasta |
-| `--pessoa` | `anonimo` | identificador da pessoa; vai no nome do arquivo |
-| `--camera` | menu (webcam), `rgb` (vídeo) | webcam: `rgb`, `ir` ou `todas` (repetível); vídeo: nome da pasta |
-| `--intervalo-ms` | 1000 | tempo mínimo entre duas capturas |
-| `--saida` | `saidas/imagens` | pasta raiz dos recortes |
+| `--camera` | menu (webcam), `rgb` (vídeo) | webcam: `rgb`, `ir` ou `todas` (repetível); vídeo: nome mostrado no terminal |
 | `--segundos` | sem limite | webcam: parar depois deste tempo |
-| `--mostrar` | ligado na webcam, desligado no vídeo | janela por câmera com o mapeamento; o quadrado pisca em verde a cada captura |
-| `--sem-janela` | — | webcam: capturar sem abrir a janela |
-| `--sem-modelo` | — | não enviar as capturas para o modelo |
-| `--limite-fotos` | 100 | máximo de fotos guardadas; ao chegar nele, a mais antiga é apagada |
+| `--sem-janela` | — | webcam: analisar sem abrir a janela |
+| `--mostrar` | ligado na webcam, desligado no vídeo | janela com o resultado e o mapeamento do rosto |
 
-Os arquivos ficam em `<saida>/<camera>/<rotulo>/<pessoa>_<origem>_<t_ms>ms.jpg`. Uma pasta por classe é o formato que as bibliotecas de treino
-de imagens leem direto, e a pessoa no nome permite separar treino e teste por pessoa, para o
-modelo não decorar rostos. As câmeras usam o mesmo relógio, então o `t_ms` de uma captura na
-`rgb` e na `ir` se comparam.
+#### O modelo
 
-##### Limite de fotos
-
-A pasta de saída guarda no máximo 100 fotos (`captura.limite_fotos`), somando câmeras e rótulos.
-Ao chegar no limite, a foto mais antiga (pela data do arquivo, inclusive de sessões anteriores) é
-apagada antes de gravar a nova; o fim da captura informa quantas foram apagadas. Só entram na conta,
-e só podem ser apagados, arquivos em `<camera>/<rotulo>/` com o nome que a captura gera: qualquer
-outro arquivo na pasta fica intocado.
+O modelo foi treinado com o quadro inteiro em RGB, redimensionado para 96×96, com os pixels de 0
+a 255 (a normalização é uma camada dele); a análise prepara a imagem do mesmo jeito, antes de
+qualquer desenho na janela. As saídas são, na ordem, `alerta` (0) e `sonolento` (1)
+(`classificador.classes` em `config/analise.json`), que também define a janela da média
+(`janela_ms`) e o intervalo das linhas no terminal (`intervalo_terminal_ms`). O arquivo fica fora
+do git (11 MB) e deve estar na raiz do projeto; sem ele, o comando termina com erro. A câmera
+infravermelha entrega imagens em cinza, diferentes das coloridas do treino, então o resultado dela
+tende a valer pouco.
 
 #### Câmeras
 
 Sem `--camera`, o comando `webcam` mostra um menu com as câmeras configuradas e a opção `todas`;
 responda com o número ou o nome, ou Enter para a padrão (`camera_padrao`, hoje `rgb`). Fora de um
-terminal interativo, ele usa a padrão sem perguntar.
-
-As câmeras ficam em `config/captura.json` pelo caminho fixo em `/dev/v4l/by-path/`, e não pelo
-número (`/dev/video0`, `/dev/video2`), que pode mudar ao reiniciar ou reconectar. Em outro
-computador, veja os caminhos com `ls -l /dev/v4l/by-path/` e `v4l2-ctl --list-devices`.
+terminal interativo, ele usa a padrão sem perguntar. As câmeras ficam em `config/analise.json` pelo
+caminho fixo em `/dev/v4l/by-path/`, e não pelo número (`/dev/video0`), que pode mudar ao reiniciar
+ou reconectar; em outro computador, veja os caminhos com `ls -l /dev/v4l/by-path/`.
 
 | Nome | Câmera | Imagem |
 | --- | --- | --- |
 | `rgb` | HD Webcam | colorida, 640×480 |
 | `ir` | IR Camera | infravermelha em tons de cinza, 640×360 |
 
-#### Como os recortes são feitos
-
-- O MediaPipe procura até 3 rostos e só o **maior** é recortado: o do motorista, mais perto da
-  câmera. Pessoas ao fundo não entram no conjunto de dados.
-- O recorte é um quadrado centrado no rosto, com lado 1,5 vez o maior eixo dele
-  (`recorte.margem = 0.25`), para incluir testa, queixo e a inclinação da cabeça. Perto da borda,
-  a parte fora da imagem é preenchida de preto, e o rosto continua centrado.
-- Quadros sem rosto não geram imagem e não consomem a vez: a captura acontece no primeiro quadro
-  com rosto depois que o intervalo passou.
-
-#### Resultado do modelo
-
-A cada captura, o **quadro inteiro** da câmera vai para o modelo `cnn_sonolencia.keras` (na raiz do
-projeto, fora do git por ser grande) e o resultado aparece no terminal e no painel da janela:
-
-```
-[rgb    5,7 s] alerta 99,9%  (sonolento 0,1%)
-[rgb    6,7 s] sonolento 87,2%  (alerta 12,8%)
-```
-
-O modelo foi treinado com o quadro inteiro em RGB, redimensionado para 96×96, com os pixels de 0 a 255
-(a normalização é uma camada dele); a captura prepara a imagem do mesmo jeito, antes de qualquer
-desenho na janela. As saídas são, na ordem, `alerta` (0) e `sonolento` (1) (`classificador.classes` em
-`config/captura.json`). Sem o arquivo, a captura avisa e segue sem classificar; `--sem-modelo`
-desliga a classificação. A câmera infravermelha entrega imagens em cinza, diferentes das coloridas
-do treino, então o resultado dela tende a valer pouco.
-
 #### Mapeamento na janela
 
-Na webcam a janela abre sempre (use `--sem-janela` para capturar sem ela); no vídeo, só com
-`--mostrar`. Sem tela gráfica, como por SSH, a captura segue sem janela e avisa. Cada janela
-desenha sobre a imagem:
-
-- o contorno do **rosto** (azul) e o quadrado que vira recorte (amarelo; verde a cada captura);
-- o contorno dos **olhos** e dos **lábios** (verde) e as **íris** (rosa);
-- a direção da **cabeça**: seta amarela saindo do nariz, vinda da matriz de pose do MediaPipe;
-- a direção do **olhar**: setas rosa saindo das íris, pela posição da íris entre os cantos do olho,
-  medida ao longo do eixo do olho para não confundir cabeça inclinada com olhar para cima;
-- no painel, para onde a cabeça e o olhar apontam (`frente`, `esquerda`, `baixo e direita`…), do
-  ponto de vista do motorista: como a câmera não espelha a imagem, olhar para a esquerda dele
-  leva o rosto para a direita da imagem. Os limiares (15° para a cabeça e 0,2 da meia largura do
-  olho para a íris) ficam em `entrada/mapa.py`.
-
-O mapeamento só aparece na tela: o recorte gravado para o modelo sai do quadro antes do desenho
-e não tem marcas.
+A janela desenha o contorno do rosto, dos olhos e dos lábios, as íris, uma seta com a direção da
+cabeça (pela matriz de pose do MediaPipe) e setas com a direção do olhar (pela posição da íris entre
+os cantos do olho), e escreve no painel para onde cada uma aponta (`frente`, `esquerda`,
+`baixo e direita`…), do ponto de vista do motorista: a câmera não espelha a imagem, então olhar para
+a esquerda dele leva o rosto para a direita da imagem. O MediaPipe procura até 3 rostos e mapeia só
+o maior, o do motorista. Sem janela, o rosto nem é procurado, porque o modelo recebe o quadro
+inteiro. Sem tela gráfica, como por SSH, a análise segue sem janela e avisa.
 
 #### Privacidade
 
-Os recortes são dados pessoais (LGPD). Eles ficam só neste computador: `saidas/` está no
-`.gitignore` e nunca vai para o repositório. Grave apenas pessoas que concordaram, e não induza
-sono ou embriaguez reais para gerar dados.
+Nenhum quadro é gravado nem sai do computador: a análise acontece na memória.
 
 ### Métricas faciais (contrato metricas.v1)
 
@@ -228,7 +185,7 @@ Sem o `preparar.sh`, os testes que usam o MediaPipe são pulados. Os casos de
 ## Treinamento
 
 O treinamento que ficava em `treinamento/` saiu do repositório. O modelo de imagens usado na
-captura, `cnn_sonolencia.keras`, fica fora do git por ser grande (11 MB) e deve ser colocado na
+análise, `cnn_sonolencia.keras`, fica fora do git por ser grande (11 MB) e deve ser colocado na
 raiz do projeto. `treinamento/exportar_modelo.py`, usado para levar um modelo ao simulador,
 depende de um `treinamento/treinar.py` que não está mais aqui; sem o arquivo exportado, o
 simulador mostra o modelo como ainda não treinado.
@@ -236,9 +193,9 @@ simulador mostra o modelo como ainda não treinado.
 ## Estrutura
 
 ```
-config/          captura (captura.json), extrator de métricas (extrator.json) e estimador
+config/          análise e câmeras (analise.json), extrator de métricas (extrator.json) e estimador
 contratos/       contratos de métricas (v1) e de sinal (v1), com exemplos
-entrada/         Python da Parte 1: captura e classificador, métricas, fontes, linha de comando
+entrada/         Python da Parte 1: análise com o classificador, métricas, fontes, linha de comando
 estimador/       Parte 2: estimador e política de ação em Python
 demo-navegador/  Parte 1 e 2 no navegador: extrator.js, estimador.js, politica.js, mensagens.js
 simulador/       Parte 3: simulador 2D/3D, canal de sinal, scanner e servidor local

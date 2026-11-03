@@ -11,7 +11,7 @@ from entrada.contexto import RAIZ
 DADOS = RAIZ / "testes" / "dados"
 MODELO = RAIZ / "modelos" / "face_landmarker.task"
 
-pytestmark = pytest.mark.skipif(
+precisa_mediapipe = pytest.mark.skipif(
     not ((DADOS / "retrato.mp4").exists() and MODELO.exists()),
     reason="rode scripts/preparar.sh para baixar o modelo e gerar o vídeo",
 )
@@ -21,11 +21,12 @@ pytestmark = pytest.mark.skipif(
 def detector():
     from entrada.detector import DetectorRosto
 
-    config = json.loads((RAIZ / "config" / "captura.json").read_text())
+    config = json.loads((RAIZ / "config" / "analise.json").read_text())
     with DetectorRosto(config) as d:
         yield d
 
 
+@precisa_mediapipe
 def test_rosto_presente_e_ausente(detector):
     from entrada.fontes import FonteArquivo
 
@@ -35,6 +36,7 @@ def test_rosto_presente_e_ausente(detector):
     assert not any(achados[i] for i in range(30, 46))  # tela preta
 
 
+@precisa_mediapipe
 def test_escolhe_o_maior_rosto(detector):
     retrato = cv2.imread(str(DADOS / "retrato.jpg"))
     grande = cv2.resize(retrato, (410, 512))
@@ -49,3 +51,15 @@ def test_escolhe_o_maior_rosto(detector):
     assert rosto.matriz.shape == (4, 4)
     frente = rosto.matriz[:3, 2] / np.linalg.norm(rosto.matriz[:3, 2])
     assert frente[2] > 0.9
+
+
+def quadrado(x0, y0, lado):
+    return np.array([[x0, y0], [x0 + lado, y0], [x0, y0 + lado], [x0 + lado, y0 + lado]], float)
+
+
+def test_maior_rosto_sem_mediapipe():
+    from entrada.detector import indice_do_maior_rosto, maior_rosto
+    pequeno, grande = quadrado(0, 0, 30), quadrado(100, 100, 90)
+    assert maior_rosto([pequeno, grande]) is grande
+    assert indice_do_maior_rosto([pequeno, grande]) == 1
+    assert maior_rosto([]) is None and indice_do_maior_rosto([]) is None

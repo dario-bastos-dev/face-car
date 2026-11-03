@@ -1,21 +1,11 @@
 {
-  "versao": 5,
+  "versao": 6,
   "mediapipe": {
     "modelo": "modelos/face_landmarker.task",
     "min_confianca_deteccao": 0.5,
     "min_confianca_presenca": 0.5,
     "min_confianca_rastreio": 0.5,
     "max_rostos": 3
-  },
-  "recorte": {
-    "margem": 0.25,
-    "tamanho": 224,
-    "qualidade_jpeg": 95
-  },
-  "captura": {
-    "intervalo_ms": 1000,
-    "pasta": "saidas/imagens",
-    "limite_fotos": 100
   },
   "camera_padrao": "rgb",
   "cameras": [
@@ -39,6 +29,8 @@
     "classes": [
       "alerta",
       "sonolento"
-    ]
+    ],
+    "janela_ms": 2000,
+    "intervalo_terminal_ms": 1000
   }
 }

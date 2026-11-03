@@ -1,7 +1,8 @@
 import numpy as np
 import pytest
 
-from entrada.classificador import ClassificadorSonolencia, Resultado, formatar, preparar
+from entrada.classificador import (ClassificadorSonolencia, MediaTemporal, Resultado, formatar,
+                                   preparar)
 from entrada.contexto import RAIZ
 
 CLASSES = ["sonolento", "alerta"]
@@ -17,8 +18,8 @@ class ModeloFalso:
         self.probabilidades = np.array([probabilidades], dtype="float32")
         self.recebido = None
 
-    def __call__(self, x, training=False):
-        assert training is False
+    def predict_on_batch(self, x):
+        # Em tempo real, predict_on_batch: ~22 ms por quadro contra ~160 ms de modelo(x).
         self.recebido = np.asarray(x)
         return self.probabilidades
 
@@ -71,3 +72,30 @@ def test_configuracao_define_0_alerta_e_1_sonolento():
     from entrada.contexto import carregar_config
 
     assert carregar_config()["classificador"]["classes"] == ["alerta", "sonolento"]
+
+
+def resultado(alerta):
+    return Resultado("alerta" if alerta > 0.5 else "sonolento",
+                     {"alerta": alerta, "sonolento": 1 - alerta})
+
+
+def test_media_temporal_usa_so_a_janela_recente():
+    media = MediaTemporal(janela_ms=2000)
+    media.adicionar(0, resultado(1.0))      # sai da janela quando chega o de 2500 ms
+    media.adicionar(1000, resultado(0.2))
+    media.adicionar(2500, resultado(0.4))
+    resumo, _ = media.resumo()
+    assert resumo.classe == "sonolento"
+    assert resumo.probabilidades == pytest.approx({"alerta": 0.3, "sonolento": 0.7})
+
+
+def test_media_temporal_mede_quadros_por_segundo():
+    media = MediaTemporal(janela_ms=2000)
+    for t in range(0, 1001, 100):           # 11 quadros em 1 s
+        media.adicionar(t, resultado(0.9))
+    _, qps = media.resumo()
+    assert qps == pytest.approx(10)
+
+
+def test_media_temporal_vazia():
+    assert MediaTemporal(janela_ms=2000).resumo() == (None, 0.0)

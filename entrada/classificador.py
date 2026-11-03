@@ -4,6 +4,7 @@ O modelo foi treinado com o quadro inteiro da câmera, em RGB, redimensionado pa
 96x96, com os pixels de 0 a 255: a normalização é uma camada dentro dele.
 """
 
+from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -61,7 +62,37 @@ class ClassificadorSonolencia:
         return classificador
 
     def classificar(self, quadro_bgr) -> Resultado:
-        saida = self.modelo(preparar(quadro_bgr, self.tamanho), training=False)
+        # predict_on_batch roda o grafo compilado: ~22 ms por quadro nesta máquina, contra
+        # ~160 ms de modelo(x), que executa camada por camada.
+        saida = self.modelo.predict_on_batch(preparar(quadro_bgr, self.tamanho))
         probabilidades = np.asarray(saida, dtype=float)[0]
         return Resultado(self.classes[int(np.argmax(probabilidades))],
                          dict(zip(self.classes, probabilidades.tolist())))
+
+
+class MediaTemporal:
+    """Média das probabilidades dos quadros dos últimos `janela_ms`.
+
+    Um quadro sozinho engana (uma piscada vira "sonolento"); a média de alguns
+    segundos separa a piscada do olho que fica fechado.
+    """
+
+    def __init__(self, janela_ms: int):
+        self.janela_ms = janela_ms
+        self._itens = deque()
+
+    def adicionar(self, t_ms: int, resultado: Resultado) -> None:
+        self._itens.append((t_ms, resultado))
+        while self._itens and self._itens[0][0] <= t_ms - self.janela_ms:
+            self._itens.popleft()
+
+    def resumo(self):
+        """(Resultado com a média, quadros por segundo na janela), ou (None, 0.0)."""
+        if not self._itens:
+            return None, 0.0
+        classes = list(self._itens[-1][1].probabilidades)
+        media = {c: float(np.mean([r.probabilidades[c] for _, r in self._itens]))
+                 for c in classes}
+        duracao = self._itens[-1][0] - self._itens[0][0]
+        qps = (len(self._itens) - 1) * 1000 / duracao if duracao > 0 else 0.0
+        return Resultado(max(media, key=media.get), media), qps

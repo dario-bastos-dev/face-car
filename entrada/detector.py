@@ -9,7 +9,21 @@ from mediapipe.tasks.python import BaseOptions
 from mediapipe.tasks.python import vision
 
 from entrada.contexto import RAIZ
-from entrada.recorte import indice_do_maior_rosto
+
+
+def indice_do_maior_rosto(rostos):
+    """Índice do rosto de maior área, o de quem está mais perto da câmera, ou None."""
+    def area(i):
+        (x0, y0), (x1, y1) = rostos[i].min(axis=0), rostos[i].max(axis=0)
+        return (x1 - x0) * (y1 - y0)
+
+    return max(range(len(rostos)), key=area, default=None)
+
+
+def maior_rosto(rostos):
+    """O rosto de maior área: o do motorista."""
+    i = indice_do_maior_rosto(rostos)
+    return None if i is None else rostos[i]
 
 
 @dataclass

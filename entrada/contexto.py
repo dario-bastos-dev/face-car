@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
-CAMINHO_CONFIG = RAIZ / "config" / "captura.json"
+CAMINHO_CONFIG = RAIZ / "config" / "analise.json"
 
 
 def carregar_config(caminho=CAMINHO_CONFIG) -> dict:

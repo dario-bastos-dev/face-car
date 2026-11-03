@@ -1,12 +1,11 @@
-"""Captura recortes do rosto do motorista e mostra o estado previsto pelo modelo.
+"""Analisa em tempo real o estado do motorista com o modelo de imagens.
 
-    uv run python -m entrada webcam --rotulo alerta --pessoa p01 [--camera rgb|ir|todas] [--sem-janela]
-    uv run python -m entrada video <seu-video.mp4> --rotulo sonolento --pessoa p07 [--camera ir]
+    uv run python -m entrada webcam [--camera rgb|ir|todas] [--sem-janela] [--segundos 60]
+    uv run python -m entrada video <seu-video.mp4> [--mostrar]
     uv run python -m entrada metricas video|webcam ...   (métricas em CSV para as Partes 2 e 3)
 
-Os recortes vão para <saida>/<camera>/<rotulo>/<pessoa>_<origem>_<t_ms>ms.jpg e ficam
-só neste computador. A cada captura, o quadro inteiro vai para o modelo Keras da
-configuração (cnn_sonolencia.keras), e o resultado aparece no terminal.
+Cada quadro vai, na memória, para o modelo Keras da configuração (cnn_sonolencia.keras);
+nada é gravado. O terminal mostra uma vez por segundo a média dos últimos segundos.
 """
 
 import argparse
@@ -14,65 +13,52 @@ import os
 import sys
 import time
 from contextlib import ExitStack
-from pathlib import Path
 
 import cv2
 
-from entrada.captura import Agendador, GravadorImagens, RetencaoImagens
-from entrada.classificador import ClassificadorSonolencia, formatar
+from entrada.classificador import ClassificadorSonolencia, MediaTemporal, formatar
 from entrada.contexto import CAMINHO_CONFIG, RAIZ, carregar_config, carregar_pontos_rosto
 from entrada.mapa import desenhar_mapa
-from entrada.recorte import caixa_do_rosto, recortar
 
-JANELA = "captura (q para sair)"
+JANELA = "analise (q para sair)"
 
 
-class Capturador:
-    """Detecta o rosto em cada quadro; a cada intervalo, grava o recorte e classifica."""
+class Analisador:
+    """Classifica todo quadro e resume os resultados de uma câmera.
 
-    def __init__(self, config: dict, detector, gravador: GravadorImagens, intervalo_ms: int,
-                 classificador: ClassificadorSonolencia | None = None):
-        self.recorte = config["recorte"]
-        self.pontos_rosto = carregar_pontos_rosto()
-        self.detector = detector
-        self.gravador = gravador
-        self.agendador = Agendador(intervalo_ms)
+    O detector de rosto é opcional: só serve ao mapeamento na janela, porque o modelo
+    recebe o quadro inteiro.
+    """
+
+    def __init__(self, classificador, detector=None, janela_ms: int = 2000,
+                 intervalo_terminal_ms: int = 1000):
         self.classificador = classificador
-        self.ultimo_resultado = None
+        self.detector = detector
+        self.media = MediaTemporal(janela_ms)
+        self.intervalo_terminal_ms = intervalo_terminal_ms
+        self.qps = 0.0
+        self._ultima_linha = None
 
     def processar(self, quadro, t_ms: int):
-        """Devolve o rosto (ou None), a caixa do recorte e se o quadro virou captura.
+        """(rosto ou None, resumo da janela, se é hora de mostrar no terminal).
 
-        O recorte e a imagem do modelo saem do quadro antes de qualquer desenho na
-        janela. O modelo recebe o quadro inteiro, como no treino.
+        A imagem do modelo sai do quadro antes de qualquer desenho na janela.
         """
-        rosto = self.detector.detectar(quadro, t_ms)
-        if rosto is None:
-            return None, None, False
-        caixa = caixa_do_rosto(rosto.pontos, self.recorte["margem"])
-        if not self.agendador.pronto(t_ms):
-            return rosto, caixa, False
-        self.gravador.salvar(recortar(quadro, caixa, self.recorte["tamanho"]), t_ms)
-        if self.classificador is not None:
-            self.ultimo_resultado = self.classificador.classificar(quadro)
-        self.agendador.registrar(t_ms)
-        return rosto, caixa, True
+        self.media.adicionar(t_ms, self.classificador.classificar(quadro))
+        resumo, self.qps = self.media.resumo()
+        rosto = self.detector.detectar(quadro, t_ms) if self.detector is not None else None
+        mostrar = (self._ultima_linha is None
+                   or t_ms - self._ultima_linha >= self.intervalo_terminal_ms)
+        if mostrar:
+            self._ultima_linha = t_ms
+        return rosto, resumo, mostrar
 
 
-def desenhar(quadro, caixa, capturou: bool, total: int, rosto=None, pontos_rosto=None,
-             resultado=None):
-    """Mostra o mapeamento do rosto, o quadrado do recorte, as capturas e o modelo."""
-    linhas = [f"capturas: {total}" if caixa is not None else f"capturas: {total}  (sem rosto)"]
-    if resultado is not None:
-        linhas.append(f"modelo: {formatar(resultado).split('  (')[0]}")
+def desenhar(quadro, resumo, rosto=None, pontos_rosto=None):
+    """Mostra o resultado do modelo e o mapeamento do rosto."""
+    linhas = [f"modelo: {formatar(resumo).split('  (')[0]}" if resumo else "modelo: ..."]
     if rosto is not None:
         linhas += desenhar_mapa(quadro, rosto.pontos, rosto.matriz, pontos_rosto)
-    if caixa is not None:
-        metade = caixa.lado / 2
-        p0 = (int(caixa.cx - metade), int(caixa.cy - metade))
-        p1 = (int(caixa.cx + metade), int(caixa.cy + metade))
-        cor, espessura = ((0, 255, 0), 4) if capturou else ((0, 200, 255), 1)
-        cv2.rectangle(quadro, p0, p1, cor, espessura)
     cv2.rectangle(quadro, (0, 0), (280, 10 + 22 * len(linhas)), (0, 0, 0), -1)
     for n, texto in enumerate(linhas):
         cv2.putText(quadro, texto, (8, 24 + 22 * n), cv2.FONT_HERSHEY_SIMPLEX, 0.55,
@@ -80,43 +66,26 @@ def desenhar(quadro, caixa, capturou: bool, total: int, rosto=None, pontos_rosto
     return quadro
 
 
-def _gravadores(args, config, cameras, origem: str) -> dict:
-    """Um gravador por câmera, todos sob a mesma raiz e o mesmo limite de fotos."""
-    raiz = Path(args.saida) if args.saida else RAIZ / config["captura"]["pasta"]
-    limite = config["captura"]["limite_fotos"] if args.limite_fotos is None else args.limite_fotos
-    retencao = RetencaoImagens(raiz, limite)
-    return {camera: GravadorImagens(raiz, camera, args.rotulo, args.pessoa, origem,
-                                    config["recorte"]["qualidade_jpeg"], retencao)
-            for camera in cameras}
-
-
 def janela_ativa(args, ambiente=os.environ) -> bool:
     """Se a janela deve abrir: sempre na webcam (salvo --sem-janela), no vídeo só com --mostrar.
 
     Sem tela gráfica (por exemplo, por SSH), o Qt do OpenCV aborta o processo ao abrir
-    uma janela; nesse caso a captura segue sem ela.
+    uma janela; nesse caso a análise segue sem ela.
     """
     quer = args.mostrar if args.comando == "video" else not args.sem_janela
     if quer and not (ambiente.get("DISPLAY") or ambiente.get("WAYLAND_DISPLAY")):
-        print("aviso: sem tela (DISPLAY ou WAYLAND_DISPLAY); capturando sem janela",
+        print("aviso: sem tela (DISPLAY ou WAYLAND_DISPLAY); analisando sem janela",
               file=sys.stderr)
         return False
     return quer
 
 
-def _carregar_classificador(args, config: dict):
-    """O classificador da configuração, ou None com --sem-modelo ou sem o arquivo.
-
-    O .keras não vai para o git (é grande); sem ele, a captura segue e avisa.
-    """
-    if args.sem_modelo:
-        return None
+def _carregar_classificador(config: dict) -> ClassificadorSonolencia:
     cfg = config["classificador"]
     caminho = RAIZ / cfg["modelo"]
     if not caminho.is_file():
-        print(f"aviso: modelo não encontrado ({caminho}); capturando sem classificar",
-              file=sys.stderr)
-        return None
+        raise FileNotFoundError(f"modelo não encontrado: {caminho} (o .keras fica fora do git; "
+                                f"coloque-o na raiz do projeto)")
     print(f"Carregando o modelo {caminho.name}...")
     return ClassificadorSonolencia.carregar(caminho, cfg["classes"])
 
@@ -125,35 +94,35 @@ def _segundos(t_ms: int) -> str:
     return f"{t_ms / 1000:6.1f} s".replace(".", ",")
 
 
-def _capturar(args, config: dict, gravadores: dict, quadros) -> int:
+def _analisar(args, config: dict, classificador, cameras: list, quadros) -> int:
     """Laço comum aos dois comandos, para uma ou várias câmeras.
 
-    `quadros` entrega (camera, quadro, t_ms); cada câmera tem o próprio detector,
-    porque o MediaPipe acompanha o rosto de um quadro para o seguinte. Termina
-    quando os quadros acabam, com q numa janela ou com Ctrl+C.
+    `quadros` entrega (camera, quadro, t_ms). Cada câmera tem a própria média e, com
+    janela, o próprio detector, porque o MediaPipe acompanha o rosto de um quadro para
+    o seguinte. Termina quando os quadros acabam, com q numa janela ou com Ctrl+C.
     """
     from entrada.detector import DetectorRosto
 
-    intervalo = args.intervalo_ms or config["captura"]["intervalo_ms"]
     mostrar = janela_ativa(args)
-    classificador = _carregar_classificador(args, config)
+    cfg = config["classificador"]
+    pontos_rosto = carregar_pontos_rosto()
     with ExitStack() as pilha:
-        capturadores = {
-            camera: Capturador(config, pilha.enter_context(DetectorRosto(config)), gravador,
-                               intervalo, classificador)
-            for camera, gravador in gravadores.items()
+        analisadores = {
+            camera: Analisador(classificador,
+                               pilha.enter_context(DetectorRosto(config)) if mostrar else None,
+                               cfg["janela_ms"], cfg["intervalo_terminal_ms"])
+            for camera in cameras
         }
         try:
             for camera, quadro, t_ms in quadros:
-                capturador = capturadores[camera]
-                rosto, caixa, capturou = capturador.processar(quadro, t_ms)
-                if capturou and capturador.ultimo_resultado is not None:
-                    print(f"[{camera} {_segundos(t_ms)}] {formatar(capturador.ultimo_resultado)}",
-                          flush=True)
+                analisador = analisadores[camera]
+                rosto, resumo, hora_de_mostrar = analisador.processar(quadro, t_ms)
+                if hora_de_mostrar:
+                    taxa = f"  · {analisador.qps:.0f} q/s" if analisador.qps else ""
+                    print(f"[{camera} {_segundos(t_ms)}] {formatar(resumo)}{taxa}", flush=True)
                 if mostrar:
-                    imagem = desenhar(quadro, caixa, capturou, gravadores[camera].total, rosto,
-                                      capturador.pontos_rosto, capturador.ultimo_resultado)
-                    cv2.imshow(f"{camera} - {JANELA}", imagem)
+                    cv2.imshow(f"{camera} - {JANELA}",
+                               desenhar(quadro, resumo, rosto, pontos_rosto))
                     if cv2.waitKey(1) & 0xFF == ord("q"):
                         break
         except KeyboardInterrupt:
@@ -161,12 +130,6 @@ def _capturar(args, config: dict, gravadores: dict, quadros) -> int:
         finally:
             if mostrar:
                 cv2.destroyAllWindows()
-    for camera, gravador in gravadores.items():
-        print(f"{camera}: {gravador.total} recortes gravados em {gravador.pasta}")
-    retencao = next(iter(gravadores.values())).retencao
-    if retencao.apagadas:
-        print(f"{retencao.apagadas} fotos antigas apagadas para manter o limite de "
-              f"{retencao.limite}")
     return 0
 
 
@@ -232,11 +195,12 @@ def cmd_video(args) -> int:
 
     config = carregar_config(args.config)
     camera = args.camera or "rgb"
-    gravadores = _gravadores(args, config, [camera], Path(args.video).name)
+    # O vídeo abre antes do modelo: um caminho errado falha na hora, sem esperar o TensorFlow.
     with FonteArquivo(args.video) as fonte:
         print(f"{args.video}: {fonte.total} quadros a {fonte.fps:.2f} fps")
+        classificador = _carregar_classificador(config)
         quadros = ((camera, quadro, t_ms) for quadro, t_ms, _ in fonte)
-        return _capturar(args, config, gravadores, quadros)
+        return _analisar(args, config, classificador, [camera], quadros)
 
 
 def cmd_webcam(args) -> int:
@@ -246,8 +210,8 @@ def cmd_webcam(args) -> int:
     cameras = {c["nome"]: c for c in config["cameras"]}
     escolhidas = escolher_cameras(args.camera, cameras, config["camera_padrao"],
                                   interativo=sys.stdin.isatty())
-    origem = time.strftime("webcam-%Y%m%d-%H%M%S")
-    gravadores = _gravadores(args, config, escolhidas, origem)
+    # O modelo carrega antes das câmeras: elas não ficam ligadas à toa enquanto ele carrega.
+    classificador = _carregar_classificador(config)
     t0 = time.monotonic()  # relógio comum: as marcas de tempo das câmeras se comparam
     with ExitStack() as pilha:
         fontes = {
@@ -256,17 +220,18 @@ def cmd_webcam(args) -> int:
                 t0=t0))
             for nome in escolhidas
         }
-        print(f"Capturando de {', '.join(escolhidas)}. Pressione q numa janela ou Ctrl+C.")
-        return _capturar(args, config, gravadores, _quadros_das_webcams(fontes, args.segundos))
+        print(f"Analisando {', '.join(escolhidas)}. Pressione q numa janela ou Ctrl+C.")
+        return _analisar(args, config, classificador, escolhidas,
+                         _quadros_das_webcams(fontes, args.segundos))
 
 
 def _silenciar_bibliotecas() -> None:
     """Corta o ruído no terminal sem esconder erros do programa.
 
-    O TensorFlow (dependência do treinamento) é carregado junto com o MediaPipe e
-    imprime avisos sobre GPU e CPU. O OpenCV não traz o plugin Wayland do Qt e avisa
-    a cada janela antes de cair para o X11; com DISPLAY disponível, vai direto ao X11.
-    Variáveis já definidas pelo usuário são respeitadas.
+    O TensorFlow é carregado junto com o MediaPipe e o modelo, e imprime avisos sobre
+    GPU e CPU. O OpenCV não traz o plugin Wayland do Qt e avisa a cada janela antes de
+    cair para o X11; com DISPLAY disponível, vai direto ao X11. Variáveis já definidas
+    pelo usuário são respeitadas.
     """
     os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
     if os.environ.get("DISPLAY"):
@@ -288,47 +253,33 @@ def main(argv=None) -> int:
     parser.add_argument("--config", default=CAMINHO_CONFIG, help="arquivo de configuração")
     sub = parser.add_subparsers(dest="comando", required=True)
 
-    def comuns(p):
-        p.add_argument("--rotulo", default="sem_rotulo",
-                       help="classe das imagens, vira a pasta (ex.: alerta, sonolento)")
-        p.add_argument("--pessoa", default="anonimo",
-                       help="identificador da pessoa, vai no nome do arquivo (ex.: p01)")
-        p.add_argument("--saida", help="pasta raiz dos recortes (padrão: config)")
-        p.add_argument("--intervalo-ms", type=int, help="tempo entre capturas (padrão: config)")
-        p.add_argument("--limite-fotos", type=int,
-                       help="máximo de fotos guardadas; passa disso, apaga a mais antiga "
-                            "(padrão: config, 100)")
-        p.add_argument("--mostrar", action="store_true",
-                       help="abrir a janela com o mapeamento (padrão na webcam)")
-        p.add_argument("--sem-modelo", action="store_true",
-                       help="não enviar as capturas para o modelo de sonolência")
-
     # Só para aparecerem na ajuda: são tratados acima, por entrada/metricas_cli.py.
     sub.add_parser("metricas", add_help=False,
                    help="extrair métricas em CSV (contrato metricas.v1) para as Partes 2 e 3: "
                         "metricas video|webcam ...")
     sub.add_parser("comparar", add_help=False, help="comparar dois CSVs de métricas")
 
-    p = sub.add_parser("video", help="capturar recortes de um arquivo de vídeo")
+    p = sub.add_parser("video", help="analisar um arquivo de vídeo quadro a quadro")
     p.add_argument("video")
-    p.add_argument("--camera", help="câmera que gravou o vídeo; vira a pasta (padrão: rgb)")
-    comuns(p)
+    p.add_argument("--camera", help="nome da câmera que gravou o vídeo, no terminal (padrão: rgb)")
+    p.add_argument("--mostrar", action="store_true",
+                   help="abrir a janela com o resultado e o mapeamento")
     p.set_defaults(func=cmd_video)
 
-    p = sub.add_parser("webcam", help="capturar recortes das webcams da configuração")
+    p = sub.add_parser("webcam", help="analisar as webcams da configuração em tempo real")
     p.add_argument("--camera", action="append",
                    help="câmera da configuração (repetível) ou 'todas'; sem esta opção, "
                         "pergunta no terminal")
     p.add_argument("--segundos", type=float, help="parar depois deste tempo")
-    p.add_argument("--sem-janela", action="store_true", help="capturar sem abrir a janela")
-    comuns(p)
+    p.add_argument("--sem-janela", action="store_true", help="analisar sem abrir a janela")
+    p.add_argument("--mostrar", action="store_true", help="(a janela já abre por padrão)")
     p.set_defaults(func=cmd_webcam)
 
     args = parser.parse_args(argv)
     try:
         return args.func(args)
     except (OSError, ValueError) as erro:
-        # Arquivo ausente, vídeo ilegível, câmera indisponível ou nome inválido:
+        # Arquivo ausente, vídeo ilegível, câmera indisponível ou modelo ausente:
         # problemas de uso, que não precisam de traceback.
         print(f"erro: {erro}", file=sys.stderr)
         return 2
