@@ -221,3 +221,15 @@ def test_modelo_ausente_avisa_e_segue_capturando(tmp_path, capsys):
     saida = capsys.readouterr()
     assert "modelo não encontrado" in saida.err
     assert len(list((tmp_path / "s").rglob("*.jpg"))) == 4
+
+
+@tem_dados
+def test_video_respeita_o_limite_de_fotos(tmp_path):
+    assert main(["video", str(VIDEO), "--saida", str(tmp_path), "--sem-modelo",
+                 "--limite-fotos", "2"]) == 0
+    nomes = sorted(p.name for p in tmp_path.rglob("*.jpg"))
+    assert nomes == [f"anonimo_retrato.mp4_{t:09d}ms.jpg" for t in (2533, 3533)]
+
+
+def test_configuracao_limita_a_100_fotos():
+    assert carregar_config()["captura"]["limite_fotos"] == 100

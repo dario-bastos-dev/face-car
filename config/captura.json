@@ -1,5 +1,5 @@
 {
-  "versao": 4,
+  "versao": 5,
   "mediapipe": {
     "modelo": "modelos/face_landmarker.task",
     "min_confianca_deteccao": 0.5,
@@ -14,7 +14,8 @@
   },
   "captura": {
     "intervalo_ms": 1000,
-    "pasta": "saidas/imagens"
+    "pasta": "saidas/imagens",
+    "limite_fotos": 100
   },
   "camera_padrao": "rgb",
   "cameras": [

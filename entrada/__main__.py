@@ -17,7 +17,7 @@ from pathlib import Path
 
 import cv2
 
-from entrada.captura import Agendador, GravadorImagens
+from entrada.captura import Agendador, GravadorImagens, RetencaoImagens
 from entrada.classificador import ClassificadorSonolencia, formatar
 from entrada.contexto import CAMINHO_CONFIG, RAIZ, carregar_config, carregar_pontos_rosto
 from entrada.mapa import desenhar_mapa
@@ -79,10 +79,14 @@ def desenhar(quadro, caixa, capturou: bool, total: int, rosto=None, pontos_rosto
     return quadro
 
 
-def _gravador(args, config, camera: str, origem: str) -> GravadorImagens:
-    pasta = Path(args.saida) if args.saida else RAIZ / config["captura"]["pasta"]
-    return GravadorImagens(pasta, camera, args.rotulo, args.pessoa, origem,
-                           config["recorte"]["qualidade_jpeg"])
+def _gravadores(args, config, cameras, origem: str) -> dict:
+    """Um gravador por câmera, todos sob a mesma raiz e o mesmo limite de fotos."""
+    raiz = Path(args.saida) if args.saida else RAIZ / config["captura"]["pasta"]
+    limite = config["captura"]["limite_fotos"] if args.limite_fotos is None else args.limite_fotos
+    retencao = RetencaoImagens(raiz, limite)
+    return {camera: GravadorImagens(raiz, camera, args.rotulo, args.pessoa, origem,
+                                    config["recorte"]["qualidade_jpeg"], retencao)
+            for camera in cameras}
 
 
 def janela_ativa(args, ambiente=os.environ) -> bool:
@@ -158,6 +162,10 @@ def _capturar(args, config: dict, gravadores: dict, quadros) -> int:
                 cv2.destroyAllWindows()
     for camera, gravador in gravadores.items():
         print(f"{camera}: {gravador.total} recortes gravados em {gravador.pasta}")
+    retencao = next(iter(gravadores.values())).retencao
+    if retencao.apagadas:
+        print(f"{retencao.apagadas} fotos antigas apagadas para manter o limite de "
+              f"{retencao.limite}")
     return 0
 
 
@@ -223,11 +231,11 @@ def cmd_video(args) -> int:
 
     config = carregar_config(args.config)
     camera = args.camera or "rgb"
-    gravador = _gravador(args, config, camera, Path(args.video).name)
+    gravadores = _gravadores(args, config, [camera], Path(args.video).name)
     with FonteArquivo(args.video) as fonte:
         print(f"{args.video}: {fonte.total} quadros a {fonte.fps:.2f} fps")
         quadros = ((camera, quadro, t_ms) for quadro, t_ms, _ in fonte)
-        return _capturar(args, config, {camera: gravador}, quadros)
+        return _capturar(args, config, gravadores, quadros)
 
 
 def cmd_webcam(args) -> int:
@@ -238,7 +246,7 @@ def cmd_webcam(args) -> int:
     escolhidas = escolher_cameras(args.camera, cameras, config["camera_padrao"],
                                   interativo=sys.stdin.isatty())
     origem = time.strftime("webcam-%Y%m%d-%H%M%S")
-    gravadores = {nome: _gravador(args, config, nome, origem) for nome in escolhidas}
+    gravadores = _gravadores(args, config, escolhidas, origem)
     t0 = time.monotonic()  # relógio comum: as marcas de tempo das câmeras se comparam
     with ExitStack() as pilha:
         fontes = {
@@ -278,6 +286,9 @@ def main(argv=None) -> int:
                        help="identificador da pessoa, vai no nome do arquivo (ex.: p01)")
         p.add_argument("--saida", help="pasta raiz dos recortes (padrão: config)")
         p.add_argument("--intervalo-ms", type=int, help="tempo entre capturas (padrão: config)")
+        p.add_argument("--limite-fotos", type=int,
+                       help="máximo de fotos guardadas; passa disso, apaga a mais antiga "
+                            "(padrão: config, 100)")
         p.add_argument("--mostrar", action="store_true",
                        help="abrir a janela com o mapeamento (padrão na webcam)")
         p.add_argument("--sem-modelo", action="store_true",

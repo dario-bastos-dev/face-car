@@ -32,11 +32,20 @@ uv run python -m entrada video <seu-video.mp4> --rotulo sonolento --pessoa p07  
 | `--mostrar` | ligado na webcam, desligado no vídeo | janela por câmera com o mapeamento; o quadrado pisca em verde a cada captura |
 | `--sem-janela` | — | webcam: capturar sem abrir a janela |
 | `--sem-modelo` | — | não enviar as capturas para o modelo |
+| `--limite-fotos` | 100 | máximo de fotos guardadas; ao chegar nele, a mais antiga é apagada |
 
 Os arquivos ficam em `<saida>/<camera>/<rotulo>/<pessoa>_<origem>_<t_ms>ms.jpg`. Uma pasta por classe é o formato que as bibliotecas de treino
 de imagens leem direto, e a pessoa no nome permite separar treino e teste por pessoa, para o
 modelo não decorar rostos. As câmeras usam o mesmo relógio, então o `t_ms` de uma captura na
 `rgb` e na `ir` se comparam.
+
+### Limite de fotos
+
+A pasta de saída guarda no máximo 100 fotos (`captura.limite_fotos`), somando câmeras e rótulos.
+Ao chegar no limite, a foto mais antiga (pela data do arquivo, inclusive de sessões anteriores) é
+apagada antes de gravar a nova; o fim da captura informa quantas foram apagadas. Só entram na conta,
+e só podem ser apagados, arquivos em `<camera>/<rotulo>/` com o nome que a captura gera: qualquer
+outro arquivo na pasta fica intocado.
 
 ## Câmeras
 
