@@ -65,3 +65,9 @@ def test_modelo_real_carrega_e_preve():
     r = c.classificar(np.full((480, 640, 3), 128, np.uint8))
     assert r.classe in CLASSES
     assert sum(r.probabilidades.values()) == pytest.approx(1, abs=1e-4)
+
+
+def test_configuracao_define_0_alerta_e_1_sonolento():
+    from entrada.contexto import carregar_config
+
+    assert carregar_config()["classificador"]["classes"] == ["alerta", "sonolento"]

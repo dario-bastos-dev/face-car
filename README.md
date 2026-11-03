@@ -127,7 +127,7 @@ projeto, fora do git por ser grande) e o resultado aparece no terminal e no pain
 
 O modelo foi treinado com o quadro inteiro em RGB, redimensionado para 96×96, com os pixels de 0 a 255
 (a normalização é uma camada dele); a captura prepara a imagem do mesmo jeito, antes de qualquer
-desenho na janela. As saídas são, na ordem, `sonolento` e `alerta` (`classificador.classes` em
+desenho na janela. As saídas são, na ordem, `alerta` (0) e `sonolento` (1) (`classificador.classes` em
 `config/captura.json`). Sem o arquivo, a captura avisa e segue sem classificar; `--sem-modelo`
 desliga a classificação. A câmera infravermelha entrega imagens em cinza, diferentes das coloridas
 do treino, então o resultado dela tende a valer pouco.
