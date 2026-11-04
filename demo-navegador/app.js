@@ -3,7 +3,7 @@
 import { FaceLandmarker, FilesetResolver } from
   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.0/vision_bundle.mjs";
 import {
-  CalculadoraMetricas, RelogioWebcam, direcaoDoRosto, pontosEmPixels, matrizEmLinhas,
+  CalculadoraMetricas, RelogioWebcam, direcaoDoRosto, pontosEmPixels, indiceDoMaiorRosto, matrizEmLinhas,
   cabecalhoCsv, linhaCsv,
 } from "./extrator.js";
 
@@ -33,7 +33,7 @@ async function novaSessao() {
   landmarker = await FaceLandmarker.createFromOptions(arquivos, {
     baseOptions: { modelAssetPath: "../" + mpc.modelo, delegate: "CPU" },
     runningMode: "VIDEO",
-    numFaces: 1,
+    numFaces: mpc.max_rostos,
     minFaceDetectionConfidence: mpc.min_confianca_deteccao,
     minFacePresenceConfidence: mpc.min_confianca_presenca,
     minTrackingConfidence: mpc.min_confianca_rastreio,
@@ -48,9 +48,11 @@ function processar(s, tMs, quadro, inicio = performance.now()) {
   const res = landmarker.detectForVideo(video, tMs);
   const largura = video.videoWidth, altura = video.videoHeight;
   let pts = null, matriz = null;
-  if (res.faceLandmarks.length) {
-    pts = pontosEmPixels(res.faceLandmarks[0], largura, altura);
-    const m = res.facialTransformationMatrixes?.[0];
+  const rostos = res.faceLandmarks.map((r) => pontosEmPixels(r, largura, altura));
+  const i = indiceDoMaiorRosto(rostos);
+  if (i !== null) {
+    pts = rostos[i];
+    const m = res.facialTransformationMatrixes?.[i];
     matriz = m ? matrizEmLinhas(m) : null;
   }
   const registro = s.calc.calcular(pts, matriz, tMs, quadro, performance.now() - inicio);

@@ -4,7 +4,8 @@
     "modelo": "modelos/face_landmarker.task",
     "min_confianca_deteccao": 0.5,
     "min_confianca_presenca": 0.5,
-    "min_confianca_rastreio": 0.5
+    "min_confianca_rastreio": 0.5,
+    "max_rostos": 3
   },
   "confianca": {
     "escala_residuo": 0.02,

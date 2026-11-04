@@ -120,6 +120,19 @@ export function pontosEmPixels(landmarks, largura, altura) {
   return landmarks.map((p) => [p.x * largura, p.y * altura]);
 }
 
+// Índice do rosto de maior área (pontos em pixels), o do motorista, ou null. O
+// MediaPipe devolve primeiro o rosto em que mais confia, que pode ser alguém ao
+// fundo; é a mesma escolha de entrada.rosto.indice_do_maior_rosto no Python.
+export function indiceDoMaiorRosto(rostos) {
+  let melhor = null, maiorArea = -1;
+  rostos.forEach((pts, i) => {
+    const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+    const area = (Math.max(...xs) - Math.min(...xs)) * (Math.max(...ys) - Math.min(...ys));
+    if (area > maiorArea) [melhor, maiorArea] = [i, area];
+  });
+  return melhor;
+}
+
 export class CalculadoraMetricas {
   constructor(parametrosConfianca, indices) {
     this.ip = indices;

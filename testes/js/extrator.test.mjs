@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 
 import {
   ear, aberturaBoca, angulosDaMatriz, matrizEmLinhas, Estabilidade,
-  CalculadoraMetricas, RelogioWebcam, direcaoDoRosto, cabecalhoCsv, linhaCsv,
+  CalculadoraMetricas, RelogioWebcam, direcaoDoRosto, cabecalhoCsv, linhaCsv, indiceDoMaiorRosto,
 } from "../../demo-navegador/extrator.js";
 
 const ler = (caminho) => JSON.parse(readFileSync(new URL(caminho, import.meta.url)));
@@ -88,4 +88,12 @@ test("direção do rosto bate com a terceira coluna da matriz", () => {
     col.forEach((v, i) => perto(d[i], v / n, 1e-9, `eixo ${i}`));
   }
   assert.ok(direcaoDoRosto(0, 30, 0)[1] < 0, "cabeça baixa aponta para baixo");
+});
+
+test("escolhe o maior rosto, como o Python (entrada.rosto.indice_do_maior_rosto)", () => {
+  const quadrado = (x0, y0, lado) => [[x0, y0], [x0 + lado, y0], [x0, y0 + lado], [x0 + lado, y0 + lado]];
+  // O MediaPipe devolve primeiro o rosto em que mais confia, que pode ser alguém ao fundo.
+  assert.equal(indiceDoMaiorRosto([quadrado(500, 50, 40), quadrado(50, 100, 200)]), 1);
+  assert.equal(indiceDoMaiorRosto([quadrado(0, 0, 90), quadrado(300, 0, 30)]), 0);
+  assert.equal(indiceDoMaiorRosto([]), null);
 });

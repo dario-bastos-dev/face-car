@@ -175,8 +175,55 @@ def test_python_e_navegador_dao_as_mesmas_metricas(tmp_path, nome):
     assert r["quadros_comuns"] == r["quadros_a"] == r["quadros_b"]
     assert r["concordancia_rosto"] >= 0.99
     d = r["diferencas"]
+    # 0,015: procurando até 3 rostos (para medir o maior, o do motorista), o MediaPipe
+    # refaz a detecção a cada quadro, e as versões nativa e WASM divergem um pouco mais
+    # (p95 de 0,011 a 0,012 no EAR; com 1 rosto ficava em ~0,004). A média segue ~0,005.
     for nome in ("ear_esq", "ear_dir", "abertura_boca"):
-        assert d[nome]["p95"] < 0.01, nome
+        assert d[nome]["p95"] < 0.015, nome
     for nome in ("yaw", "pitch", "roll"):
         assert d[nome]["p95"] < 1.0, nome
     assert d["confianca"]["p95"] < 0.05
+
+
+# ---- escolha do rosto ------------------------------------------------------
+
+def _rosto_falso(x0, y0, lado, n=478):
+    """Pontos normalizados (0 a 1) espalhados num quadrado, como os do MediaPipe."""
+    from types import SimpleNamespace
+    rng = np.random.default_rng(int(lado * 1000))
+    xs, ys = rng.uniform(x0, x0 + lado, n), rng.uniform(y0, y0 + lado, n)
+    return [SimpleNamespace(x=x, y=y) for x, y in zip(xs, ys)]
+
+
+def test_metricas_usam_o_maior_rosto_e_a_matriz_dele():
+    # O MediaPipe devolve primeiro o rosto em que mais confia, que pode ser alguém ao
+    # fundo; as métricas precisam ser do motorista, o maior, como na análise.
+    from types import SimpleNamespace
+    from entrada.metricas import _pontos_e_matriz
+    pequeno, grande = _rosto_falso(0.7, 0.1, 0.1), _rosto_falso(0.1, 0.2, 0.5)
+    matriz_pequeno, matriz_grande = np.eye(4), 2 * np.eye(4)
+    resultado = SimpleNamespace(face_landmarks=[pequeno, grande],
+                                facial_transformation_matrixes=[matriz_pequeno, matriz_grande])
+    pts, matriz = _pontos_e_matriz(resultado, 1000, 1000)
+    assert pts[:, 0].max() < 650                  # pontos do rosto grande (x de 100 a 600)
+    assert matriz is matriz_grande
+
+
+def test_extrator_procura_tantos_rostos_quanto_a_analise():
+    from entrada.contexto import carregar_config
+    extrator = json.loads((RAIZ / "config" / "extrator.json").read_text())
+    assert extrator["mediapipe"]["max_rostos"] == carregar_config()["mediapipe"]["max_rostos"] > 1
+
+
+@precisa_dados
+def test_extrator_mede_o_maior_rosto_da_cena():
+    import cv2
+    from entrada.metricas import ExtratorVideo
+    retrato = cv2.imread(str(RAIZ / "testes" / "dados" / "retrato.jpg"))
+    cena = np.full((512, 700, 3), 128, np.uint8)
+    cena[:, :410] = cv2.resize(retrato, (410, 512))
+    cena[128:384, 470:675] = cv2.resize(retrato, (205, 256))
+    config = json.loads((RAIZ / "config" / "extrator.json").read_text())
+    with ExtratorVideo(config) as extrator:
+        registro = extrator.processar(cena, 0, 0)
+    assert registro.rosto_visivel and extrator.ultimos_pontos[:, 0].max() < 410

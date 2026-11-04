@@ -16,7 +16,7 @@ from entrada import geometria
 from entrada.contexto import carregar_pontos_rosto
 from entrada.contrato import RAIZ, RegistroMetricas
 from entrada.geometria import residuo_alinhado
-from entrada.rosto import pontos_em_pixels
+from entrada.rosto import indice_do_maior_rosto, pontos_em_pixels
 
 
 # ---- confiança do rastreio -------------------------------------------------
@@ -134,7 +134,7 @@ def _criar_landmarker(config: dict, modo: str, callback=None):
     opcoes = vision.FaceLandmarkerOptions(
         base_options=BaseOptions(model_asset_path=str(RAIZ / mpc["modelo"])),
         running_mode=getattr(vision.RunningMode, modo),
-        num_faces=1,
+        num_faces=mpc["max_rostos"],
         min_face_detection_confidence=mpc["min_confianca_deteccao"],
         min_face_presence_confidence=mpc["min_confianca_presenca"],
         min_tracking_confidence=mpc["min_confianca_rastreio"],
@@ -152,11 +152,17 @@ def _imagem(quadro_bgr):
 
 
 def _pontos_e_matriz(resultado, largura: int, altura: int):
-    if not resultado.face_landmarks:
+    """Pontos em pixels e matriz de pose do maior rosto, o do motorista, ou (None, None).
+
+    O MediaPipe devolve primeiro o rosto em que mais confia, que pode ser alguém ao
+    fundo; a escolha é a mesma da análise (entrada.rosto.DetectorRosto).
+    """
+    rostos = [pontos_em_pixels(r, largura, altura) for r in resultado.face_landmarks]
+    i = indice_do_maior_rosto(rostos)
+    if i is None:
         return None, None
-    pts = pontos_em_pixels(resultado.face_landmarks[0], largura, altura)
     matrizes = resultado.facial_transformation_matrixes
-    return pts, (matrizes[0] if matrizes else None)
+    return rostos[i], (matrizes[i] if matrizes else None)
 
 
 class ExtratorVideo:

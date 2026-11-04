@@ -133,8 +133,9 @@ cabeça (pela matriz de pose do MediaPipe) e setas com a direção do olhar (pel
 os cantos do olho), e escreve no painel para onde cada uma aponta (`frente`, `esquerda`,
 `baixo e direita`…), do ponto de vista do motorista: a câmera não espelha a imagem, então olhar para
 a esquerda dele leva o rosto para a direita da imagem. O MediaPipe procura até 3 rostos e mapeia só
-o maior, o do motorista. Sem janela, o rosto nem é procurado, porque o modelo recebe o quadro
-inteiro. Sem tela gráfica, como por SSH, a análise segue sem janela e avisa.
+o maior, o do motorista; o rosto é procurado em todo quadro, com ou sem janela, porque também
+alimenta olhos, boca e cabeça no terminal. Sem tela gráfica, como por SSH, a análise segue sem
+janela e avisa.
 
 #### Privacidade
 
@@ -157,6 +158,8 @@ uv run python -m entrada comparar a.csv b.csv                                   
 ```
 
 - **Arquivo:** modo vídeo do MediaPipe, síncrono. `t_ms = round(quadro · 1000 / fps)`.
+- **Rosto:** o MediaPipe procura até 3 rostos (`mediapipe.max_rostos` em `config/extrator.json`)
+  e as métricas são do maior, o do motorista, como na análise; a demo do navegador faz o mesmo.
 - **Webcam:** a leitura roda numa thread que guarda só o quadro mais recente, e o MediaPipe
   roda no modo ao vivo (assíncrono). Quadros que chegam enquanto ele está ocupado são ignorados.
   `atraso_ms` é o tempo entre a captura e o resultado.
