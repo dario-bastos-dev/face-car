@@ -201,7 +201,7 @@ ponto de partida e ainda precisa ser calibrado com gravações reais.
 ./scripts/preparar.sh                                                 # modelo e vídeos de teste, antes do pytest
 uv run pytest                                                         # Python (visão e estimador)
 npm test                                                              # JavaScript (Node)
-RODAR_PARIDADE=1 uv run pytest testes/entrada/test_paridade_navegador.py   # Python × navegador
+RODAR_PARIDADE=1 uv run pytest testes/entrada/test_metricas.py   # Python × navegador
 ```
 
 Sem o `preparar.sh`, os testes que usam o MediaPipe são pulados. Os casos de

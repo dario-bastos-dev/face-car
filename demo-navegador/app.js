@@ -104,7 +104,7 @@ function desenhar(pts, r, largura, altura) {
     : `rosto não detectado\nconfiança ${f(r.confianca, 2)}`;
 }
 
-// Seta da ponta do nariz para onde o rosto aponta, como em entrada/__main__.py:
+// Seta da ponta do nariz para onde o rosto aponta, como em entrada/metricas_cli.py:
 // com a cabeça baixa ela aponta para baixo; de frente para a câmera quase some.
 function desenharSeta(pts, r) {
   const [a, b] = indices.referencia_escala;

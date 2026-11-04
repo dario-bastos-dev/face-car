@@ -13,7 +13,7 @@ from pathlib import Path
 
 import numpy as np
 
-from entrada.confianca import Estabilidade, ParametrosConfianca
+from entrada.metricas import Estabilidade, ParametrosConfianca
 from entrada.geometria import rotacao
 
 DESTINO = Path(__file__).with_name("geometria.json")

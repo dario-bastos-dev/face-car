@@ -22,10 +22,8 @@ import cv2
 
 from entrada.classificador import (ClassificadorSonolencia, MediaTemporal, Resultado, formatar,
                                    formatar_classe, formatar_saida)
-from entrada.contexto import CAMINHO_CONFIG, RAIZ, carregar_config, carregar_pontos_rosto
-from entrada.estado_rosto import EstadoRosto, LimiaresRosto, MonitorRosto, formatar_estado
-from entrada.formato import numero
-from entrada.mapa import desenhar_mapa
+from entrada.contexto import CAMINHO_CONFIG, RAIZ, carregar_config, carregar_pontos_rosto, numero
+from entrada.rosto import EstadoRosto, LimiaresRosto, MonitorRosto, desenhar_mapa, formatar_estado
 
 JANELA = "analise (q para sair)"
 
@@ -139,7 +137,7 @@ def _analisar(args, config: dict, classificador, cameras: list, quadros) -> int:
     janela, o próprio detector, porque o MediaPipe acompanha o rosto de um quadro para
     o seguinte. Termina quando os quadros acabam, com q numa janela ou com Ctrl+C.
     """
-    from entrada.detector import DetectorRosto
+    from entrada.rosto import DetectorRosto
 
     mostrar = janela_ativa(args)
     cfg = config["classificador"]

@@ -51,7 +51,7 @@ class DetectorSemRosto:
 
 
 def test_analisador_guarda_o_estado_do_rosto_do_quadro():
-    from entrada.estado_rosto import LimiaresRosto, MonitorRosto
+    from entrada.rosto import LimiaresRosto, MonitorRosto
     analisador = Analisador(ClassificadorFalso(), DetectorSemRosto(),
                             monitor=MonitorRosto(LimiaresRosto()))
     estado = analisador.processar(np.zeros((8, 8, 3), np.uint8), 0).estado
@@ -113,7 +113,7 @@ def test_arquivo_que_nao_e_video_da_mensagem_clara(tmp_path, capsys):
 
 
 def rosto_sintetico():
-    from entrada.detector import Rosto
+    from entrada.rosto import Rosto
     angulos = np.linspace(0, 2 * np.pi, 478, endpoint=False)
     return Rosto(np.c_[200 + 80 * np.cos(angulos), 210 + 80 * np.sin(angulos)], np.eye(4))
 
@@ -257,7 +257,7 @@ def test_sem_log_mostra_so_as_medias(capsys):
 
 
 def test_desenho_mostra_olhos_e_boca_no_painel():
-    from entrada.estado_rosto import EstadoRosto
+    from entrada.rosto import EstadoRosto
     estado = EstadoRosto("fechados", 0.05, "aberta", 0.6, "baixo")
     quadro = np.zeros((320, 400, 3), np.uint8)
     desenhar(quadro, None, None, None, estado)
@@ -266,7 +266,7 @@ def test_desenho_mostra_olhos_e_boca_no_painel():
 
 def test_linhas_do_terminal_com_e_sem_log():
     from entrada.__main__ import Analise
-    from entrada.estado_rosto import EstadoRosto
+    from entrada.rosto import EstadoRosto
     resultado = Resultado("alerta", {"alerta": 0.9, "sonolento": 0.1}, saida=[0.9, 0.1], ms=20)
     estado = EstadoRosto("abertos", 0.3, "fechada", 0.02, "frente", eventos=["piscada (0,15 s)"])
     analise = Analise(resultado, resultado, 18.0, None, estado, mostrar_resumo=True)

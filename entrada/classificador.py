@@ -12,7 +12,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from entrada.formato import numero
+from entrada.contexto import numero
 
 
 @dataclass

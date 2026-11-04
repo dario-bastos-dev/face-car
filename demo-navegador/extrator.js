@@ -1,5 +1,5 @@
-// Cálculo das métricas por quadro, espelhando entrada/geometria.py,
-// entrada/confianca.py e entrada/metricas.py. Não usa DOM nem MediaPipe, então
+// Cálculo das métricas por quadro, espelhando entrada/geometria.py e
+// entrada/metricas.py. Não usa DOM nem MediaPipe, então
 // roda também no Node e passa pelos casos de testes/casos/geometria.json.
 
 export function distancia(a, b) {
