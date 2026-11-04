@@ -73,41 +73,51 @@ class MonitorRosto:
             self._alertou_olhos = self._alertou_bocejo = False
             return EstadoRosto(None, None, None, None, None)
 
+        fechados, eventos_olhos = self._acompanhar_olhos(t_ms, ear)
+        aberta, eventos_boca = self._acompanhar_boca(t_ms, abertura)
+        return EstadoRosto("fechados" if fechados else "abertos", ear,
+                           "aberta" if aberta else "fechada", abertura, cabeca,
+                           eventos_olhos + eventos_boca)
+
+    def _acompanhar_olhos(self, t_ms: int, ear: float) -> tuple[bool, list]:
+        """(olhos fechados?, eventos): piscada, olhos fechados por muito tempo e reabertura."""
         lim = self.limiares
-        eventos = []
-        fechados = ear < lim.ear_olho_fechado
-        if fechados:
+        if ear < lim.ear_olho_fechado:
             if self._olhos_fechados_desde is None:
                 self._olhos_fechados_desde = t_ms
-            if (not self._alertou_olhos
-                    and t_ms - self._olhos_fechados_desde >= lim.olhos_fechados_alerta_ms):
-                eventos.append("olhos fechados há mais de "
-                               f"{numero(lim.olhos_fechados_alerta_ms / 1000, 'g')} s")
-                self._alertou_olhos = True
-        elif self._olhos_fechados_desde is not None:
-            duracao = t_ms - self._olhos_fechados_desde
-            if duracao <= lim.piscada_max_ms:
-                eventos.append(f"piscada ({_duracao(duracao)})")
-            elif self._alertou_olhos:
-                eventos.append(f"olhos reabertos após {_duracao(duracao)}")
-            else:
-                eventos.append(f"olhos fechados por {_duracao(duracao)}")
-            self._olhos_fechados_desde = None
-            self._alertou_olhos = False
+            if (self._alertou_olhos
+                    or t_ms - self._olhos_fechados_desde < lim.olhos_fechados_alerta_ms):
+                return True, []
+            self._alertou_olhos = True
+            return True, ["olhos fechados há mais de "
+                          f"{numero(lim.olhos_fechados_alerta_ms / 1000, 'g')} s"]
 
-        aberta = abertura > lim.abertura_boca_aberta
-        if aberta:
-            if self._boca_aberta_desde is None:
-                self._boca_aberta_desde = t_ms
-            if not self._alertou_bocejo and t_ms - self._boca_aberta_desde >= lim.bocejo_min_ms:
-                eventos.append("bocejo")
-                self._alertou_bocejo = True
+        if self._olhos_fechados_desde is None:
+            return False, []
+        duracao = t_ms - self._olhos_fechados_desde
+        if duracao <= lim.piscada_max_ms:
+            evento = f"piscada ({_duracao(duracao)})"
+        elif self._alertou_olhos:
+            evento = f"olhos reabertos após {_duracao(duracao)}"
         else:
+            evento = f"olhos fechados por {_duracao(duracao)}"
+        self._olhos_fechados_desde = None
+        self._alertou_olhos = False
+        return False, [evento]
+
+    def _acompanhar_boca(self, t_ms: int, abertura: float) -> tuple[bool, list]:
+        """(boca aberta?, eventos): bocejo quando a boca fica aberta tempo suficiente."""
+        lim = self.limiares
+        if abertura <= lim.abertura_boca_aberta:
             self._boca_aberta_desde = None
             self._alertou_bocejo = False
-
-        return EstadoRosto("fechados" if fechados else "abertos", ear,
-                           "aberta" if aberta else "fechada", abertura, cabeca, eventos)
+            return False, []
+        if self._boca_aberta_desde is None:
+            self._boca_aberta_desde = t_ms
+        if self._alertou_bocejo or t_ms - self._boca_aberta_desde < lim.bocejo_min_ms:
+            return True, []
+        self._alertou_bocejo = True
+        return True, ["bocejo"]
 
 
 def formatar_estado(estado: EstadoRosto) -> str:
