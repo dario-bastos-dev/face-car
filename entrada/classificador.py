@@ -12,6 +12,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from entrada.formato import numero
+
 
 @dataclass
 class Resultado:
@@ -38,17 +40,23 @@ def preparar(quadro_bgr, tamanho: int) -> np.ndarray:
 
 def formatar(resultado: Resultado) -> str:
     """Ex.: "sonolento 91,3%  (alerta 8,7%)"."""
-    def pct(p):
-        return f"{100 * p:.1f}%".replace(".", ",")
-
-    outras = [f"{c} {pct(p)}" for c, p in resultado.probabilidades.items()
+    outras = [f"{c} {_pct(p)}" for c, p in resultado.probabilidades.items()
               if c != resultado.classe]
-    return f"{resultado.classe} {pct(resultado.probabilidades[resultado.classe])}  ({', '.join(outras)})"
+    return f"{formatar_classe(resultado)}  ({', '.join(outras)})"
+
+
+def formatar_classe(resultado: Resultado) -> str:
+    """Só a classe escolhida e a probabilidade dela, ex.: "sonolento 91,3%"."""
+    return f"{resultado.classe} {_pct(resultado.probabilidades[resultado.classe])}"
+
+
+def _pct(p: float) -> str:
+    return f"{numero(100 * p, '.1f')}%"
 
 
 def formatar_saida(resultado: Resultado) -> str:
     """Ex.: "saída [0,9813 0,0187] → alerta (22 ms)"."""
-    vetor = " ".join(f"{v:.4f}".replace(".", ",") for v in resultado.saida)
+    vetor = " ".join(numero(v, ".4f") for v in resultado.saida)
     return f"saída [{vetor}] → {resultado.classe} ({resultado.ms:.0f} ms)"
 
 

@@ -6,8 +6,8 @@ import time
 import numpy as np
 import pytest
 
-from entrada.__main__ import (Analisador, _quadros_das_webcams, desenhar, escolher_cameras,
-                              janela_ativa, main)
+from entrada.__main__ import (Analisador, _linhas_do_terminal, _quadros_das_webcams, desenhar,
+                              escolher_cameras, janela_ativa, main)
 from entrada.classificador import Resultado
 from entrada.contexto import RAIZ, carregar_config
 from entrada.fontes import FonteWebcam
@@ -37,11 +37,11 @@ class ClassificadorFalso:
 def test_analisador_classifica_todo_quadro_e_resume_uma_vez_por_segundo():
     classificador = ClassificadorFalso()
     analisador = Analisador(classificador, janela_ms=2000, intervalo_terminal_ms=1000)
-    imprimiu = [analisador.processar(np.zeros((8, 8, 3), np.uint8), t)[2]
+    imprimiu = [analisador.processar(np.zeros((8, 8, 3), np.uint8), t).mostrar_resumo
                 for t in range(0, 3000, 100)]
     assert classificador.chamadas == 30                       # todo quadro vai ao modelo
     assert [t for t, i in zip(range(0, 3000, 100), imprimiu) if i] == [0, 1000, 2000]
-    _, resumo, _ = analisador.processar(np.zeros((8, 8, 3), np.uint8), 3000)
+    resumo = analisador.processar(np.zeros((8, 8, 3), np.uint8), 3000).resumo
     assert resumo.probabilidades["alerta"] == pytest.approx(0.6, abs=0.02)  # média de 0,9 e 0,3
 
 
@@ -54,14 +54,14 @@ def test_analisador_guarda_o_estado_do_rosto_do_quadro():
     from entrada.estado_rosto import LimiaresRosto, MonitorRosto
     analisador = Analisador(ClassificadorFalso(), DetectorSemRosto(),
                             monitor=MonitorRosto(LimiaresRosto()))
-    analisador.processar(np.zeros((8, 8, 3), np.uint8), 0)
-    assert analisador.estado.olhos is None and analisador.estado.eventos == []
+    estado = analisador.processar(np.zeros((8, 8, 3), np.uint8), 0).estado
+    assert estado.olhos is None and estado.eventos == []
 
 
 def test_analisador_sem_detector_nao_procura_o_rosto():
     analisador = Analisador(ClassificadorFalso(), janela_ms=2000, intervalo_terminal_ms=1000)
-    rosto, _, _ = analisador.processar(np.zeros((8, 8, 3), np.uint8), 0)
-    assert rosto is None
+    analise = analisador.processar(np.zeros((8, 8, 3), np.uint8), 0)
+    assert analise.rosto is None and analise.estado is None
 
 
 @tem_modelo_ia
@@ -262,3 +262,19 @@ def test_desenho_mostra_olhos_e_boca_no_painel():
     quadro = np.zeros((320, 400, 3), np.uint8)
     desenhar(quadro, None, None, None, estado)
     assert quadro[50:80, :200].any()   # linhas extras no painel
+
+
+def test_linhas_do_terminal_com_e_sem_log():
+    from entrada.__main__ import Analise
+    from entrada.estado_rosto import EstadoRosto
+    resultado = Resultado("alerta", {"alerta": 0.9, "sonolento": 0.1}, saida=[0.9, 0.1], ms=20)
+    estado = EstadoRosto("abertos", 0.3, "fechada", 0.02, "frente", eventos=["piscada (0,15 s)"])
+    analise = Analise(resultado, resultado, 18.0, None, estado, mostrar_resumo=True)
+    linhas = _linhas_do_terminal("rgb", 1500, analise, sem_log=False, janela_s="2")
+    assert linhas == [
+        "[rgb    1,500 s] saída [0,9000 0,1000] → alerta (20 ms) | "
+        "olhos abertos (EAR 0,30) · boca fechada (0,02) · cabeça frente",
+        "[rgb    1,500 s] evento: piscada (0,15 s)",
+        "[rgb    1,5 s] média 2 s: alerta 90,0%  (sonolento 10,0%)  · 18 q/s",
+    ]
+    assert _linhas_do_terminal("rgb", 1500, analise, sem_log=True, janela_s="2") == linhas[1:]

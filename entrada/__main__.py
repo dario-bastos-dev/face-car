@@ -16,16 +16,30 @@ import os
 import sys
 import time
 from contextlib import ExitStack
+from dataclasses import dataclass
 
 import cv2
 
-from entrada.classificador import (ClassificadorSonolencia, MediaTemporal, formatar,
-                                   formatar_saida)
+from entrada.classificador import (ClassificadorSonolencia, MediaTemporal, Resultado, formatar,
+                                   formatar_classe, formatar_saida)
 from entrada.contexto import CAMINHO_CONFIG, RAIZ, carregar_config, carregar_pontos_rosto
-from entrada.estado_rosto import LimiaresRosto, MonitorRosto, formatar_estado
+from entrada.estado_rosto import EstadoRosto, LimiaresRosto, MonitorRosto, formatar_estado
+from entrada.formato import numero
 from entrada.mapa import desenhar_mapa
 
 JANELA = "analise (q para sair)"
+
+
+@dataclass
+class Analise:
+    """O que se sabe de um quadro: o resultado dele, a média da janela e o rosto."""
+
+    resultado: Resultado                 # saída do modelo neste quadro
+    resumo: Resultado                    # média das probabilidades na janela
+    qps: float                           # quadros por segundo na janela
+    rosto: object | None                 # Rosto do detector, para o mapeamento
+    estado: EstadoRosto | None           # olhos, boca, cabeça e eventos
+    mostrar_resumo: bool                 # hora de mostrar a média no terminal
 
 
 class Analisador:
@@ -40,35 +54,27 @@ class Analisador:
         self.classificador = classificador
         self.detector = detector
         self.monitor = monitor
-        self.estado = None
         self.media = MediaTemporal(janela_ms)
         self.intervalo_terminal_ms = intervalo_terminal_ms
-        self.qps = 0.0
-        self.ultimo = None
-        self._ultima_linha = None
+        self._ultimo_resumo = None
 
-    def processar(self, quadro, t_ms: int):
-        """(rosto ou None, resumo da janela, se é hora de mostrar no terminal).
-
-        A imagem do modelo sai do quadro antes de qualquer desenho na janela; o
-        resultado deste quadro fica em `ultimo` e o estado do rosto em `estado`.
-        """
-        self.ultimo = self.classificador.classificar(quadro)
-        self.media.adicionar(t_ms, self.ultimo)
-        resumo, self.qps = self.media.resumo()
+    def processar(self, quadro, t_ms: int) -> Analise:
+        """Analisa um quadro. A imagem do modelo sai antes de qualquer desenho na janela."""
+        resultado = self.classificador.classificar(quadro)
+        self.media.adicionar(t_ms, resultado)
+        resumo, qps = self.media.resumo()
         rosto = self.detector.detectar(quadro, t_ms) if self.detector is not None else None
-        if self.monitor is not None:
-            self.estado = self.monitor.atualizar(t_ms, rosto)
-        mostrar = (self._ultima_linha is None
-                   or t_ms - self._ultima_linha >= self.intervalo_terminal_ms)
-        if mostrar:
-            self._ultima_linha = t_ms
-        return rosto, resumo, mostrar
+        estado = self.monitor.atualizar(t_ms, rosto) if self.monitor is not None else None
+        mostrar_resumo = (self._ultimo_resumo is None
+                          or t_ms - self._ultimo_resumo >= self.intervalo_terminal_ms)
+        if mostrar_resumo:
+            self._ultimo_resumo = t_ms
+        return Analise(resultado, resumo, qps, rosto, estado, mostrar_resumo)
 
 
 def desenhar(quadro, resumo, rosto=None, pontos_rosto=None, estado=None):
     """Mostra o resultado do modelo, o estado dos olhos e da boca e o mapeamento do rosto."""
-    linhas = [f"modelo: {formatar(resumo).split('  (')[0]}" if resumo else "modelo: ..."]
+    linhas = [f"modelo: {formatar_classe(resumo)}" if resumo else "modelo: ..."]
     if estado is not None and estado.olhos is not None:
         linhas += [f"olhos: {estado.olhos}", f"boca: {estado.boca}"]
     if rosto is not None:
@@ -105,7 +111,25 @@ def _carregar_classificador(config: dict) -> ClassificadorSonolencia:
 
 
 def _segundos(t_ms: int, casas: int = 1) -> str:
-    return f"{t_ms / 1000:{5 + casas}.{casas}f} s".replace(".", ",")
+    return f"{numero(t_ms / 1000, f'{5 + casas}.{casas}f')} s"
+
+
+def _linhas_do_terminal(camera: str, t_ms: int, analise: Analise, sem_log: bool,
+                        janela_s: str) -> list[str]:
+    """Linhas de um quadro: a saída do modelo e o rosto (salvo --sem-log), os eventos e,
+    uma vez por segundo, a média."""
+    instante = f"[{camera} {_segundos(t_ms, 3)}]"
+    linhas = []
+    if not sem_log:
+        rosto = f" | {formatar_estado(analise.estado)}" if analise.estado is not None else ""
+        linhas.append(f"{instante} {formatar_saida(analise.resultado)}{rosto}")
+    if analise.estado is not None:
+        linhas += [f"{instante} evento: {evento}" for evento in analise.estado.eventos]
+    if analise.mostrar_resumo:
+        taxa = f"  · {numero(analise.qps, '.0f')} q/s" if analise.qps else ""
+        linhas.append(f"[{camera} {_segundos(t_ms)}] média {janela_s} s: "
+                      f"{formatar(analise.resumo)}{taxa}")
+    return linhas
 
 
 def _analisar(args, config: dict, classificador, cameras: list, quadros) -> int:
@@ -120,7 +144,7 @@ def _analisar(args, config: dict, classificador, cameras: list, quadros) -> int:
     mostrar = janela_ativa(args)
     cfg = config["classificador"]
     limiares = LimiaresRosto(**config["rosto"])
-    janela_s = f"{cfg['janela_ms'] / 1000:g}".replace(".", ",")
+    janela_s = numero(cfg["janela_ms"] / 1000, "g")
     pontos_rosto = carregar_pontos_rosto()
     with ExitStack() as pilha:
         analisadores = {
@@ -131,21 +155,14 @@ def _analisar(args, config: dict, classificador, cameras: list, quadros) -> int:
         }
         try:
             for camera, quadro, t_ms in quadros:
-                analisador = analisadores[camera]
-                rosto, resumo, hora_de_mostrar = analisador.processar(quadro, t_ms)
-                instante = f"[{camera} {_segundos(t_ms, 3)}]"
-                if not args.sem_log:
-                    print(f"{instante} {formatar_saida(analisador.ultimo)} | "
-                          f"{formatar_estado(analisador.estado)}")
-                for evento in analisador.estado.eventos:
-                    print(f"{instante} evento: {evento}", flush=True)
-                if hora_de_mostrar:
-                    taxa = f"  · {analisador.qps:.0f} q/s" if analisador.qps else ""
-                    print(f"[{camera} {_segundos(t_ms)}] média {janela_s} s: {formatar(resumo)}"
-                          f"{taxa}", flush=True)
+                analise = analisadores[camera].processar(quadro, t_ms)
+                linhas = _linhas_do_terminal(camera, t_ms, analise, args.sem_log, janela_s)
+                if linhas:
+                    print("\n".join(linhas), flush=True)
                 if mostrar:
-                    cv2.imshow(f"{camera} - {JANELA}",
-                               desenhar(quadro, resumo, rosto, pontos_rosto, analisador.estado))
+                    imagem = desenhar(quadro, analise.resumo, analise.rosto, pontos_rosto,
+                                      analise.estado)
+                    cv2.imshow(f"{camera} - {JANELA}", imagem)
                     if cv2.waitKey(1) & 0xFF == ord("q"):
                         break
         except KeyboardInterrupt:

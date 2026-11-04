@@ -1,7 +1,7 @@
 """Mapeamento do rosto para a janela de visualização: contornos, íris e direções.
 
-Só desenha sobre a imagem mostrada na tela; os recortes gravados para o modelo
-não recebem estas marcas. Direções são descritas do ponto de vista do motorista:
+Só desenha sobre a imagem mostrada na tela; a imagem enviada ao modelo não recebe
+estas marcas. Direções são descritas do ponto de vista do motorista:
 a câmera não espelha a imagem, então quando ele olha para a esquerda dele, o
 rosto e as íris vão para a direita da imagem.
 """
@@ -49,6 +49,11 @@ def descrever(horizontal: float, vertical: float, limiar: float) -> str:
     elif horizontal < -limiar:
         partes.append("direita")
     return " e ".join(partes) or "frente"
+
+
+def rotulo_da_cabeca(matriz) -> str:
+    """Para onde a cabeça aponta, como "frente" ou "baixo e esquerda"."""
+    return descrever(*angulos_da_direcao(direcao_da_cabeca(matriz)), LIMIAR_CABECA_GRAUS)
 
 
 def _olhos(pontos, indices):
@@ -118,6 +123,6 @@ def desenhar_mapa(quadro, pontos, matriz, indices) -> list[str]:
             nariz = pontos[indices["ponta_nariz"]]
             cv2.arrowedLine(quadro, _ponto(nariz), _ponto(nariz + seta), COR_CABECA, 2,
                             cv2.LINE_AA, tipLength=0.25)
-        linhas.append("cabeca: " + descrever(*angulos_da_direcao(direcao), LIMIAR_CABECA_GRAUS))
+        linhas.append("cabeca: " + rotulo_da_cabeca(matriz))
     linhas.append("olhar: " + descrever(dx, -dy, LIMIAR_OLHAR))
     return linhas

@@ -9,7 +9,8 @@ ajustados com gravações reais.
 from dataclasses import dataclass, field
 
 from entrada import geometria
-from entrada.mapa import LIMIAR_CABECA_GRAUS, angulos_da_direcao, descrever, direcao_da_cabeca
+from entrada.formato import numero
+from entrada.mapa import rotulo_da_cabeca
 
 
 @dataclass
@@ -41,12 +42,8 @@ def medidas(pontos, indices: dict) -> tuple[float, float]:
     return ear, abertura
 
 
-def _s(ms: float) -> str:
-    return f"{ms / 1000:.2f} s".replace(".", ",")
-
-
-def _n(valor: float) -> str:
-    return f"{valor:.2f}".replace(".", ",")
+def _duracao(ms: float) -> str:
+    return f"{numero(ms / 1000, '.2f')} s"
 
 
 class MonitorRosto:
@@ -65,10 +62,7 @@ class MonitorRosto:
         if rosto is None:
             return self.registrar(t_ms, None, None, None)
         ear, abertura = medidas(rosto.pontos, self.indices)
-        cabeca = None
-        if rosto.matriz is not None:
-            cabeca = descrever(*angulos_da_direcao(direcao_da_cabeca(rosto.matriz)),
-                               LIMIAR_CABECA_GRAUS)
+        cabeca = rotulo_da_cabeca(rosto.matriz) if rosto.matriz is not None else None
         return self.registrar(t_ms, ear, abertura, cabeca)
 
     def registrar(self, t_ms: int, ear, abertura, cabeca) -> EstadoRosto:
@@ -87,17 +81,17 @@ class MonitorRosto:
                 self._olhos_fechados_desde = t_ms
             if (not self._alertou_olhos
                     and t_ms - self._olhos_fechados_desde >= lim.olhos_fechados_alerta_ms):
-                eventos.append(f"olhos fechados há mais de {lim.olhos_fechados_alerta_ms / 1000:g} s"
-                               .replace(".", ","))
+                eventos.append("olhos fechados há mais de "
+                               f"{numero(lim.olhos_fechados_alerta_ms / 1000, 'g')} s")
                 self._alertou_olhos = True
         elif self._olhos_fechados_desde is not None:
             duracao = t_ms - self._olhos_fechados_desde
             if duracao <= lim.piscada_max_ms:
-                eventos.append(f"piscada ({_s(duracao)})")
+                eventos.append(f"piscada ({_duracao(duracao)})")
             elif self._alertou_olhos:
-                eventos.append(f"olhos reabertos após {_s(duracao)}")
+                eventos.append(f"olhos reabertos após {_duracao(duracao)}")
             else:
-                eventos.append(f"olhos fechados por {_s(duracao)}")
+                eventos.append(f"olhos fechados por {_duracao(duracao)}")
             self._olhos_fechados_desde = None
             self._alertou_olhos = False
 
@@ -120,8 +114,8 @@ def formatar_estado(estado: EstadoRosto) -> str:
     """Ex.: "olhos abertos (EAR 0,31) · boca fechada (0,02) · cabeça baixo"."""
     if estado.olhos is None:
         return "rosto não detectado"
-    partes = [f"olhos {estado.olhos} (EAR {_n(estado.ear)})",
-              f"boca {estado.boca} ({_n(estado.abertura)})"]
+    partes = [f"olhos {estado.olhos} (EAR {numero(estado.ear, '.2f')})",
+              f"boca {estado.boca} ({numero(estado.abertura, '.2f')})"]
     if estado.cabeca is not None:
         partes.append(f"cabeça {estado.cabeca}")
     return " · ".join(partes)
