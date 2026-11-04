@@ -61,17 +61,28 @@ MODELO_REAL = RAIZ / "cnn_sonolencia.keras"
 
 
 @pytest.mark.skipif(not MODELO_REAL.exists(), reason="cnn_sonolencia.keras não está na raiz")
-def test_modelo_real_carrega_e_preve():
-    c = ClassificadorSonolencia.carregar(MODELO_REAL, CLASSES)
+def test_modelo_real_carrega_com_as_classes_da_configuracao_e_preve():
+    from entrada.contexto import carregar_config
+
+    classes = carregar_config()["classificador"]["classes"]
+    c = ClassificadorSonolencia.carregar(MODELO_REAL, classes)   # confere saídas × classes
     r = c.classificar(np.full((480, 640, 3), 128, np.uint8))
-    assert r.classe in CLASSES
+    assert r.classe in classes and len(r.saida) == len(classes)
     assert sum(r.probabilidades.values()) == pytest.approx(1, abs=1e-4)
 
 
-def test_configuracao_define_0_alerta_e_1_sonolento():
+def test_configuracao_segue_a_ordem_das_pastas_do_treino():
+    # FaceCar_CNN_V2: pastas Drowsy, Non Drowsy e Yawn, em ordem alfabética.
     from entrada.contexto import carregar_config
 
-    assert carregar_config()["classificador"]["classes"] == ["alerta", "sonolento"]
+    assert carregar_config()["classificador"]["classes"] == ["sonolento", "alerta", "bocejo"]
+
+
+def test_formatar_com_tres_classes():
+    r = Resultado("bocejo", {"sonolento": 0.05, "alerta": 0.15, "bocejo": 0.8},
+                  saida=[0.05, 0.15, 0.8], ms=30)
+    assert formatar(r) == "bocejo 80,0%  (sonolento 5,0%, alerta 15,0%)"
+    assert formatar_saida(r) == "saída [0,0500 0,1500 0,8000] → bocejo (30 ms)"
 
 
 def resultado(alerta):

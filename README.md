@@ -70,9 +70,10 @@ para vê-los, rode com `TF_CPP_MIN_LOG_LEVEL=0`.
 
 #### Olhos, boca e cabeça
 
-Depois da barra `|`, cada linha mostra o estado do rosto. Ele **não vem do modelo**, que só diz
-alerta ou sonolento: vem da geometria do rosto (MediaPipe), com as mesmas fórmulas do extrator de
-métricas. O EAR mede a abertura do olho e a abertura da boca é a distância interna dos lábios
+Depois da barra `|`, cada linha mostra o estado do rosto. Ele **não vem do modelo**, que classifica
+o quadro inteiro como sonolento, alerta ou bocejo: vem da geometria do rosto (MediaPipe), com as
+mesmas fórmulas do extrator de métricas. As duas fontes são independentes; o bocejo do modelo e o
+evento `bocejo` da geometria podem discordar. O EAR mede a abertura do olho e a abertura da boca é a distância interna dos lábios
 dividida pela largura da boca. Os eventos aparecem numa linha própria, também com `--sem-log`:
 
 | Evento | Quando |
@@ -104,12 +105,14 @@ uv run python -m entrada video <seu-video.mp4> [--mostrar]
 
 #### O modelo
 
-O modelo foi treinado com o quadro inteiro em RGB, redimensionado para 96×96, com os pixels de 0
-a 255 (a normalização é uma camada dele); a análise prepara a imagem do mesmo jeito, antes de
-qualquer desenho na janela. As saídas são, na ordem, `alerta` (0) e `sonolento` (1)
-(`classificador.classes` em `config/analise.json`), que também define a janela da média
+O modelo atual é o FaceCar_CNN_V2 (MobileNetV2), treinado com o quadro inteiro em RGB,
+redimensionado para 160×160, com os pixels de 0 a 255 (a normalização é uma camada dele); a análise
+lê o tamanho do próprio modelo e prepara a imagem do mesmo jeito, antes de qualquer desenho na
+janela. As saídas são, na ordem, `sonolento` (0), `alerta` (1) e `bocejo` (2), as pastas Drowsy,
+Non Drowsy e Yawn do treino em ordem alfabética (`classificador.classes` em `config/analise.json`;
+o programa confere que o número de classes bate com o de saídas do modelo), que também define a janela da média
 (`janela_ms`) e o intervalo das linhas no terminal (`intervalo_terminal_ms`). O arquivo fica fora
-do git (11 MB) e deve estar na raiz do projeto; sem ele, o comando termina com erro. A câmera
+do git (cerca de 10 MB) e deve estar na raiz do projeto; sem ele, o comando termina com erro. A câmera
 infravermelha entrega imagens em cinza, diferentes das coloridas do treino, então o resultado dela
 tende a valer pouco.
 
@@ -214,7 +217,7 @@ Sem o `preparar.sh`, os testes que usam o MediaPipe são pulados. Os casos de
 ## Treinamento
 
 O treinamento que ficava em `treinamento/` saiu do repositório. O modelo de imagens usado na
-análise, `cnn_sonolencia.keras`, fica fora do git por ser grande (11 MB) e deve ser colocado na
+análise, `cnn_sonolencia.keras`, fica fora do git por ser grande (cerca de 10 MB) e deve ser colocado na
 raiz do projeto. `treinamento/exportar_modelo.py`, usado para levar um modelo ao simulador,
 depende de um `treinamento/treinar.py` que não está mais aqui; sem o arquivo exportado, o
 simulador mostra o modelo como ainda não treinado.

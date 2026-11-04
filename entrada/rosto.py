@@ -1,7 +1,7 @@
 """O rosto do motorista: detecção com o MediaPipe, olhos, boca e cabeça, e o desenho na janela.
 
-Olhos, boca e cabeça não vêm do modelo cnn_sonolencia.keras, que só diz alerta ou
-sonolento: vêm da geometria do rosto, com as mesmas fórmulas do extrator de métricas
+Olhos, boca e cabeça não vêm do modelo cnn_sonolencia.keras, que classifica o quadro
+inteiro (sonolento, alerta ou bocejo): vêm da geometria do rosto, com as mesmas fórmulas do extrator de métricas
 (entrada/geometria.py). O desenho só vai para a imagem mostrada na tela; a imagem
 enviada ao modelo não recebe marcas. Direções são descritas do ponto de vista do
 motorista: a câmera não espelha a imagem, então quando ele olha para a esquerda dele,

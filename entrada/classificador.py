@@ -1,7 +1,8 @@
 """Classifica o estado do motorista com o modelo Keras treinado (cnn_sonolencia.keras).
 
-O modelo foi treinado com o quadro inteiro da câmera, em RGB, redimensionado para
-96x96, com os pixels de 0 a 255: a normalização é uma camada dentro dele.
+O modelo foi treinado com o quadro inteiro da câmera, em RGB, redimensionado para o
+tamanho de entrada dele (160x160 no FaceCar_CNN_V2), com os pixels de 0 a 255: a
+normalização é uma camada dentro dele. O tamanho é lido do próprio modelo.
 """
 
 import time

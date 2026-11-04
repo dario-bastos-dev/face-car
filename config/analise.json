@@ -27,8 +27,9 @@
   "classificador": {
     "modelo": "cnn_sonolencia.keras",
     "classes": [
+      "sonolento",
       "alerta",
-      "sonolento"
+      "bocejo"
     ],
     "janela_ms": 2000,
     "intervalo_terminal_ms": 1000
