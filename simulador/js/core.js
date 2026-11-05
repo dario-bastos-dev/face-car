@@ -29,6 +29,7 @@ const state = {
   speed: 80, target: 80, manualTarget: false, paused: false,
   driver: 'AGUARDANDO', ackDeadline: 0, ackDone: false,
   hazardOn: false, blinkElapsed: 0, alarmElapsed: 0, cruiseT: 0,
+  returning: false, leftOn: false, // voltando do acostamento para a faixa: seta para a esquerda
   viewMode: '2d', reduceMotion: matchMedia('(prefers-reduced-motion:reduce)').matches,
   trafficDensity: 2, cycleMinutes: 4, zoneSeconds: 30, volume: .45,
   events: [], eventSeq: 0,
@@ -42,7 +43,10 @@ const world = {
   traffic: [],        // veículos no sentido oposto: {id, z, kmh, kind, color}
   lead: null,         // veículo à frente na faixa própria
   follower: null,     // veículo atrás (aparece nos retrovisores)
-  spawnTimer: 0, nextId: 1, rpm: 0, gear: 'D', gearNum: 1
+  spawnTimer: 0, nextId: 1, rpm: 0, gear: 'D', gearNum: 1,
+  // acostamento: pull 0 = na faixa, 1 = no acostamento; pullFrac = posição suavizada (0..1);
+  // egoOffset (m) e lateralSpeed (m/s) para a cabine 3D; heading (rad) = rumo em relação à via
+  pull: 0, pullFrac: 0, egoOffset: 0, lateralSpeed: 0, lateralAccel: 0, heading: 0,
 };
 
 // Ciclo dia/noite contínuo. timeOfDay em horas (0..24).
@@ -270,7 +274,20 @@ function updateTraffic(dt) {
     L.z = Math.max(L.z, ext.front + half(L.len) + 4); // nunca encosta no ego
   }
   const F = world.follower;
-  if (F) {
+  const returning = world.pull > 0 && !state.degraded && state.level !== 'intervention';
+  if (F && returning) {
+    // voltando do acostamento: ninguém aparece atrás. Quem já passou segue em frente; quem vem
+    // atrás fica longe, fora de vista (inclusive dos retrovisores), até o ego entrar na faixa.
+    if (F.z > 0) { F.kmh = lerp(F.kmh, 80, clamp(dt * .4, 0, 1)); F.z += (F.kmh / 3.6 - ego) * dt; }
+    if (F.z <= 0 || F.z > 420) { F.z = -340; F.kmh = state.speed; }
+    F.braking = false;
+  } else if (F && world.pull > .5) {
+    // ego no acostamento: quem vem atrás segue na faixa e passa ao lado, em velocidade de estrada
+    F.kmh = lerp(F.kmh, 80, clamp(dt * .4, 0, 1));
+    F.z += (F.kmh / 3.6 - ego) * dt;
+    if (F.z > 420) { Object.assign(F, randomVehicle(['truck', 'toco', 'pickup', 'van', 'truck34', 'car', 'gol'])); F.z = -200; F.kmh = 80; }
+    F.braking = false;
+  } else if (F) {
     const v = F.kmh / 3.6, gap = -ext.rear - (F.z + half(F.len)); // espaço livre até a traseira do ego
     const dv = v - ego;                       // aproximação (>0 = está chegando)
     const v0 = Math.max(cruiseFor(), 30) / 3.6 + 2;
@@ -300,7 +317,8 @@ function updateSpeed(dt) {
   const v = VEHICLES[state.vehicle];
   let desired = state.target;
   const intervention = !state.degraded && state.level === 'intervention';
-  if (intervention) desired = 0;
+  // intervenção: reduz até ~30 km/h enquanto encosta e só para depois de chegar ao acostamento
+  if (intervention) desired = world.pull >= .98 ? 0 : Math.max(15, Math.min(state.speed, 30));
   if (state.degraded) desired = state.speed;
   else if (!intervention && desired > 0) {
     state.cruiseT += dt;
@@ -328,6 +346,39 @@ function updateSpeed(dt) {
   world.gearNum = state.speed < 1 ? 0 : g;
   world.gear = state.speed < .5 && intervention ? 'P' : 'D';
 
+}
+
+/* ---------- acostamento ----------
+ * Na intervenção, o veículo sai devagar da faixa para o centro do acostamento enquanto reduz,
+ * e só então para. A velocidade lateral é baixa (pico de ~0,45 m/s) e proporcional à de avanço
+ * (não desliza de lado parado). Quando a intervenção termina, volta à faixa só em movimento e
+ * com espaço livre atrás e ao lado. Sem sinal (degradado), fica onde está. */
+const PULL_DIST = ROAD.laneWidth + ROAD.shoulder / 2 - ROAD.egoLaneX; // até o centro do acostamento
+function mergeIsSafe() {
+  const ext = egoExtent(), F = world.follower, L = world.lead;
+  const behind = !F || F.z + half(F.len) < -ext.rear - 30 || F.z - half(F.len) > ext.front + 10;
+  const ahead = !L || L.z - half(L.len) > ext.front + 15;
+  return behind && ahead;
+}
+function updateLateral(dt) {
+  const inter = !state.degraded && state.level === 'intervention';
+  let dir = 0;
+  if (inter && world.pull < 1) dir = 1;
+  else if (!inter && !state.degraded && world.pull > 0 && state.speed > 20 && mergeIsSafe()) dir = -1;
+  const rate = Math.min(.3, state.speed / 3.6 * .08); // m/s (pico ~0,45 m/s no meio da manobra)
+  const before = world.pull;
+  world.pull = clamp(world.pull + dir * rate / PULL_DIST * dt, 0, 1);
+  world.pullFrac = smooth(world.pull);
+  const off = world.pullFrac * PULL_DIST, lat = dt > 0 ? (off - world.egoOffset) / dt : 0;
+  // aceleração lateral suavizada: é ela que pede volante (vira, depois desvira para alinhar)
+  world.lateralAccel = lerp(world.lateralAccel, dt > 0 ? (lat - world.lateralSpeed) / dt : 0, clamp(dt * 4, 0, 1));
+  world.lateralSpeed = lat;
+  world.egoOffset = off;
+  // rumo do veículo: inclina um pouco na direção da manobra, sem tranco
+  world.heading = lerp(world.heading, Math.atan2(lat, Math.max(state.speed / 3.6, 2)), clamp(dt * 3, 0, 1));
+  if (before === 0 && world.pull > 0) log('Intervenção: encostando no acostamento', 'intervention');
+  if (before < 1 && world.pull === 1) log('Veículo no acostamento', 'intervention');
+  if (before > 0 && world.pull === 0) log('Veículo de volta à faixa', 'intervention');
 }
 
 /* ---------- ciclo dia/noite (transição suave) ---------- */
@@ -406,6 +457,7 @@ function setVehicle(v) {
   if (!VEHICLES[v]) return;
   state.vehicle = v; state.level = 'normal'; state.degraded = false;
   state.target = state.speed = cruiseFor(); state.manualTarget = false;
+  Object.assign(world, { pull: 0, pullFrac: 0, egoOffset: 0, lateralSpeed: 0, lateralAccel: 0, heading: 0 });
   state.driver = 'AGUARDANDO'; state.ackDone = false; state.ackDeadline = 0;
   seedTraffic();
   document.querySelectorAll('[data-vehicle]').forEach(b => { b.classList.toggle('active', b.dataset.vehicle === v); b.setAttribute('aria-pressed', b.dataset.vehicle === v); });
@@ -430,8 +482,9 @@ function setPaused(p) {
 }
 function reset() {
   VIGIA.sinal?.fecharCanal('Cenário reiniciado: canal de sinal fechado');
-  Object.assign(state, { degraded: false, source: 'manual', level: 'normal', driver: 'AGUARDANDO', ackDeadline: 0, ackDone: false, hazardOn: false, alarmElapsed: 0 });
+  Object.assign(state, { degraded: false, source: 'manual', level: 'normal', driver: 'AGUARDANDO', ackDeadline: 0, ackDone: false, hazardOn: false, alarmElapsed: 0, returning: false, leftOn: false });
   state.target = state.speed = cruiseFor(); state.manualTarget = false;
+  Object.assign(world, { pull: 0, pullFrac: 0, egoOffset: 0, lateralSpeed: 0, lateralAccel: 0, heading: 0 });
   seedTraffic();
   if (state.paused) setPaused(false);
   refreshUI(); emit('level', 'normal');
@@ -454,7 +507,8 @@ function updateMotion(dt) {
   const k = clamp(state.speed / 40, 0, 1) * (state.reduceMotion ? 0 : 1), t = (motion.t += dt);
   motion.kick = Math.max(0, motion.kick - dt * 2.2);
   const jolt = motion.kick * (Math.sin(t * 31) * .6 + Math.sin(t * 17) * .4);
-  motion.steer = (Math.sin(t * .33) * 1.5 + Math.sin(t * .91 + 1.3) * .6 + Math.sin(t * 2.3) * .12) * k; // graus
+  motion.steer = (Math.sin(t * .33) * 1.5 + Math.sin(t * .91 + 1.3) * .6 + Math.sin(t * 2.3) * .12) * k // graus
+    + world.lateralSpeed * 8 + world.lateralAccel * 45; // entra e sai do acostamento: vira e desvira
   motion.roll = ((Math.sin(t * .47) * .16 + Math.sin(t * 1.3) * .06) * k + jolt * .25) * Math.PI / 180;
   motion.bob = (Math.sin(t * 1.9) * .8 + Math.sin(t * 5.1 + .5) * .35) * k + jolt * 1.6; // px
 }
@@ -468,17 +522,27 @@ function frame(time) {
   lastFrame = time;
   if (!state.paused) {
     updateSpeed(dt);
+    updateLateral(dt);
     updateTraffic(dt);
     updateEnv(dt);
     updateMotion(dt);
     updateZones(dt);
     updatePeds(dt);
     const inter = !state.degraded && state.level === 'intervention';
+    // de volta à faixa (fim da intervenção, ainda no acostamento): seta para a esquerda até entrar
+    const returning = !inter && !state.degraded && world.pull > 0;
+    if (returning !== state.returning) {
+      state.returning = returning;
+      if (returning) { state.blinkElapsed = .55; log('Seta para a esquerda: retornando à faixa', 'intervention'); }
+      else state.leftOn = false;
+    }
     state.blinkElapsed += dt; state.alarmElapsed += dt;
     if (state.blinkElapsed > .55) {
       state.blinkElapsed = 0;
       state.hazardOn = inter ? !state.hazardOn : false;
+      state.leftOn = returning ? !state.leftOn : false;
       if (inter) emit('blink', state.hazardOn);
+      else if (returning) emit('blink', state.leftOn);
     }
     if ((state.level === 'critical' || state.level === 'intervention' || state.level === 'attention') && !state.degraded) {
       const every = state.level === 'attention' ? 6 : state.level === 'critical' ? 2.6 : 2.2;
@@ -555,7 +619,7 @@ const VIGIA = window.VIGIA = {
   getState: () => ({ night: env.night > .5, nightAmount: env.night, timeOfDay: env.timeOfDay, viewMode: state.viewMode, vehicle: state.vehicle, level: state.level, speed: state.speed, target: state.target, degraded: state.degraded, traffic: world.traffic.length, audioActive: !!VIGIA.audio?.enabled, cameraActive: !!VIGIA.monitor?.cameraActive }),
   trafficSnapshot: () => world.traffic.map(t => ({ id: t.id, z: t.z, kind: t.kind, len: t.len })),
   // avança a simulação sem depender da animação (testes automatizados)
-  step: (dt = 1 / 30) => { updateSpeed(dt); updateTraffic(dt); },
+  step: (dt = 1 / 30) => { updateSpeed(dt); updateLateral(dt); updateTraffic(dt); },
   setTimeOfDay: h => { env.warp = null; env.timeOfDay = ((h % 24) + 24) % 24; computeEnv(); }
 };
 

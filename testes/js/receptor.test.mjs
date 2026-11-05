@@ -1,9 +1,11 @@
-// Receptor do contrato sinal.v1 (simulador/js/receptor.js) e modelo da Parte 4 no navegador.
+// Receptor do contrato sinal.v1 (simulador/js/receptor.js).
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { Receptor, validarSinal } from "../../simulador/js/receptor.js";
-import { atributosDaJanela, preverModelo } from "../../simulador/js/modelo.js";
+import { estimar } from "../../demo-navegador/estimador.js";
+import { estadoInicial, transicionar } from "../../demo-navegador/politica.js";
+import { estadoEmissorInicial, emitir } from "../../demo-navegador/mensagens.js";
 
 const msg = (extra = {}) => ({ versao: 1, sessao: "s1", tipo: "acao", seq: 1, ts: 0, ttl: 2000,
   estado: "NORMAL", nivel: 0, acao: "monitorar", indice: 10, confianca: 0.9, ...extra });
@@ -49,20 +51,29 @@ test("canal perdido quando a última mensagem aceita vence", () => {
   assert.equal(r.canalPerdido(5000 + 2000), true);
 });
 
-test("todas as mensagens da Parte 2 (exemplos/parte2/sinais.jsonl) são aceitas em tempo real", () => {
-  const linhas = readFileSync(new URL("../../exemplos/parte2/sinais.jsonl", import.meta.url), "utf8")
-    .split(/\r?\n/).filter((l) => l.trim()).map((l) => JSON.parse(l));
+// Mensagens geradas pela Parte 2 como na página (ia.js): 20 s de olhos abertos e depois
+// fechados, a 30 quadros/s, com ticks de 100 ms. Todas devem ser aceitas, e o estado precisa
+// sair de NORMAL até ALERTA.
+test("mensagens da Parte 2 geradas em tempo real são todas aceitas", () => {
+  const config = JSON.parse(readFileSync(new URL("../../config/estimador.json", import.meta.url), "utf8"));
+  const retencao = config.janela_s * 1000 + config.min_fechamento_ms + config.max_intervalo_ms;
+  const historico = [];
+  for (let t = 0, q = 0; t <= 40000; t += 33, q++) {
+    const ear = t > 20000 ? 0.04 : 0.3;
+    historico.push({ t_ms: t, quadro: q, rosto_visivel: true, ear_esq: ear, ear_dir: ear, abertura_boca: 0.02,
+      yaw: 0, pitch: 0, roll: 0, confianca: 0.95, atraso_ms: 10 });
+  }
+  let estado = estadoInicial(), emissor = estadoEmissorInicial("teste");
+  const mensagens = [];
+  for (let t = 0; t <= 40000; t += 100) {
+    const e = estimar(historico.filter((r) => r.t_ms <= t && r.t_ms > t - retencao), config, t);
+    estado = transicionar(estado, e, t, config, false);
+    let novas;
+    [emissor, novas] = emitir(emissor, estado, e, t, config);
+    mensagens.push(...novas);
+  }
   const r = new Receptor(), t0 = 10000;
-  const status = linhas.map((m) => r.receber(m, t0 + m.ts).status);
-  assert.deepEqual([...new Set(status)], ["aceita"]);
-});
-
-test("modelo da Parte 4: atributos da janela e probabilidade logística", () => {
-  const hist = [0, 100, 200].map((t) => ({ t_ms: t, rosto_visivel: true, ear_esq: 0.3, ear_dir: 0.2, abertura_boca: 0.1 }));
-  const x = atributosDaJanela(hist, { t_ms: 200, perclos: 0.5 }, 30000);
-  for (const [k, v] of Object.entries({ ear: 0.25, perclos: 0.5, boca: 0.1 })) assert.ok(Math.abs(x[k] - v) < 1e-12, k);
-  const modelo = { atributos: ["ear", "perclos", "boca"], media: [0.25, 0, 0], escala: [1, 1, 1], coeficientes: [0, 2, 0], intercepto: -1 };
-  assert.ok(Math.abs(preverModelo(modelo, hist, { t_ms: 200, perclos: 0.5 }) - 0.5) < 1e-12); // z = -1 + 2*0.5 = 0
-  assert.equal(preverModelo(null, hist, { perclos: 0.5 }), null);
-  assert.equal(preverModelo(modelo, [], { perclos: null }), null);
+  assert.deepEqual([...new Set(mensagens.map((m) => r.receber(m, t0 + m.ts).status))], ["aceita"]);
+  const estados = new Set(mensagens.filter((m) => m.tipo === "acao").map((m) => m.estado));
+  for (const e of ["NORMAL", "ATENCAO", "ALERTA"]) assert.ok(estados.has(e), e);
 });

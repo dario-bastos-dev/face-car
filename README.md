@@ -2,18 +2,53 @@
 
 ## Parte 3 · Simulador e integração
 
-Simulador de direção (visão 2D e cabine 3D) com o **scanner de rosto** real: a webcam passa
-pelo extrator da Parte 1 e pelo estimador da Parte 2 na própria página, e as mensagens
-`sinal.v1` comandam o veículo simulado. Também recebe o estimador em Python por WebSocket e
-reproduz mensagens gravadas.
+Simulador de direção (visão 2D e cabine 3D) que integra as Partes 1 e 2 na própria página:
+a webcam do navegador passa pelo mapeamento do rosto (MediaPipe) e pelo **modelo de imagens**
+da Parte 1 (`cnn_sonolencia.keras`), e o estimador e a política da Parte 2 transformam o
+resultado em mensagens `sinal.v1`, que comandam o veículo simulado.
 
 ```bash
-python simulador/servidor.py     # http://localhost:8000/simulador/  (WebSocket: pip install websockets)
-node --test testes/js/receptor.test.mjs
+pip install websockets           # o servidor também precisa do TensorFlow (uv sync) e do modelo na raiz
+python simulador/servidor.py     # http://localhost:8000/simulador/  (ou simulador\INICIAR_SIMULADOR_WINDOWS.bat)
 ```
 
-No cartão da câmera, **◉ Demonstrar** liga o scanner mostrando a malha do rosto e
-**◌ Invisível** mantém o scanner rodando sem desenho. Veja o [guia da Parte 3](docs/parte3.md).
+```text
+webcam (navegador) ─┬─ MediaPipe → olhos, boca, cabeça, olhar e eventos (simulador/js/rosto.js,
+                    │              mesmas regras e limiares de entrada/rosto.py e config/analise.json)
+                    │            → métricas metricas.v1 e PERCLOS (Partes 1 e 2 em JS)
+                    └─ quadro inteiro reduzido a 160×160, RGB, sem desenho
+                         → WebSocket /cnn → simulador/servidor.py → cnn_sonolencia.keras
+                         → sonolento / alerta / bocejo e a média dos últimos 2 s
+índice = 100 × (sonolento + 0,45 × bocejo)  →  política da Parte 2  →  sinal.v1  →  simulador
+```
+
+- **Cartão da câmera:** **◉ Demonstrar** liga o scanner com o mapeamento (contornos, íris,
+  setas do olhar e da cabeça, painel com cabeça, olhar, olhos, boca e a classe do modelo);
+  **◌ Invisível** mantém tudo rodando e mostra só o quadrado do rosto. Abaixo das barras, o
+  painel **Modelo CNN** mostra as probabilidades médias. Clicar na imagem amplia o cartão.
+- **Infravermelho:** usa o sensor IR se o navegador enxergar uma câmera com "IR" ou "infra" no
+  nome (o registro de eventos lista as câmeras encontradas); senão, aplica só um filtro visual
+  monocromático. Muitas câmeras IR de notebook (Windows Hello) não são liberadas para o navegador.
+- **Calibração por motorista:** nos primeiros 5 s com o rosto à frente, a página mede quanto o
+  modelo já marca de sono nesta pessoa acordada (linha de base) e passa a contar só o que passar
+  dela, com folga para o ruído; **↺ Recalibrar** mede de novo. Se a base de sonolência passar de
+  60%, o modelo não separa nada para esse rosto: o painel avisa e os níveis seguem pela geometria.
+  O modelo atual (`cnn_sonolencia_v2`) marca 75% a 98% de "sonolento" num retrato acordado e
+  sorrindo, no quadro inteiro e no rosto recortado; vale reavaliar o treino com imagens de webcam.
+- **Comando dos níveis:** com o modelo calibrado, confiável e com resultado recente (menos de 0,8 s), o índice da
+  política vem do modelo; sem o servidor, sem TensorFlow ou sem o arquivo do modelo, volta ao
+  índice geométrico (PERCLOS) e o painel avisa. Bocejo sozinho leva no máximo a ATENÇÃO. A
+  confiança continua sendo a do rastreio do rosto: sem rosto, o simulador degrada sem frear.
+- **Intervenção:** com o pisca-alerta ligado, o veículo reduz para cerca de 30 km/h, vai devagar
+  para o centro do acostamento (pico de ~0,45 m/s de lado) e só então para. Quando a intervenção
+  termina, volta à faixa em movimento e só com espaço livre atrás e à frente.
+- **Eventos:** olhos fechados por mais de 1 s, olhos reabertos e bocejo vão para o registro de
+  eventos; piscadas são só contadas.
+- **Privacidade:** os quadros só existem na memória do navegador e do servidor; nada é gravado.
+- **Outros canais:** o estimador em Python sobre um CSV (`?ws=ws://localhost:8765`) e o replay
+  de mensagens gravadas continuam disponíveis. Só um canal comanda por vez.
+- **Testes:** `npm test` (receptor, rosto) e `uv run pytest testes/simulador` (serviço do
+  modelo, com um modelo falso).
 
 ## Parte 2 pronta para executar sem câmera
 
@@ -218,9 +253,7 @@ Sem o `preparar.sh`, os testes que usam o MediaPipe são pulados. Os casos de
 
 O treinamento que ficava em `treinamento/` saiu do repositório. O modelo de imagens usado na
 análise, `cnn_sonolencia.keras`, fica fora do git por ser grande (cerca de 10 MB) e deve ser colocado na
-raiz do projeto. `treinamento/exportar_modelo.py`, usado para levar um modelo ao simulador,
-depende de um `treinamento/treinar.py` que não está mais aqui; sem o arquivo exportado, o
-simulador mostra o modelo como ainda não treinado.
+raiz do projeto. O simulador usa o mesmo arquivo pelo servidor (`simulador/servidor.py`).
 
 ## Estrutura
 
@@ -230,10 +263,10 @@ contratos/       contratos de métricas (v1) e de sinal (v1), com exemplos
 entrada/         Python da Parte 1: análise com o classificador, métricas, fontes, linha de comando
 estimador/       Parte 2: estimador e política de ação em Python
 demo-navegador/  Parte 1 e 2 no navegador: extrator.js, estimador.js, politica.js, mensagens.js
-simulador/       Parte 3: simulador 2D/3D, canal de sinal, scanner e servidor local
+simulador/       Parte 3: simulador 2D/3D, canal de sinal, scanner, modelo de imagens e servidor local
 exemplos/        dados sintéticos da Parte 2
 docs/            guias das Partes 2 e 3
 scripts/         preparação, servidor local e extração pelo navegador
 testes/          casos compartilhados, testes Python (entrada/, estimador/) e JS (js/)
-treinamento/     exportação de modelo para o simulador
+treinamento/     notebook do modelo de imagens (modelo.ipynb)
 ```

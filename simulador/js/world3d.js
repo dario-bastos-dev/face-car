@@ -13,6 +13,8 @@ let container, glCanvas;
 const R = {}; // referências da cena
 
 /* ---------- utilitários ---------- */
+// x do veículo próprio: centro da faixa + deslocamento para o acostamento (core.js)
+const egoX = () => V.ROAD.egoLaneX + world.egoOffset;
 function hash(n) { const s = Math.sin(n * 127.1) * 43758.5453; return s - Math.floor(s); }
 function rng(seed) { let s = seed >>> 0; return () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; }; }
 function vnoise(x, y) {
@@ -43,6 +45,7 @@ function lerpColor(a, b, t) { return a.clone().lerp(b, t); }
 
 /* ---------- texturas ---------- */
 const ROAD_W = 8.4, ROAD_TILE = 16.8;
+const SHOULDER_W = 2.1, GRAVEL_W = .9; // acostamento asfaltado e cascalho até o guard-rail (6,58 m)
 function makeAsphalt() {
   return canvasTex(1024, 2048, (ctx, w, h) => {
     noiseFill(ctx, w, h, [78, 81, 84], 34, 7);
@@ -68,6 +71,16 @@ function makeAsphalt() {
     };
     line(.6, .15, '#e6e6e0'); line(ROAD_W - .6, .15, '#e6e6e0');
     line(ROAD_W / 2 - .11, .12, '#e4ad35'); line(ROAD_W / 2 + .11, .12, '#e4ad35');
+  }, true);
+}
+// Acostamento: o mesmo asfalto, um pouco mais claro e gasto, sem faixas nem trilhas de pneus.
+function makeShoulder() {
+  return canvasTex(256, 1024, (ctx, w, h) => {
+    noiseFill(ctx, w, h, [88, 90, 92], 36, 21);
+    const r = rng(23);
+    for (let i = 0; i < 900; i++) { ctx.fillStyle = `rgba(${r() < .5 ? 30 : 160},${r() < .5 ? 32 : 160},${r() < .5 ? 34 : 160},${.05 + r() * .12})`; ctx.fillRect(r() * w, r() * h, 1 + r() * 3, 1 + r() * 3); }
+    for (let i = 0; i < 10; i++) { ctx.fillStyle = `rgba(20,22,24,${.04 + r() * .06})`; ctx.beginPath(); ctx.ellipse(r() * w, r() * h, 10 + r() * 40, 20 + r() * 90, 0, 0, 7); ctx.fill(); }
+    ctx.fillStyle = 'rgba(160,150,120,.18)'; ctx.fillRect(w - 10, 0, 10, h); // poeira junto ao cascalho
   }, true);
 }
 function makeGravel() {
@@ -274,16 +287,22 @@ function buildSky() {
 }
 
 function buildTerrain() {
-  R.tex = { asphalt: makeAsphalt(), gravel: makeGravel(), grass: makeGrass() };
+  R.tex = { asphalt: makeAsphalt(), shoulder: makeShoulder(), gravel: makeGravel(), grass: makeGrass() };
   // Vai de BEHIND metros atrás até ~1040 m à frente: os retrovisores também enxergam pista e chão.
   const LEN = 1360, BEHIND = 320, cz = -LEN / 2 + BEHIND;
   R.tex.asphalt.repeat.set(1, LEN / ROAD_TILE);
   const road = new THREE.Mesh(new THREE.PlaneGeometry(ROAD_W, LEN), std(0xffffff, { map: R.tex.asphalt, roughness: .92 }));
   road.rotation.x = -Math.PI / 2; road.position.set(0, 0, cz); road.receiveShadow = true; scene.add(road);
   R.tex.gravel.repeat.set(1, LEN / 6);
+  R.tex.shoulder.repeat.set(1, LEN / ROAD_TILE);
   for (const side of [-1, 1]) {
-    const sh = new THREE.Mesh(new THREE.PlaneGeometry(2.6, LEN), std(0xffffff, { map: R.tex.gravel, roughness: 1 }));
-    sh.rotation.x = -Math.PI / 2; sh.position.set(side * (ROAD_W / 2 + 1.3), -.02, cz);
+    // acostamento asfaltado logo depois da linha de bordo (é onde o veículo para na intervenção)
+    const ac = new THREE.Mesh(new THREE.PlaneGeometry(SHOULDER_W, LEN), std(0xffffff, { map: R.tex.shoulder, roughness: .94 }));
+    ac.rotation.x = -Math.PI / 2; ac.position.set(side * (ROAD_W / 2 + SHOULDER_W / 2), -.005, cz);
+    if (side < 0) ac.scale.x = -1;
+    ac.receiveShadow = true; scene.add(ac);
+    const sh = new THREE.Mesh(new THREE.PlaneGeometry(GRAVEL_W, LEN), std(0xffffff, { map: R.tex.gravel, roughness: 1 }));
+    sh.rotation.x = -Math.PI / 2; sh.position.set(side * (ROAD_W / 2 + SHOULDER_W + GRAVEL_W / 2), -.02, cz);
     if (side < 0) sh.scale.x = -1;
     sh.receiveShadow = true; scene.add(sh);
   }
@@ -1051,7 +1070,8 @@ function updateVehicles(dt) {
     spin(g, (t.kmh / 3.6) * dt);
   }
   for (const [key, v] of [['lead', world.lead], ['follow', world.follower]]) {
-    if (!v) continue; seen.add(key);
+    if (!v || v.z < -330) continue; // longe demais (ex.: afastado enquanto o ego volta do acostamento)
+    seen.add(key);
     const g = acquire(key, v);
     g.position.set(V.ROAD.egoLaneX, 0, -v.z);
     g.rotation.y = 0;
@@ -1145,7 +1165,7 @@ function buildEgo() {
     const lower = new THREE.Mesh(new THREE.BoxGeometry(1.8, .62, 4.5), body); lower.position.set(0, .66, 1.3); g.add(lower);
     const top = new THREE.Mesh(new THREE.BoxGeometry(1.6, .6, 2.2), [std('#121a22', { metalness: .8, roughness: .1 }), std('#121a22', { metalness: .8, roughness: .1 }), body, body, body, body]); top.position.set(0, 1.27, 1.4); g.add(top);
   }
-  g.position.x = V.ROAD.egoLaneX;
+  g.position.x = egoX();
   R.ego = g; scene.add(g);
 }
 
@@ -1209,7 +1229,7 @@ function updateLighting() {
 /* ---------- câmeras ---------- */
 function eye() {
   const truck = state.vehicle === 'truck';
-  return { x: V.ROAD.egoLaneX - (truck ? .55 : .42), y: truck ? 2.75 : 1.22, z: truck ? -7.2 + 7.2 : 0 };
+  return { x: egoX() - (truck ? .55 : .42), y: truck ? 2.75 : 1.22, z: truck ? -7.2 + 7.2 : 0 };
 }
 let bobT = 0, shake = 0;
 function updateCamera(dt) {
@@ -1222,13 +1242,16 @@ function updateCamera(dt) {
   // pequenas correções do volante deslocam o veículo na faixa; a suspensão inclina a vista
   const drift = V.motion.steer * .012;
   camera.position.set(e.x + bx + drift, e.y + by, e.z);
-  camera.lookAt(e.x + bx * .3 + drift * 1.6, e.y - (state.vehicle === 'truck' ? 4.6 : 3.4), e.z - 40);
+  // o rumo do veículo (manobra para o acostamento) gira a vista suavemente para o lado
+  camera.lookAt(e.x + bx * .3 + drift * 1.6 + Math.tan(world.heading) * 40, e.y - (state.vehicle === 'truck' ? 4.6 : 3.4), e.z - 40);
   camera.rotateZ(V.motion.roll);
-  R.headL.position.set(V.ROAD.egoLaneX - .7, .75, -1.8); R.headR.position.set(V.ROAD.egoLaneX + .7, .75, -1.8);
+  const ex = egoX();
+  if (R.ego) { R.ego.position.x = ex; R.ego.rotation.y = -world.heading; }
+  R.headL.position.set(ex - .7, .75, -1.8); R.headR.position.set(ex + .7, .75, -1.8);
   const front = state.vehicle === 'truck' ? 1.3 : 1.0; // para-choque à frente do motorista
-  R.egoBeam.position.set(V.ROAD.egoLaneX, .03, -(front + 2 + 26));
-  R.egoBeamCore.position.set(V.ROAD.egoLaneX, .035, -(front + 2 + 13));
-  R.headL.target.position.set(V.ROAD.egoLaneX - .9, 0, -45); R.headR.target.position.set(V.ROAD.egoLaneX + .6, 0, -45);
+  R.egoBeam.position.set(ex, .03, -(front + 2 + 26));
+  R.egoBeamCore.position.set(ex, .035, -(front + 2 + 13));
+  R.headL.target.position.set(ex - .9, 0, -45); R.headR.target.position.set(ex + .6, 0, -45);
 }
 
 // Retângulos dos retrovisores fornecidos pelo desenho da cabine (cabin.js).
@@ -1358,6 +1381,7 @@ function render(dt) {
   const t = R.tex;
   t.asphalt.offset.y = (world.distance / ROAD_TILE) % 1;
   t.gravel.offset.y = (world.distance / 6) % 1;
+  t.shoulder.offset.y = (world.distance / ROAD_TILE) % 1;
   t.grass.offset.y = (world.distance / 5) % 1;
   for (const c of R.clouds) { c.position.x += c.userData.drift * dt; if (c.position.x > 1400) c.position.x = -1400; }
   updateScrollers(); updateVehicles(dt); updateSigns(); updateAnimals(dt, performance.now()); updatePeople(performance.now()); updateLighting(); updateCamera(dt);
@@ -1373,7 +1397,7 @@ function render(dt) {
   if (layout && layout.mirrors) {
     const e = eye(), truck = state.vehicle === 'truck';
     const halfW = truck ? 1.38 : 1.0;
-    const cx = V.ROAD.egoLaneX;
+    const cx = egoX();
     // retrovisores acompanham o balanço vertical da cabine
     const bob = V.cabin.snap ? V.cabin.snap(V.motion.bob) : V.motion.bob; // o mesmo deslocamento da moldura
     const m = {}; for (const [k, r] of Object.entries(layout.mirrors)) m[k] = { ...r, y: r.y + bob };

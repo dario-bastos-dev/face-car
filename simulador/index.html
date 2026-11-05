@@ -8,7 +8,7 @@
 <link rel="icon" href="assets/favicon.ico" sizes="any" />
 <link rel="icon" type="image/png" href="assets/vigia_icon.png" />
 <link rel="apple-touch-icon" href="assets/vigia_icon.png" />
-<link rel="stylesheet" href="css/vigia.css?v=0.9.7" />
+<link rel="stylesheet" href="css/vigia.css?v=0.9.20" />
 </head>
 <body>
 <div class="app">
@@ -83,7 +83,7 @@
       <section class="card monitor-card cam-big glass" id="monitorCard">
             <div class="card-row cam-head"><div class="panel-label">01 / Monitoramento do motorista</div>
               <label class="camera-switch" title="Ligar / desligar a câmera"><input id="cameraBtn" type="checkbox" role="switch" aria-label="Ligar ou desligar câmera" /><span class="switch-track"></span><b>CÂMERA</b></label>
-              <label class="camera-switch ir-switch" title="Filtro de câmera infravermelha (só visual; o scanner usa a imagem original)"><input id="irBtn" type="checkbox" role="switch" aria-label="Filtro infravermelho" /><span class="switch-track"></span><b>INFRAVERMELHO</b></label>
+              <label class="camera-switch ir-switch" title="Usa o sensor infravermelho se o navegador tiver acesso a ele; senão, aplica só um filtro visual"><input id="irBtn" type="checkbox" role="switch" aria-label="Filtro infravermelho" /><span class="switch-track"></span><b>INFRAVERMELHO</b></label>
               <span class="cam-status" id="camStatus">SIMULAÇÃO</span>
               <button class="cam-close" id="camCloseBtn" title="Fechar (Esc)" aria-label="Fechar a câmera ampliada">✕</button>
             </div>
@@ -92,16 +92,19 @@
               <canvas id="monitorOverlay" aria-hidden="true"></canvas>
               <div class="cam-warning" id="camWarning" hidden></div>
             </div>
-            <div class="scanner-bar"><span class="scanner-status" data-scanner-status>SCANNER DESLIGADO</span><button class="scanner-btn" data-scanner="demonstrar" title="Liga a câmera e o scanner, mostrando a malha do rosto">◉ Demonstrar</button><button class="scanner-btn" data-scanner="invisivel" title="O scanner continua rodando, sem desenho sobre a imagem">◌ Invisível</button></div>
+            <div class="scanner-bar"><span class="scanner-status" data-scanner-status>SCANNER DESLIGADO</span><button class="scanner-btn" data-scanner="demonstrar" title="Liga a câmera e o scanner, mostrando a malha do rosto">◉ Demonstrar</button><button class="scanner-btn" data-scanner="invisivel" title="O scanner continua rodando; só o quadrado do rosto aparece">◌ Invisível</button></div>
             <div class="cc-metrics">
               <div class="metric" id="mEyes"><small>Olhos</small><span class="bar"><i></i></span><b>100%</b></div>
-              <div class="metric" id="mMouth" title="Abertura da boca (bocejo a partir de 70%)"><small>Boca</small><span class="bar"><i></i></span><b>0%</b></div>
+              <div class="metric" id="mMouth" title="Abertura da boca: aberta acima de 50% (abertura 0,40); aberta por 1,5 s é bocejo"><small>Boca</small><span class="bar"><i></i></span><b>0%</b></div>
               <div class="metric" id="mHead"><small>Cabeça</small><span class="bar"><i></i></span><b>0°</b></div>
               <div class="metric" id="mPerclos"><small>PERCLOS</small><span class="bar"><i></i></span><b>5%</b></div>
               <div class="metric" id="mFatigue"><small>Fadiga</small><span class="bar"><i></i></span><b>10</b></div>
             </div>
             <div class="cc-foot" id="monitorSource">MÉTRICAS SIMULADAS</div>
-            <div class="cc-foot model-line" data-modelo>Modelo (Parte 4): ainda não treinado</div>
+            <div class="cnn-panel" data-cnn data-estado="desligado" title="Modelo de imagens da Parte 1 (cnn_sonolencia.keras), média dos últimos 2 s">
+              <div class="cnn-head"><b>MODELO CNN</b><span data-cnn-status>liga com o scanner</span><button class="cnn-recal" data-cnn-recalibrar hidden title="Medir de novo a linha de base deste motorista (olhe para a frente por 5 s)">↺ Recalibrar</button></div>
+              <div class="cnn-barras" data-cnn-barras></div>
+            </div>
           </section>
     </div>
   </main>
@@ -136,15 +139,16 @@
 
 <script src="vendor/three.min.js"></script>
 <script>window.THREE || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');</script>
-<script src="js/core.js?v=0.9.7"></script>
-<script src="js/scene2d.js?v=0.9.7"></script>
-<script src="js/world3d.js?v=0.9.7"></script>
-<script src="js/cabin.js?v=0.9.7"></script>
-<script src="js/audio.js?v=0.9.7"></script>
-<script src="js/driver-monitor.js?v=0.9.7"></script>
-<script src="js/overlay2d.js?v=0.9.7"></script>
+<script src="js/core.js?v=0.9.20"></script>
+<script src="js/scene2d.js?v=0.9.20"></script>
+<script src="js/world3d.js?v=0.9.20"></script>
+<script src="js/cabin.js?v=0.9.20"></script>
+<script src="js/audio.js?v=0.9.20"></script>
+<script src="js/driver-monitor.js?v=0.9.20"></script>
+<script src="js/overlay2d.js?v=0.9.20"></script>
 <!-- Parte 3: canal de sinal (sinal.v1) e scanner real (Partes 1 e 2 na página) -->
-<script type="module" src="js/sinal.js?v=0.9.7"></script>
-<script type="module" src="js/ia.js?v=0.9.7" onerror="VIGIA.log('Scanner indisponível: não foi possível carregar o MediaPipe', 'error')"></script>
+<script type="module" src="js/sinal.js?v=0.9.20"></script>
+<script type="module" src="js/ia.js?v=0.9.20" onerror="VIGIA.log('Scanner indisponível: não foi possível carregar o MediaPipe', 'error')"></script>
+<script type="module" src="js/cnn.js?v=0.9.20"></script>
 </body>
 </html>

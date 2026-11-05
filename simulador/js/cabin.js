@@ -10,6 +10,27 @@ let canvas, ctx, W = 0, H = 0, dpr = 1;
 let under, over; // camadas estáticas pré-renderizadas
 const emblem = new Image(); emblem.src = 'assets/vigia_v.png'; // "V" do volante, sem fundo
 emblem.onload = () => { if (W) buildStatic(); };
+// Mãos do motorista segurando o volante, recortadas de uma imagem de referência do volante com
+// as mãos (o aro passa por trás do dorso e reaparece em cima e embaixo). Cada imagem guarda onde
+// ficava o centro do volante (`centro`, em px da imagem), o raio da linha média do aro (`raio`) e
+// o ângulo da pegada (`angulo`); `giro` sobe um pouco a mão no aro. São desenhadas a cada quadro,
+// não na camada pré-renderizada: girando com o volante, os braços continuam até fora da tela.
+const MAOS = [
+  { img: new Image(), src: 'assets/mao_esquerda.png', centro: [370.2, 119.4], raio: 250.2, giro: .12 },
+  { img: new Image(), src: 'assets/mao_direita.png', centro: [-185.4, 118.2], raio: 250.2, giro: -.12 },
+];
+for (const m of MAOS) m.img.src = m.src;
+function drawHands(c, w) {
+  for (const m of MAOS) {
+    if (!m.img.complete || !m.img.naturalWidth) continue;
+    const k = w.r / m.raio;
+    c.save();
+    c.translate(w.cx, w.cy); c.rotate(m.giro); c.scale(k, k);
+    c.shadowColor = 'rgba(0,0,0,.4)'; c.shadowBlur = 14; c.shadowOffsetY = 5;
+    c.drawImage(m.img, -m.centro[0], -m.centro[1]);
+    c.restore();
+  }
+}
 
 // Balanço da cabine arredondado para pixels inteiros da tela: deslocamentos fracionários
 // reamostram as bordas (colunas, molduras) e deixam frestas claras piscando ao sacudir.
@@ -66,7 +87,7 @@ function computeLayout() {
 
   const wheelCx = narrow ? W * .5 : W * .445;
   const wheelR = narrow ? Math.min(W * .42, H * .44) : Math.min(H * .47, W * .3);
-  L.wheel = { cx: wheelCx, cy: H * 1.04, r: wheelR, t: Math.max(14, wheelR * .11) };
+  L.wheel = { cx: wheelCx, cy: H * 1.04, r: wheelR, t: Math.max(14, wheelR * .15) }; // aro grosso, como o da referência das mãos
   L.cluster = narrow
     ? { x: W * .14, y: dashTop + H * .03, w: W * .72, h: H - dashTop - H * .05 }
     : { x: W * .272, y: dashTop + H * .028, w: W * .352, h: H - dashTop - H * .045 };
@@ -75,6 +96,7 @@ function computeLayout() {
 }
 
 function resize(w, h) {
+  if (!w || !h) return; // área ainda sem tamanho (oculta)
   canvas = canvas || document.getElementById('cabinCanvas');
   ctx = ctx || canvas.getContext('2d');
   dpr = Math.min(window.devicePixelRatio || 1, 1.5); // igual ao WebGL: camadas menores, cópia por quadro mais leve
@@ -429,10 +451,10 @@ function drawCluster(L, t) {
   // visão de faixa (ADAS)
   const lx = mx, ly = k.y + 42 * S, lw = mw, lh = k.h - 50 * S;
   // pisca-alerta: setas nos cantos superiores da área da faixa, abaixo dos textos e dentro do quadro
-  if (state.hazardOn) {
+  if (state.hazardOn || state.leftOn) { // seta para a esquerda: só a do lado esquerdo
     const as = 8 * S, ay = ly + as * .9;
     c.save(); c.fillStyle = '#2fe08f'; c.shadowColor = '#2fe08f'; c.shadowBlur = 8;
-    for (const s of [-1, 1]) {
+    for (const s of state.hazardOn ? [-1, 1] : [-1]) {
       const tip = s < 0 ? lx + 1 : lx + lw - 1; // ponta da seta junto à borda da coluna
       c.beginPath(); c.moveTo(tip, ay); c.lineTo(tip - s * as, ay - as * .62); c.lineTo(tip - s * as, ay - as * .25);
       c.lineTo(tip - s * as * 1.6, ay - as * .25); c.lineTo(tip - s * as * 1.6, ay + as * .25); c.lineTo(tip - s * as, ay + as * .25);
@@ -531,6 +553,8 @@ function draw(dt, t) {
   ctx.setTransform(1, 0, 0, 1, 0, dy * dpr);
   ctx.translate(w.cx * dpr, w.cy * dpr); ctx.rotate(V.motion.steer * Math.PI / 180); ctx.translate(-w.cx * dpr, -w.cy * dpr);
   ctx.drawImage(over, 0, 0);
+  ctx.scale(dpr, dpr);
+  drawHands(ctx, w); // mesmo giro do volante
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 V.addRenderer(draw);
