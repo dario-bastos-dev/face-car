@@ -9,6 +9,36 @@ const { state, world, env, clamp } = V;
 const A = V.audio = { enabled: false };
 let ctx, master, bus = {}, engine, road, wind, ambience, noiseBuf;
 
+/* Buzinas gravadas (assets/sons). Trechos em segundos, medidos pelo envelope de cada arquivo:
+ *  classica   buzina comum de carro (~1,7 kHz): toque curto 0,05-0,22, médio 0,7-1,2, longo 1,8-2,9
+ *  dois       "bi-bi" (~420 Hz): dois toques em 0,9 s
+ *  grave      buzina grave de caminhão: toques em 0,05-0,25 e 0,9-1,15
+ *  forte      toque forte 0,05-0,7 e longo 1,3-3,0 (alarme da intervenção, toques seguidos) */
+const SONS = { classica: 'buzina_classica', dois: 'buzina_dois_toques', grave: 'buzina_grave', forte: 'buzina_forte' };
+const buffers = {};
+function carregarSons() {
+  for (const [nome, arq] of Object.entries(SONS)) {
+    if (buffers[nome]) continue;
+    fetch(`assets/sons/${arq}.mp3`).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
+      .then(buf => { buffers[nome] = buf; }).catch(() => {}); // sem o arquivo, cai no som sintetizado
+  }
+}
+// Toca um trecho gravado; devolve os nós para ajustar volume, panorâmica e tom enquanto toca.
+function sample(nome, { inicio = 0, dur, vol = 1, pan = 0, rate = 1, delay = 0, dest = bus.alert } = {}) {
+  const buf = buffers[nome];
+  if (!A.enabled || !buf) return null;
+  const t = ctx.currentTime + delay, src = ctx.createBufferSource(), g = ctx.createGain();
+  src.buffer = buf; src.playbackRate.value = rate;
+  const d = Math.min(dur ?? buf.duration - inicio, buf.duration - inicio);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .015);
+  g.gain.setValueAtTime(vol, t + Math.max(.02, d / rate - .04)); g.gain.linearRampToValueAtTime(0, t + d / rate);
+  const p = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+  if (p) p.pan.value = pan;
+  src.connect(g); (p ? g.connect(p) : g).connect(dest);
+  src.start(t, inicio, d); src.stop(t + d / rate + .05);
+  return { src, g, p, fim: t + d / rate };
+}
+
 function makeNoise() {
   const len = ctx.sampleRate * 2, b = ctx.createBuffer(1, len, ctx.sampleRate), d = b.getChannelData(0);
   let last = 0;
@@ -58,6 +88,7 @@ function enable() {
     if (!AC) throw Error('Web Audio não suportada');
     if (!ctx) { ctx = new AC(); buildGraph(); }
     ctx.resume();
+    carregarSons();
     A.enabled = true;
     V.log('Áudio do simulador ativado', 'audio');
     blink(true);
@@ -106,6 +137,7 @@ function blink(on) { tone(on ? 1400 : 950, .03, 'square', on ? .05 : .035); burs
 function horn(intensity = 1) {
   if (!A.enabled) return;
   const truck = state.vehicle === 'truck';
+  if (sample(truck ? 'grave' : 'classica', { inicio: truck ? .9 : .7, dur: truck ? .3 : .5, vol: .9 * intensity })) return;
   const f = truck ? [185, 233, 277] : [349, 440];
   f.forEach(fr => tone(fr, truck ? .9 : .5, 'square', .05 * intensity, 0, null, bus.alert));
   f.forEach(fr => tone(fr * 1.005, truck ? .9 : .5, 'sawtooth', .03 * intensity, 0, null, bus.alert));
@@ -114,7 +146,48 @@ function chime(strong) {
   if (strong) { [880, 1175, 880].forEach((f, i) => tone(f, .18, 'sine', .16, i * .2)); tone(1568, .25, 'triangle', .08, .6); }
   else { tone(659, .35, 'sine', .11); tone(988, .5, 'sine', .1, .22); }
 }
-function siren() { for (let i = 0; i < 4; i++) { tone(960, .14, 'square', .1, i * .3); tone(720, .14, 'square', .1, i * .3 + .15); } }
+// Intervenção: a sirene e, junto, a mesma buzina tocada em toques seguidos, como um alarme.
+const ALARME_TOQUES = 3, ALARME_INTERVALO = .5, ALARME_DUR = .36;
+function siren() {
+  for (let i = 0; i < 4; i++) { tone(960, .14, 'square', .1, i * .3); tone(720, .14, 'square', .1, i * .3 + .15); }
+  for (let i = 0; i < ALARME_TOQUES; i++) sample('forte', { inicio: .05, dur: ALARME_DUR, vol: .9, delay: i * ALARME_INTERVALO });
+}
+
+/* Buzinadas de quem vem na contramão em algumas passagens: dois toques seguidos, com volume,
+ * panorâmica e tom acompanhando a distância do veículo (sobe ao chegar, cai ao se afastar, com
+ * Doppler). Cada buzinada fica ligada ao veículo até terminar. */
+const buzinadas = [];
+let ultimaBuzinada = -1e9;
+function buzinar(t) {
+  const pesado = !!V.VEHICLE_TYPES[t.kind]?.heavy, nome = pesado ? 'grave' : Math.random() < .5 ? 'dois' : 'classica';
+  const toques = nome === 'dois' ? [{ inicio: 0, dur: .9 }]
+    : nome === 'grave' ? [{ inicio: .05, dur: .22 }, { inicio: .05, dur: .22, delay: .32 }]
+    : [{ inicio: .05, dur: .18 }, { inicio: .05, dur: .18, delay: .28 }];
+  for (const tq of toques) {
+    const s = sample(nome, { ...tq, vol: 0, dest: bus.drive, pan: -.6 });
+    if (s) buzinadas.push({ s, id: t.id, ...tq });
+  }
+}
+function atualizarBuzinadas() {
+  const agora = ctx.currentTime;
+  for (let i = buzinadas.length - 1; i >= 0; i--) {
+    const b = buzinadas[i], t = world.traffic.find(v => v.id === b.id);
+    if (agora > b.s.fim + .1) { buzinadas.splice(i, 1); continue; }
+    const z = t ? t.z : -200, perto = clamp(1 - Math.abs(z) / 130, 0, 1);
+    b.s.g.gain.setTargetAtTime(.9 * perto * perto * state.volume * 1.6, agora, .03);
+    if (b.s.p) b.s.p.pan.setTargetAtTime(clamp(-.25 - .6 * (1 - Math.abs(z) / 40), -.9, -.25) * (z < 0 ? .7 : 1), agora, .05);
+    const aprox = ((state.speed + (t?.kmh || 0)) / 3.6) * (z > 0 ? 1 : -1);
+    b.s.src.playbackRate.setTargetAtTime(clamp(1 + aprox / 343, .85, 1.18), agora, .05);
+  }
+}
+function vigiarPassagens() {
+  const agora = ctx.currentTime;
+  for (const t of world.traffic) {
+    if (t.honkChecked || t.z > 55 || t.z < 0) continue;
+    t.honkChecked = true;
+    if (Math.random() < .3 && agora - ultimaBuzinada > 6) { ultimaBuzinada = agora; buzinar(t); }
+  }
+}
 
 let birdTimer = 2, cityTimer = 4;
 function distantHorn() {
@@ -158,6 +231,8 @@ function update(dt) {
   // cidade: buzinas distantes de vez em quando
   if (!paused && city) { cityTimer -= dt; if (cityTimer < 0) { cityTimer = 6 + Math.random() * 10; distantHorn(); } }
   ramp(master.gain, state.volume, .1);
+  if (!paused) vigiarPassagens();
+  atualizarBuzinadas();
 }
 
 /* ---------- ligações com o núcleo ---------- */

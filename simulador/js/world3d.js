@@ -1038,16 +1038,46 @@ function setVehicleLights(g, night, braking, hazard) {
 
 const pools = {}; // modelos reaproveitados por tipo
 const active = new Map();
+// Reaproveitamento de modelos: construir um veículo novo (geometria, materiais, envio à GPU)
+// no meio da viagem causava uma travada a cada carro que surgia. Agora um modelo guardado do
+// mesmo tipo é repintado com as cores do novo veículo; só se constrói quando não há nenhum.
+const isTruck = kind => kind === 'truck' || kind === 'toco' || kind === 'truck34';
+function marcarPintura(g, v) {
+  const cor = new THREE.Color(v.color).getHex(), cab = v.cab ? new THREE.Color(v.cab).getHex() : null;
+  const rib = isTruck(v.kind) ? ribTex(v.color) : null, door = isTruck(v.kind) ? doorTex(v.color) : null;
+  const pintura = [];
+  g.traverse(o => {
+    if (!o.isMesh) return;
+    for (const m of [].concat(o.material)) {
+      if (!m || pintura.some(p => p.m === m)) continue;
+      if (rib && m.map === rib) pintura.push({ m, papel: 'rib' });
+      else if (door && m.map === door) pintura.push({ m, papel: 'door' });
+      else if (!m.map && m.color && !m.emissiveMap && m.color.getHex() === cor) pintura.push({ m, papel: 'cor' });
+      else if (!m.map && m.color && cab !== null && m.color.getHex() === cab) pintura.push({ m, papel: 'cab' });
+    }
+  });
+  g.userData.pintura = pintura;
+}
+function repintar(g, v) {
+  for (const { m, papel } of g.userData.pintura || []) {
+    if (papel === 'cor') m.color.set(v.color);
+    else if (papel === 'cab') m.color.set(v.cab || '#f4f4f2');
+    else if (papel === 'rib') m.map = ribTex(v.color);
+    else if (papel === 'door') m.map = doorTex(v.color);
+  }
+  Object.assign(g.userData, { color: v.color, cab: v.cab });
+}
 function acquire(key, v) {
   let g = active.get(key);
-  if (g && g.userData.kind === v.kind && g.userData.color === v.color) return g;
+  if (g && g.userData.kind === v.kind && g.userData.color === v.color && g.userData.cab === v.cab) return g;
   if (g) release(key);
   const pool = pools[v.kind] || (pools[v.kind] = []);
-  g = pool.find(p => p.userData.color === v.color);
-  if (g) pool.splice(pool.indexOf(g), 1);
+  g = pool.find(p => p.userData.color === v.color && p.userData.cab === v.cab) || pool[pool.length - 1];
+  if (g) { pool.splice(pool.indexOf(g), 1); if (g.userData.color !== v.color || g.userData.cab !== v.cab) repintar(g, v); }
   else {
     g = (BUILDERS[v.kind] || BUILDERS.car)(v);
-    g.userData.kind = v.kind; g.userData.color = v.color;
+    Object.assign(g.userData, { kind: v.kind, color: v.color, cab: v.cab });
+    marcarPintura(g, v);
   }
   g.visible = true; scene.add(g); active.set(key, g);
   return g;
@@ -1055,7 +1085,7 @@ function acquire(key, v) {
 function release(key) {
   const g = active.get(key); if (!g) return;
   scene.remove(g); active.delete(key);
-  const pool = pools[g.userData.kind] || (pools[g.userData.kind] = []); if (pool.length < 6) pool.push(g);
+  const pool = pools[g.userData.kind] || (pools[g.userData.kind] = []); if (pool.length < 12) pool.push(g);
 }
 
 function updateVehicles(dt) {
@@ -1347,7 +1377,8 @@ function warmUp() {
   (R.scrollers || []).forEach(show); R.officers.forEach(show); R.peds.forEach(show);
   const extra = [];
   for (const kind of Object.keys(V.VEHICLE_TYPES)) for (const color of V.VEHICLE_TYPES[kind].colors.slice(0, 3)) {
-    const g = (BUILDERS[kind] || BUILDERS.car)({ kind, color, cab: '#f4f4f2' }); g.userData.kind = kind; g.userData.color = color;
+    const v = { kind, color, cab: '#f4f4f2' }, g = (BUILDERS[kind] || BUILDERS.car)(v);
+    Object.assign(g.userData, { kind, color, cab: v.cab }); marcarPintura(g, v);
     g.position.set(0, 0, -30); scene.add(g); extra.push(g);
   }
   for (const type of ['animals', 'noPassing', 'rest', 'belt', 'distance', 'vigia', 'pedestrian', 'busStop']) { const g = buildSign({ type }); g.position.z = -30; scene.add(g); extra.push(g); }
@@ -1356,7 +1387,7 @@ function warmUp() {
   finally { renderer.setRenderTarget(null); rt.dispose(); }
   shown.forEach(o => { o.visible = false; });
   // veículos pré-construídos vão para o reaproveitamento (pools), já prontos na GPU
-  for (const g of extra) { scene.remove(g); if (g.userData.kind) { const pool = pools[g.userData.kind] || (pools[g.userData.kind] = []); if (pool.length < 6) pool.push(g); } }
+  for (const g of extra) { scene.remove(g); if (g.userData.kind) { const pool = pools[g.userData.kind] || (pools[g.userData.kind] = []); if (pool.length < 12) pool.push(g); } }
 }
 function fail(msg) {
   failed = true;
@@ -1376,8 +1407,23 @@ function resize() {
 }
 
 let mirrorFrame = 0;
+// Resolução adaptativa: se a máquina não segura ~60 quadros/s (um quadro que passa de 16,7 ms
+// faz o navegador cair para 30, aos solavancos), a cena 3D baixa a escala de pixels em passos,
+// até 0,7. Só desce: subir e descer alternadamente faria a imagem piscar de nitidez.
+const QUAL = { media: 1 / 60, lento: 0, min: .7 };
+function adaptarResolucao(dt) {
+  if (!dt || dt > .2) return; // pausa, troca de aba ou primeiro quadro
+  QUAL.media += (dt - QUAL.media) * .1;
+  QUAL.lento = QUAL.media > 1 / 48 ? QUAL.lento + dt : 0;
+  const pr = renderer.getPixelRatio();
+  if (QUAL.lento > 1.5 && pr > QUAL.min + .01) {
+    QUAL.lento = 0; QUAL.media = 1 / 60;
+    renderer.setPixelRatio(Math.max(QUAL.min, Math.round((pr - .2) * 100) / 100)); resize();
+  }
+}
 function render(dt) {
   if (!ready || failed || state.viewMode !== '3d') return;
+  adaptarResolucao(dt);
   const t = R.tex;
   t.asphalt.offset.y = (world.distance / ROAD_TILE) % 1;
   t.gravel.offset.y = (world.distance / 6) % 1;
@@ -1418,7 +1464,7 @@ function render(dt) {
   mirrorFrame++;
 }
 
-V.world3d = { init, render, info: () => renderer && { ...renderer.info.render, programs: renderer.info.programs?.length },
+V.world3d = { init, render, get resolucao() { return renderer && renderer.getPixelRatio(); }, info: () => renderer && { ...renderer.info.render, programs: renderer.info.programs?.length },
   // diagnóstico: posição dos animais em relação ao motorista (z < 0 = à frente)
   animals: () => (R.animals || []).map(a => ({ kind: a.kind, x: +a.x.toFixed(1), z: +(-(a.S - world.distance)).toFixed(1), state: a.state, visible: a.g.visible })), get ready() { return ready; }, get failed() { return failed; } };
 V.on('ready', init);

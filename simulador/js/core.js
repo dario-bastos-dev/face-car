@@ -47,6 +47,7 @@ const world = {
   // acostamento: pull 0 = na faixa, 1 = no acostamento; pullFrac = posição suavizada (0..1);
   // egoOffset (m) e lateralSpeed (m/s) para a cabine 3D; heading (rad) = rumo em relação à via
   pull: 0, pullFrac: 0, egoOffset: 0, lateralSpeed: 0, lateralAccel: 0, heading: 0,
+  posRetorno: 0, // s restantes, depois de voltar à faixa, sem nenhum veículo atrás
 };
 
 // Ciclo dia/noite contínuo. timeOfDay em horas (0..24).
@@ -274,7 +275,8 @@ function updateTraffic(dt) {
     L.z = Math.max(L.z, ext.front + half(L.len) + 4); // nunca encosta no ego
   }
   const F = world.follower;
-  const returning = world.pull > 0 && !state.degraded && state.level !== 'intervention';
+  // voltando do acostamento e até 3 s depois de entrar na faixa: ninguém atrás
+  const returning = (world.pull > 0 && !state.degraded && state.level !== 'intervention') || world.posRetorno > 0;
   if (F && returning) {
     // voltando do acostamento: ninguém aparece atrás. Quem já passou segue em frente; quem vem
     // atrás fica longe, fora de vista (inclusive dos retrovisores), até o ego entrar na faixa.
@@ -286,6 +288,11 @@ function updateTraffic(dt) {
     F.kmh = lerp(F.kmh, 80, clamp(dt * .4, 0, 1));
     F.z += (F.kmh / 3.6 - ego) * dt;
     if (F.z > 420) { Object.assign(F, randomVehicle(['truck', 'toco', 'pickup', 'van', 'truck34', 'car', 'gol'])); F.z = -200; F.kmh = 80; }
+    F.braking = false;
+  } else if (F && F.z > 0) {
+    // já passou o ego (estava no acostamento): segue em frente e reaparece longe, atrás
+    F.kmh = lerp(F.kmh, 80, clamp(dt * .4, 0, 1)); F.z += (F.kmh / 3.6 - ego) * dt;
+    if (F.z > 420) { F.z = -260; F.kmh = state.speed; }
     F.braking = false;
   } else if (F) {
     const v = F.kmh / 3.6, gap = -ext.rear - (F.z + half(F.len)); // espaço livre até a traseira do ego
@@ -300,7 +307,7 @@ function updateTraffic(dt) {
     // garantia física: nunca invade o espaço do ego
     const maxZ = -ext.rear - half(F.len) - 2;
     if (F.z > maxZ) { F.z = maxZ; F.kmh = Math.min(F.kmh, state.speed); }
-    if (F.z < -220) { F.z = -120; F.kmh = state.speed; } // ficou muito para trás: reaparece no retrovisor
+    if (F.z < -330) { F.z = -260; F.kmh = state.speed; } // ficou muito para trás: volta de longe, ao fundo do retrovisor
     F.braking = acc < -1;
   }
 }
@@ -354,6 +361,9 @@ function updateSpeed(dt) {
  * (não desliza de lado parado). Quando a intervenção termina, volta à faixa só em movimento e
  * com espaço livre atrás e ao lado. Sem sinal (degradado), fica onde está. */
 const PULL_DIST = ROAD.laneWidth + ROAD.shoulder / 2 - ROAD.egoLaneX; // até o centro do acostamento
+const LAT_ACCEL = .12;   // m/s²: quanto a velocidade lateral pode mudar por segundo
+const STEER_MAX = 35;    // graus de volante, no máximo, para entrar ou sair do acostamento
+const STEER_RATE = 40;   // graus por segundo: o motorista gira o volante aos poucos
 function mergeIsSafe() {
   const ext = egoExtent(), F = world.follower, L = world.lead;
   const behind = !F || F.z + half(F.len) < -ext.rear - 30 || F.z - half(F.len) > ext.front + 10;
@@ -365,20 +375,27 @@ function updateLateral(dt) {
   let dir = 0;
   if (inter && world.pull < 1) dir = 1;
   else if (!inter && !state.degraded && world.pull > 0 && state.speed > 20 && mergeIsSafe()) dir = -1;
-  const rate = Math.min(.3, state.speed / 3.6 * .08); // m/s (pico ~0,45 m/s no meio da manobra)
+  // Velocidade lateral contínua: sobe e desce com aceleração limitada (inclusive quando a volta
+  // pausa por falta de espaço) e freia antes do fim, para o volante nunca dar tranco.
+  const rate = Math.min(.3, state.speed / 3.6 * .08); // m/s
+  const restante = (dir > 0 ? 1 - world.pull : world.pull) * PULL_DIST;
+  const alvo = dir * Math.min(rate, Math.sqrt(2 * LAT_ACCEL * restante));
+  const v0 = world.lateralSpeed;
+  const v = dt > 0 ? v0 + clamp(alvo - v0, -LAT_ACCEL * dt, LAT_ACCEL * dt) : v0;
   const before = world.pull;
-  world.pull = clamp(world.pull + dir * rate / PULL_DIST * dt, 0, 1);
-  world.pullFrac = smooth(world.pull);
-  const off = world.pullFrac * PULL_DIST, lat = dt > 0 ? (off - world.egoOffset) / dt : 0;
+  world.pull = clamp(world.pull + v * dt / PULL_DIST, 0, 1);
+  world.pullFrac = world.pull;
+  world.lateralSpeed = (world.pull === 0 && v < 0) || (world.pull === 1 && v > 0) ? 0 : v;
   // aceleração lateral suavizada: é ela que pede volante (vira, depois desvira para alinhar)
-  world.lateralAccel = lerp(world.lateralAccel, dt > 0 ? (lat - world.lateralSpeed) / dt : 0, clamp(dt * 4, 0, 1));
-  world.lateralSpeed = lat;
-  world.egoOffset = off;
+  world.lateralAccel = lerp(world.lateralAccel, dt > 0 ? (world.lateralSpeed - v0) / dt : 0, clamp(dt * 6, 0, 1));
+  world.egoOffset = world.pull * PULL_DIST;
+  const lat = world.lateralSpeed;
   // rumo do veículo: inclina um pouco na direção da manobra, sem tranco
   world.heading = lerp(world.heading, Math.atan2(lat, Math.max(state.speed / 3.6, 2)), clamp(dt * 3, 0, 1));
   if (before === 0 && world.pull > 0) log('Intervenção: encostando no acostamento', 'intervention');
   if (before < 1 && world.pull === 1) log('Veículo no acostamento', 'intervention');
-  if (before > 0 && world.pull === 0) log('Veículo de volta à faixa', 'intervention');
+  if (before > 0 && world.pull === 0) { log('Veículo de volta à faixa', 'intervention'); world.posRetorno = 3; }
+  world.posRetorno = Math.max(0, world.posRetorno - dt);
 }
 
 /* ---------- ciclo dia/noite (transição suave) ---------- */
@@ -457,7 +474,7 @@ function setVehicle(v) {
   if (!VEHICLES[v]) return;
   state.vehicle = v; state.level = 'normal'; state.degraded = false;
   state.target = state.speed = cruiseFor(); state.manualTarget = false;
-  Object.assign(world, { pull: 0, pullFrac: 0, egoOffset: 0, lateralSpeed: 0, lateralAccel: 0, heading: 0 });
+  Object.assign(world, { pull: 0, pullFrac: 0, egoOffset: 0, lateralSpeed: 0, lateralAccel: 0, heading: 0, posRetorno: 0 });
   state.driver = 'AGUARDANDO'; state.ackDone = false; state.ackDeadline = 0;
   seedTraffic();
   document.querySelectorAll('[data-vehicle]').forEach(b => { b.classList.toggle('active', b.dataset.vehicle === v); b.setAttribute('aria-pressed', b.dataset.vehicle === v); });
@@ -484,7 +501,7 @@ function reset() {
   VIGIA.sinal?.fecharCanal('Cenário reiniciado: canal de sinal fechado');
   Object.assign(state, { degraded: false, source: 'manual', level: 'normal', driver: 'AGUARDANDO', ackDeadline: 0, ackDone: false, hazardOn: false, alarmElapsed: 0, returning: false, leftOn: false });
   state.target = state.speed = cruiseFor(); state.manualTarget = false;
-  Object.assign(world, { pull: 0, pullFrac: 0, egoOffset: 0, lateralSpeed: 0, lateralAccel: 0, heading: 0 });
+  Object.assign(world, { pull: 0, pullFrac: 0, egoOffset: 0, lateralSpeed: 0, lateralAccel: 0, heading: 0, posRetorno: 0 });
   seedTraffic();
   if (state.paused) setPaused(false);
   refreshUI(); emit('level', 'normal');
@@ -502,13 +519,15 @@ function exportLog() {
 
 /* ---------- movimento do veículo (volante, balanço da cabine, rolagem) ----------
  * Compartilhado pela cabine (volante/painel) e pela câmera 3D, para tudo se mover junto. */
-const motion = { t: 0, steer: 0, roll: 0, bob: 0, kick: 0 };
+const motion = { t: 0, steer: 0, manobra: 0, roll: 0, bob: 0, kick: 0 };
 function updateMotion(dt) {
   const k = clamp(state.speed / 40, 0, 1) * (state.reduceMotion ? 0 : 1), t = (motion.t += dt);
   motion.kick = Math.max(0, motion.kick - dt * 2.2);
   const jolt = motion.kick * (Math.sin(t * 31) * .6 + Math.sin(t * 17) * .4);
-  motion.steer = (Math.sin(t * .33) * 1.5 + Math.sin(t * .91 + 1.3) * .6 + Math.sin(t * 2.3) * .12) * k // graus
-    + world.lateralSpeed * 8 + world.lateralAccel * 45; // entra e sai do acostamento: vira e desvira
+  // entra e sai do acostamento: vira e desvira, limitado e sem saltos (nunca dá a volta no volante)
+  const manobra = clamp(world.lateralSpeed * 8 + world.lateralAccel * 45, -STEER_MAX, STEER_MAX);
+  motion.manobra += clamp(manobra - motion.manobra, -STEER_RATE * dt, STEER_RATE * dt);
+  motion.steer = (Math.sin(t * .33) * 1.5 + Math.sin(t * .91 + 1.3) * .6 + Math.sin(t * 2.3) * .12) * k + motion.manobra; // graus
   motion.roll = ((Math.sin(t * .47) * .16 + Math.sin(t * 1.3) * .06) * k + jolt * .25) * Math.PI / 180;
   motion.bob = (Math.sin(t * 1.9) * .8 + Math.sin(t * 5.1 + .5) * .35) * k + jolt * 1.6; // px
 }
