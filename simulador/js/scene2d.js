@@ -97,7 +97,10 @@ function resize() {
 // lateral em "faixas" (0 = eixo, ±1 = bordas da pista)
 function lx(f) { return CX + f * lane; }
 function sy(z) { return H * .66 - z * ppm; }
-const EDGE = 1.02, GRAVEL = 1.14, RAIL = 1.52;
+// em larguras de faixa: asfalto até EDGE (linha de bordo em .97), acostamento asfaltado até
+// SHOULDER, cascalho até GRAVEL e vegetação baixa até o guard-rail (RAIL)
+const EDGE = 1.02, SHOULDER = 1.5, GRAVEL = 1.6, RAIL = 2.0;
+const CURB = 1.6; // cidade: acostamento asfaltado até o meio-fio (em larguras de faixa)
 
 function drawGround(scroll) {
   const c = ctx;
@@ -108,11 +111,13 @@ function drawGround(scroll) {
     const a = lx(s * GRAVEL), b = lx(s * (RAIL + .05));
     c.save(); c.translate(0, scroll % 256); c.fillStyle = grassPat; c.fillRect(Math.min(a, b), -256, Math.abs(b - a), H + 512); c.restore();
     c.save(); c.translate(0, scroll % 128); c.fillStyle = gravelPat;
-    const g0 = lx(s * EDGE), g1 = lx(s * GRAVEL);
+    const g0 = lx(s * SHOULDER), g1 = lx(s * GRAVEL);
     c.fillRect(Math.min(g0, g1), -128, Math.abs(g1 - g0), H + 256); c.restore();
   }
-  // asfalto
-  c.save(); c.translate(0, scroll % 256); c.fillStyle = asphaltPat; c.fillRect(lx(-EDGE), -256, lx(EDGE) - lx(-EDGE), H + 512); c.restore();
+  // asfalto (pista e acostamentos); o acostamento é um pouco mais claro
+  c.save(); c.translate(0, scroll % 256); c.fillStyle = asphaltPat; c.fillRect(lx(-SHOULDER), -256, lx(SHOULDER) - lx(-SHOULDER), H + 512); c.restore();
+  c.fillStyle = 'rgba(255,255,255,.05)';
+  for (const s of [-1, 1]) c.fillRect(Math.min(lx(s * EDGE), lx(s * SHOULDER)), 0, Math.abs(lx(s * SHOULDER) - lx(s * EDGE)), H);
   // trilhas de pneus
   for (const f of [-.72, -.28, .28, .72]) {
     const x = lx(f), w = lane * .2;
@@ -178,10 +183,23 @@ function drawLaneLabels() {
 
 // Trechos urbanos: calçadas, quadras com prédios, ruas transversais, semáforos, guarda e pedestres.
 const ROOFS = ['#7d7a75', '#9a958c', '#a2492e', '#b65a37', '#6f747a', '#c2b8a6', '#8b5a3c', '#5f666e'];
-const WALK = 1.55; // borda externa da calçada (em larguras de faixa)
-function sideX(x) { // posição lateral do mundo (m) -> tela, comprimindo calçada entre EDGE e WALK
+const WALK = 2.1; // borda externa da calçada (em larguras de faixa)
+// posição lateral do mundo (m) -> tela: faixa até 3,6 m, acostamento até o meio-fio (6,6 m), calçada depois
+function sideX(x) {
   const s = Math.sign(x), a = Math.abs(x);
-  return lx(s * (a <= 6.6 ? a / 3.6 * EDGE / 1.02 : EDGE + (a - 6.6) / 3.5 * (WALK - EDGE)));
+  const f = a <= 3.6 ? a / 3.6 * EDGE : a <= 6.6 ? EDGE + (a - 3.6) / 3 * (CURB - EDGE) : CURB + Math.min(1, (a - 6.6) / 3.5) * (WALK - CURB);
+  return lx(s * f);
+}
+// Centro do veículo próprio na 2D (em larguras de faixa). No acostamento, o veículo desenhado
+// fica inteiro à direita da linha de bordo, sem passar do guard-rail (campo) nem do meio-fio
+// (cidade). A largura desenhada usa a escala da 2D (ppm), não a da faixa.
+function egoLane() {
+  const meia = V.VEHICLE_TYPES[state.vehicle === 'truck' ? 'truck' : 'car'].width * VSCALE * ppm / 2 / lane;
+  const cidade = V.cityAmount(world.distance);
+  const limite = (SHOULDER - .04) * (1 - cidade) + (CURB - .05) * cidade;
+  // no meio do acostamento, sem tocar a linha de bordo nem o limite externo
+  const alvo = Math.max(.5, Math.min(Math.max((EDGE + limite) / 2, EDGE + .08 + meia), limite - meia));
+  return .5 + (world.pullFrac || 0) * (alvo - .5);
 }
 function drawCity() {
   const c = ctx, d = world.distance;
@@ -192,8 +210,10 @@ function drawCity() {
     if (bot <= top) continue;
     c.save(); c.beginPath(); c.rect(0, top, W, bot - top); c.clip();
     for (const s of [-1, 1]) {
-      const xe = lx(s * EDGE), xw = lx(s * WALK), xo = s < 0 ? 0 : W;
+      const xe = lx(s * CURB), xw = lx(s * WALK), xo = s < 0 ? 0 : W;
       c.fillStyle = '#8f8a80'; c.fillRect(Math.min(xw, xo), top, Math.abs(xo - xw), bot - top);      // quadras
+      c.save(); c.translate(0, (world.distance * ppm) % 256); c.fillStyle = asphaltPat;                // acostamento
+      c.fillRect(Math.min(lx(s * EDGE), xe), top - 256, Math.abs(xe - lx(s * EDGE)), bot - top + 512); c.restore();
       c.fillStyle = '#b7b3a9'; c.fillRect(Math.min(xe, xw), top, Math.abs(xw - xe), bot - top);      // calçada
       c.fillStyle = '#dcd8cf'; c.fillRect(xe - (s < 0 ? 3 : 0), top, 3, bot - top);                  // meio-fio
       c.fillStyle = 'rgba(0,0,0,.08)';                                                                  // juntas da calçada
@@ -220,12 +240,12 @@ function drawCity() {
     for (const S of V.crossingsBetween(from, to)) {
       const y = sy(S - d), hh = 9 * ppm;
       c.fillStyle = '#4a4d50';
-      c.fillRect(0, y - hh / 2, lx(-EDGE), hh); c.fillRect(lx(EDGE), y - hh / 2, W - lx(EDGE), hh);
+      c.fillRect(0, y - hh / 2, lx(-CURB), hh); c.fillRect(lx(CURB), y - hh / 2, W - lx(CURB), hh);
       c.fillStyle = '#e8e8e2'; // faixa de pedestres na pista principal
       const yz = sy(S - 7.5 - d);
-      for (let i = 0; i < 8; i++) c.fillRect(lx(-EDGE + (i + .25) * EDGE * 2 / 8), yz - 1.5 * ppm, EDGE * 2 / 8 * lane * .5, 3 * ppm);
+      for (let i = 0; i < 12; i++) c.fillRect(lx(-CURB + (i + .25) * CURB * 2 / 12), yz - 1.5 * ppm, CURB * 2 / 12 * lane * .5, 3 * ppm);
       // semáforos sempre verdes
-      for (const [x, yy] of [[lx(EDGE + .02), sy(S - 9.5 - d)], [lx(-EDGE - .02), sy(S + 9.5 - d)]]) {
+      for (const [x, yy] of [[lx(CURB + .02), sy(S - 9.5 - d)], [lx(-CURB - .02), sy(S + 9.5 - d)]]) {
         c.fillStyle = '#1a1c1e'; c.fillRect(x - 5, yy - 9, 10, 18);
         c.fillStyle = '#23ff6a'; c.shadowColor = '#23ff6a'; c.shadowBlur = 8; c.beginPath(); c.arc(x, yy + 4, 3, 0, 7); c.fill(); c.shadowBlur = 0;
       }
@@ -251,7 +271,7 @@ function drawSigns() {
   const c = ctx, zMin = (sy(0) - H) / ppm, zMax = sy(0) / ppm;
   for (const s of V.signsBetween(world.distance + zMin, world.distance + zMax)) {
     if (s.type === 'km') continue;
-    const x = lx(GRAVEL + .12), y = sy(s.at - world.distance), sz = clamp(lane * .2, 18, 34);
+    const cid = V.cityAmount(s.at), x = lx((GRAVEL + .12) * (1 - cid) + (CURB + .12) * cid), y = sy(s.at - world.distance), sz = clamp(lane * .2, 18, 34);
     c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(x + 4, y + 5, sz * .55, sz * .45, 0, 0, 7); c.fill();
     const label = (bg, fg, text) => { // placas de painel vistas de cima: retângulo colorido com a palavra-chave
       c.font = `900 ${sz * .3}px Arial`; const tw = c.measureText(text).width + sz * .5;
@@ -391,9 +411,10 @@ function drawVehicle(x, z, kind, color, dir, opts = {}) {
   c.fillStyle = brake ? '#ff3030' : `rgba(220,25,25,${.75 + n * .25})`;
   for (const s of [-1, 1]) rr(c, s * wid * .32 - wid * .13, len / 2 - wid * .07, wid * .26, wid * .06, 2), c.fill();
   c.restore();
-  if (opts.hazard) {
+  if (opts.hazard || opts.left) { // pisca-alerta (os quatro cantos) ou seta para a esquerda (só o lado esquerdo)
     c.save(); c.fillStyle = '#ffb22c'; c.shadowColor = '#ffb22c'; c.shadowBlur = 18;
-    for (const [px, py] of [[-wid / 2, -len / 2 + 4], [wid / 2, -len / 2 + 4], [-wid / 2, len / 2 - 4], [wid / 2, len / 2 - 4]]) { c.beginPath(); c.arc(px, py, 4, 0, 7); c.fill(); }
+    const cantos = [[-wid / 2, -len / 2 + 4], [-wid / 2, len / 2 - 4], ...(opts.hazard ? [[wid / 2, -len / 2 + 4], [wid / 2, len / 2 - 4]] : [])];
+    for (const [px, py] of cantos) { c.beginPath(); c.arc(px, py, 4, 0, 7); c.fill(); }
     c.restore();
   }
   c.restore();
@@ -458,7 +479,7 @@ function drawFrame(small) {
   for (const t of world.traffic) vis.push({ x: opp, z: t.z, kind: t.kind, color: t.color || '#b7bec7', dir: 1, opts: { cab: t.cab, box: t.color } });
   if (world.lead) vis.push({ x: own, z: world.lead.z, kind: world.lead.kind, color: world.lead.color, dir: -1, opts: { cab: world.lead.cab, box: world.lead.color } });
   if (world.follower) vis.push({ x: own, z: world.follower.z, kind: world.follower.kind, color: world.follower.color, dir: -1, opts: { cab: world.follower.cab, box: world.follower.color } });
-  vis.push({ x: own, z: V.egoExtent().center, kind: state.vehicle, color: '#2f7fd6', dir: -1, ego: true, opts: { cab: '#1f5fa8', box: '#eef0f2', brake: inter && state.speed > .5, hazard: state.hazardOn } });
+  vis.push({ x: lx(egoLane()), z: V.egoExtent().center, kind: state.vehicle, color: '#2f7fd6', dir: -1, ego: true, opts: { cab: '#1f5fa8', box: '#eef0f2', brake: inter && state.speed > .5, hazard: state.hazardOn, left: state.leftOn } });
 
   // fachos de luz sobre o asfalto (sempre acesos; mais fortes à noite)
   for (const v of vis) {

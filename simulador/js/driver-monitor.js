@@ -15,24 +15,31 @@ let stream = null, canvas, ctx, W = 0, H = 0, dpr = 1;
 const m = { eyesOpen: 1, headPitch: 0, headYaw: 0, mouth: .04, perclos: 4, fatigue: 8, confidence: .97, face: { x: .33, y: .2, w: .34, h: .52 } };
 let blinkT = 0, blinkPhase = 0, externalAt = 0, eyesBase = 1;
 // Abertura da boca (abertura_boca do contrato metricas.v1: altura interna dos lábios / largura).
-// 100% = BOCA_REF; bocejo = boca acima de BOCEJO_LIMIAR por BOCEJO_MIN_MS. Ainda não calibrado.
-const BOCA_REF = .7, BOCEJO_LIMIAR = .5, BOCEJO_MIN_MS = 1500;
-let bocaDesde = 0, bocejoAtivo = false;
-function bocejo(v, registrar) {
+// Boca aberta acima do limiar de config/analise.json (rosto.abertura_boca_aberta); a barra
+// chega a 100% no dobro dele. Com o scanner, o bocejo vem do monitor do rosto (ia.js); aqui
+// fica só o da simulação, com os mesmos valores padrão.
+const BOCEJO_LIMIAR = .4, BOCEJO_MIN_MS = 1500;
+let bocaDesde = 0, bocejoSimulado = false;
+function bocejo(v) {
   const agora = performance.now();
-  if (v == null || v < BOCEJO_LIMIAR) { bocaDesde = 0; bocejoAtivo = false; return false; }
+  if (v == null || v <= BOCEJO_LIMIAR) { bocaDesde = 0; bocejoSimulado = false; return false; }
   if (!bocaDesde) bocaDesde = agora;
-  if (!bocejoAtivo && agora - bocaDesde >= BOCEJO_MIN_MS) {
-    bocejoAtivo = true;
-    if (registrar) V.log('Bocejo detectado', 'monitor', { abertura_boca: Number(v.toFixed(3)) });
-  }
-  return bocejoAtivo;
+  if (agora - bocaDesde >= BOCEJO_MIN_MS) bocejoSimulado = true;
+  return bocejoSimulado;
 }
-function mouthBar(v) {
-  const yawn = bocejo(v, V.ia?.ativo);
-  setBar('mMouth', clamp((v ?? 0) / BOCA_REF * 100, 0, 100), v == null ? '—' : Math.round(clamp(v / BOCA_REF, 0, 1) * 100) + '%',
-    v == null ? 'warn' : yawn ? 'bad' : v >= BOCEJO_LIMIAR ? 'warn' : 'ok');
-  return yawn;
+function mouthBar(v, yawn, limiar = BOCEJO_LIMIAR) {
+  const ref = limiar * 2;
+  setBar('mMouth', clamp((v ?? 0) / ref * 100, 0, 100), v == null ? '—' : Math.round(clamp(v / ref, 0, 1) * 100) + '%',
+    v == null ? 'warn' : yawn ? 'bad' : v > limiar ? 'warn' : 'ok');
+}
+function arrow(c, x0, y0, x1, y1, color, width) {
+  const a = Math.atan2(y1 - y0, x1 - x0), len = Math.hypot(x1 - x0, y1 - y0), head = Math.min(7, len * .35);
+  if (len < 2) return;
+  c.strokeStyle = color; c.lineWidth = width; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1);
+  c.moveTo(x1, y1); c.lineTo(x1 - head * Math.cos(a - .5), y1 - head * Math.sin(a - .5));
+  c.moveTo(x1, y1); c.lineTo(x1 - head * Math.cos(a + .5), y1 - head * Math.sin(a + .5));
+  c.stroke(); c.lineCap = 'butt';
 }
 // Selo "BOCEJO" logo abaixo do rosto.
 function yawnTag(c, cx, y) {
@@ -66,8 +73,50 @@ async function startCamera() {
     setSwitches(false);
   }
 }
+// Troca a câmera sem desligar o scanner: abre a nova antes de fechar a atual.
+async function trocarCamera(deviceId) {
+  const novo = await navigator.mediaDevices.getUserMedia({ video: deviceId ? { deviceId: { exact: deviceId } }
+    : { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }, audio: false });
+  const antigo = stream;
+  stream = novo;
+  $('cameraFeed').srcObject = novo;
+  await $('cameraFeed').play().catch(() => {});
+  novo.getVideoTracks().forEach(t => t.onended = stopCamera);
+  antigo?.getTracks().forEach(t => { t.onended = null; t.stop(); });
+}
+
+/* Infravermelho: usa o sensor IR quando o navegador enxerga uma câmera com "IR" ou
+ * "infra" no nome; senão, aplica só um filtro visual (monocromático) sobre a webcam comum.
+ * Muitas câmeras IR de notebook (Windows Hello) não são liberadas para o navegador. */
+let rgbDeviceId = null;
+async function setIR(on) {
+  const card = $('monitorCard');
+  if (!on) {
+    card.classList.remove('ir', 'ir-real');
+    if (rgbDeviceId !== null) { const id = rgbDeviceId; rgbDeviceId = null; if (stream) await trocarCamera(id || null).catch(() => {}); }
+    V.log('Câmera: imagem normal', 'camera');
+    return;
+  }
+  const cams = (await navigator.mediaDevices?.enumerateDevices?.().catch(() => []) || []).filter(d => d.kind === 'videoinput');
+  const ir = cams.find(d => /\bir\b|infra|infrared/i.test(d.label));
+  if (stream && ir) {
+    try {
+      rgbDeviceId = stream.getVideoTracks()[0]?.getSettings().deviceId || '';
+      await trocarCamera(ir.deviceId);
+      card.classList.add('ir-real');
+      V.log('Câmera infravermelha em uso: ' + ir.label, 'camera');
+      return;
+    } catch (e) { rgbDeviceId = null; V.log('Câmera infravermelha não abriu (' + e.message + '); usando filtro visual', 'error'); }
+  }
+  card.classList.add('ir');
+  const nomes = cams.map(d => d.label).filter(Boolean);
+  V.log(!stream ? 'Infravermelho: ligue a câmera para procurar um sensor IR; por enquanto, filtro visual'
+    : `Nenhuma câmera infravermelha disponível para o navegador (câmeras: ${nomes.join(', ') || 'sem nome'}); usando filtro visual`, 'camera');
+}
+
 function stopCamera() {
   if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  if (rgbDeviceId !== null) { rgbDeviceId = null; $('monitorCard').classList.remove('ir-real'); $('irBtn').checked = false; }
   $('cameraFeed').srcObject = null; M.cameraActive = false;
   $('monitorCard').classList.remove('live');
   $('camStatus').textContent = 'SIMULAÇÃO'; setSwitches(false);
@@ -195,15 +244,25 @@ function eyeShape(c, x, y, w, open, color) {
 // Malha real do MediaPipe. A imagem da câmera é espelhada (como um espelho), então x também.
 function drawReal(c, color) {
   const ia = V.ia, r = ia.ultimo;
-  if (!ia.visivel) return; // modo invisível: o scanner segue rodando, sem desenho
   const pts = r?.pontos, idx = ia.indices;
-  const P = i => [(1 - pts[i][0]) * W, pts[i][1] * H];
+  // O vídeo preenche o quadro 4:3 cortando as sobras (object-fit: cover) e aparece espelhado:
+  // os pontos normalizados passam pelo mesmo corte, senão a malha sai do rosto em vídeos 16:9.
+  const v = $('cameraFeed'), vw = v.videoWidth || W, vh = v.videoHeight || H, s = Math.max(W / vw, H / vh);
+  const ox = (W - vw * s) / 2, oy = (H - vh * s) / 2;
+  const P = i => [W - (ox + pts[i][0] * vw * s), oy + pts[i][1] * vh * s];
   if (!pts) {
     c.fillStyle = 'rgba(3,10,20,.7)'; c.fillRect(W / 2 - 80, H / 2 - 12, 160, 24);
     c.fillStyle = '#ffc44d'; c.font = '800 11px Inter, system-ui, sans-serif'; c.textAlign = 'center';
     c.fillText(ia.carregando ? 'CARREGANDO MODELO…' : 'ROSTO NÃO DETECTADO', W / 2, H / 2 + 4);
     return;
   }
+  // Quadrado do rosto: fica também no modo invisível; nele só somem a malha, as setas e os indicadores.
+  let x0 = 1, y0 = 1, x1 = 0, y1 = 0;
+  for (const i of idx.contorno_rosto) { const [x, y] = P(i); x0 = Math.min(x0, x / W); y0 = Math.min(y0, y / H); x1 = Math.max(x1, x / W); y1 = Math.max(y1, y / H); }
+  c.strokeStyle = color; c.lineWidth = 2; corner(c, x0 * W - 6, y0 * H - 6, (x1 - x0) * W + 12, (y1 - y0) * H + 12, 12);
+  c.font = '700 10px Inter, system-ui, sans-serif'; c.fillStyle = color; c.textAlign = 'left';
+  c.fillText(`ROSTO · CONF. ${Math.round(r.registro.confianca * 100)}%`, x0 * W - 6, y0 * H - 11);
+  if (!ia.visivel) return;
   const contorno = (nome, cor, largura, fechar = true) => {
     c.strokeStyle = cor; c.lineWidth = largura; c.beginPath();
     idx[nome].forEach((i, n) => (n ? c.lineTo : c.moveTo).call(c, ...P(i)));
@@ -219,26 +278,52 @@ function drawReal(c, color) {
   }
   c.fillStyle = '#3ddc84';
   for (const i of [...idx.olho_esquerdo, ...idx.olho_direito]) { const [x, y] = P(i); c.fillRect(x - 1.5, y - 1.5, 3, 3); }
-  // direção da cabeça a partir da ponta do nariz (pitch positivo = cabeça baixa)
-  if (r.registro.pitch !== null) {
-    const [x0, y0] = P(idx.ponta_nariz);
-    c.strokeStyle = '#ffdc00'; c.lineWidth = 2; c.beginPath(); c.moveTo(x0, y0);
-    c.lineTo(x0 - r.registro.yaw * 1.2, y0 + r.registro.pitch * 1.4); c.stroke();
+  // Setas como na janela da análise (entrada/rosto.py): olhar saindo de cada íris e direção da
+  // cabeça saindo da ponta do nariz. Calculadas sobre os pontos já espelhados da tela.
+  const geo = ia.geo, tela = pts.map((_, i) => P(i));
+  const [dx, dy] = geo.olharDaIris(tela, idx);
+  for (const { eixo, meia, iris } of geo.olhos(tela, idx)) {
+    const k = meia * 3, sx = (dx * eixo[0] - dy * eixo[1]) * k, sy = (dx * eixo[1] + dy * eixo[0]) * k;
+    arrow(c, iris[0][0], iris[0][1], iris[0][0] + sx, iris[0][1] + sy, '#ff78ff', 1.3);
   }
-  // caixa e rótulos
-  let x0 = 1, y0 = 1, x1 = 0, y1 = 0;
-  for (const i of idx.contorno_rosto) { const [x, y] = P(i); x0 = Math.min(x0, x / W); y0 = Math.min(y0, y / H); x1 = Math.max(x1, x / W); y1 = Math.max(y1, y / H); }
-  c.strokeStyle = color; c.lineWidth = 2; corner(c, x0 * W - 6, y0 * H - 6, (x1 - x0) * W + 12, (y1 - y0) * H + 12, 12);
-  c.font = '700 10px Inter, system-ui, sans-serif'; c.fillStyle = color; c.textAlign = 'left';
-  c.fillText(`ROSTO · CONF. ${Math.round(r.registro.confianca * 100)}%`, x0 * W - 6, y0 * H - 11);
+  if (r.matriz) {
+    const d = geo.direcaoDaCabeca(r.matriz), [a, b] = idx.referencia_escala, [ax, ay] = P(a), [bx, by] = P(b);
+    const comp = 1.5 * Math.hypot(ax - bx, ay - by), [x0, y0] = P(idx.ponta_nariz);
+    arrow(c, x0, y0, x0 - d[0] * comp, y0 - d[1] * comp, '#ffdc00', 2); // x invertido: a tela é espelhada
+  }
   perclosTag(c, x1 * W + 14, y0 * H - 6, r.estimativa?.perclos, color);
-  if (bocejoAtivo) yawnTag(c, (x0 + x1) / 2 * W, y1 * H + 10);
+  if (r.rosto?.bocejando) yawnTag(c, (x0 + x1) / 2 * W, y1 * H + 10);
+  facePanel(c, r);
   const est = r.estado || 'DEGRADADO';
   const lab = { NORMAL: 'MOTORISTA ATENTO', ATENCAO: 'SINAIS DE FADIGA', ALERTA: 'ALERTA DE SONOLÊNCIA', INTERVENCAO: 'INTERVENÇÃO', DEGRADADO: 'COLETANDO EVIDÊNCIA…' }[est];
   c.font = '800 10px Inter, system-ui, sans-serif';
   const tw = c.measureText(lab).width + 16;
   c.fillStyle = 'rgba(3,10,20,.75)'; c.beginPath(); c.roundRect ? c.roundRect(W / 2 - tw / 2, H - 26, tw, 19, 9) : c.rect(W / 2 - tw / 2, H - 26, tw, 19); c.fill();
   c.fillStyle = color; c.textAlign = 'center'; c.fillText(lab, W / 2, H - 13);
+}
+// Painel no canto, como o da janela da análise: cabeça, olhar, olhos, boca e o modelo CNN.
+function facePanel(c, r) {
+  const cnn = V.cnn?.media() ?? null;
+  const pct = v => Math.round(v * 100) + '%';
+  const linhas = [
+    ['CNN', cnn ? `${cnn.classe} ${pct(cnn.probabilidades[cnn.classe])}` : V.cnn?.estado === 'pronto' ? (!V.cnn.fresco() ? '…' : V.cnn.base ? 'não confiável' : 'calibrando') : '—'],
+    ['cabeça', r.rosto?.cabeca ?? '—'], ['olhar', r.olhar ?? '—'],
+    ['olhos', r.rosto?.olhos ?? '—'], ['boca', r.rosto?.boca ?? '—'],
+  ];
+  const ev = r.evento && V.ia.ultimo.registro.t_ms - r.evento.t < 3000 ? r.evento.texto : null;
+  c.font = '700 8.5px Inter, system-ui, sans-serif';
+  const h = 12 * linhas.length + 8;
+  c.fillStyle = 'rgba(3,10,20,.62)'; c.beginPath(); c.roundRect ? c.roundRect(6, 6, 104, h, 6) : c.rect(6, 6, 104, h); c.fill();
+  linhas.forEach(([k, v], n) => {
+    c.fillStyle = '#8fb1d4'; c.textAlign = 'left'; c.fillText(k, 12, 18 + n * 12);
+    c.fillStyle = n === 0 && cnn ? (cnn.classe === 'alerta' ? '#38f0b0' : '#ff9b91') : '#e8f2ff'; c.fillText(v, 48, 18 + n * 12);
+  });
+  if (ev) {
+    c.font = '800 9px Inter, system-ui, sans-serif';
+    const tw = c.measureText(ev).width + 14;
+    c.fillStyle = 'rgba(60,40,8,.85)'; c.beginPath(); c.roundRect ? c.roundRect(W / 2 - tw / 2, H - 50, tw, 17, 8) : c.rect(W / 2 - tw / 2, H - 50, tw, 17); c.fill();
+    c.fillStyle = '#ffd58a'; c.textAlign = 'center'; c.fillText(ev, W / 2, H - 38.5); c.textAlign = 'left';
+  }
 }
 // Anel com o PERCLOS (fração do tempo com olhos fechados na janela); null = sem evidência.
 function perclosTag(c, x, y, v, color) {
@@ -263,10 +348,10 @@ function realBars() {
   setBar('mHead', clamp((p ?? 0) / 35 * 100, 0, 100), f(p, 1, '°'), p == null ? 'warn' : p > 20 ? 'bad' : p > 8 ? 'warn' : 'ok');
   const pc = est?.perclos;
   setBar('mPerclos', (pc ?? 0) * 100, f(pc, 100, '%'), pc == null ? 'warn' : pc > .4 ? 'bad' : pc > .15 ? 'warn' : 'ok');
-  mouthBar(reg?.abertura_boca);
+  mouthBar(reg?.abertura_boca, !!r?.rosto?.bocejando, V.ia.limiares.abertura_boca_aberta);
   const ix = est?.indice;
   setBar('mFatigue', ix ?? 0, f(ix), ix == null ? 'warn' : ix > 65 ? 'bad' : ix > 35 ? 'warn' : 'ok');
-  $('monitorSource').textContent = 'IA REAL · MEDIAPIPE' + (V.ia.visivel ? '' : ' · OCULTO');
+  $('monitorSource').textContent = 'IA REAL · MEDIAPIPE' + (r?.fonte === 'cnn' ? ' + CNN' : '') + (V.ia.visivel ? '' : ' · OCULTO');
   $('monitorSource').classList.add('real');
 }
 function draw(dt, t) {
@@ -294,7 +379,9 @@ function draw(dt, t) {
   const my = fy + fh * .78 + m.headPitch * .3, mw = fw * .22, mh = Math.max(3, m.mouth * mw);
   c.strokeStyle = color; c.lineWidth = 1.4; c.beginPath(); c.ellipse(fx + fw / 2, my, mw / 2, mh / 2, 0, 0, 7); c.stroke();
   perclosTag(c, fx + fw + 8, fy, m.perclos / 100, color);
-  if (mouthBar(m.mouth)) yawnTag(c, fx + fw / 2, fy + fh + 8);
+  const yawnSim = bocejo(m.mouth);
+  mouthBar(m.mouth, yawnSim);
+  if (yawnSim) yawnTag(c, fx + fw / 2, fy + fh + 8);
   // eixo de orientação da cabeça
   const nx = fx + fw / 2, ny = fy + fh * .55;
   c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 1.5;
@@ -338,10 +425,7 @@ V.on('ready', () => {
   addEventListener('resize', () => { if ($('monitorCard').classList.contains('expanded')) { fitExpanded(); resize(); } });
   document.addEventListener('fullscreenchange', () => { if ($('monitorCard').classList.contains('expanded')) { fitExpanded(); resize(); } });
   // Filtro infravermelho: só muda a imagem exibida (o MediaPipe lê o vídeo original).
-  $('irBtn').onchange = e => {
-    $('monitorCard').classList.toggle('ir', e.target.checked);
-    V.log(e.target.checked ? 'Filtro de câmera: infravermelho' : 'Filtro de câmera: normal', 'camera');
-  };
+  $('irBtn').onchange = e => setIR(e.target.checked);
 });
 V.addRenderer(draw);
 })();

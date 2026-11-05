@@ -2,19 +2,23 @@
 //
 //   webcam → MediaPipe Face Landmarker → extrator da Parte 1 (demo-navegador/extrator.js)
 //          → histórico de métricas (contratos/metricas.v1.json)
+//          → olhos, boca, cabeça, olhar e eventos (rosto.js, como entrada/rosto.py)
 //          → a cada 100 ms: estimar → transicionar → emitir (Parte 2, módulos JS)
 //          → mensagens sinal.v1 → sinal.js (mesmo caminho do WebSocket e do replay)
+//
+// Com o modelo de imagens da Parte 1 conectado (cnn.js), o índice que entra na política é o
+// do modelo (média da janela); sem ele, é o índice geométrico do estimador (PERCLOS).
 //
 // Os ticks rodam a cada 100 ms mesmo sem quadros novos, como pede docs/parte2.md:
 // sem rosto ou sem câmera, o estimador degrada e o simulador não freia.
 // Nenhum quadro sai do navegador e nada é gravado; só as métricas podem ser exportadas.
 import { FaceLandmarker, FilesetResolver } from
   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.0/vision_bundle.mjs";
-import { CalculadoraMetricas, pontosEmPixels, matrizEmLinhas, cabecalhoCsv, linhaCsv } from "../../demo-navegador/extrator.js";
+import { CalculadoraMetricas, pontosEmPixels, indiceDoMaiorRosto, matrizEmLinhas, cabecalhoCsv, linhaCsv } from "../../demo-navegador/extrator.js";
 import { estimar, validarConfig } from "../../demo-navegador/estimador.js";
 import { estadoInicial, transicionar } from "../../demo-navegador/politica.js";
 import { estadoEmissorInicial, emitir } from "../../demo-navegador/mensagens.js";
-import { carregarModelo, preverModelo } from "./modelo.js";
+import { MonitorRosto, direcaoDaCabeca, olharDaIris, olhos, rotuloDaCabeca, rotuloDoOlhar } from "./rosto.js";
 
 const V = window.VIGIA;
 const $ = (id) => document.getElementById(id);
@@ -25,10 +29,10 @@ const MODELO_REMOTO = "https://storage.googleapis.com/mediapipe-models/face_land
 const TICK_MS = 100;
 
 const json = (u) => fetch(u).then((r) => { if (!r.ok) throw new Error(`${u}: HTTP ${r.status}`); return r.json(); });
-const [cfgExtrator, cfgEstimador, contrato, indices] = await Promise.all(
-  ["../config/extrator.json", "../config/estimador.json", "../contratos/metricas.v1.json", "../entrada/pontos_rosto.json"].map(json));
+const [cfgExtrator, cfgEstimador, contrato, indices, cfgAnalise] = await Promise.all(
+  ["../config/extrator.json", "../config/estimador.json", "../contratos/metricas.v1.json", "../entrada/pontos_rosto.json",
+    "../config/analise.json"].map(json));
 validarConfig(cfgEstimador);
-const modeloParte4 = await carregarModelo("../modelos/modelo_sonolencia.json");
 
 let landmarker = null, carregando = null;
 async function prepararLandmarker() {
@@ -39,7 +43,7 @@ async function prepararLandmarker() {
     const mpc = cfgExtrator.mediapipe;
     const opcoes = (delegate) => ({
       baseOptions: { modelAssetPath: local ? MODELO_LOCAL : MODELO_REMOTO, delegate },
-      runningMode: "VIDEO", numFaces: 1,
+      runningMode: "VIDEO", numFaces: mpc.max_rostos ?? 1, // mapeia só o maior: o motorista
       minFaceDetectionConfidence: mpc.min_confianca_deteccao,
       minFacePresenceConfidence: mpc.min_confianca_presenca,
       minTrackingConfidence: mpc.min_confianca_rastreio,
@@ -56,7 +60,7 @@ async function prepararLandmarker() {
 
 // Estado da sessão do scanner
 const S = { ativo: false, visivel: true, t0: 0, ultimoT: -1, quadro: 0, calc: null, historico: [], linhas: [],
-  estado: null, emissor: null, respondeu: false, timer: null, sessao: "", ultimo: null };
+  estado: null, emissor: null, respondeu: false, timer: null, sessao: "", ultimo: null, monitor: null, piscadas: 0 };
 const RETENCAO = cfgEstimador.janela_s * 1000 + cfgEstimador.min_fechamento_ms + cfgEstimador.max_intervalo_ms;
 const agora = () => Math.round(performance.now() - S.t0); // relógio monotônico da sessão (ms)
 
@@ -74,32 +78,48 @@ function aoQuadro(video, captura) {
   S.ultimoT = t;
   const res = landmarker.detectForVideo(video, t);
   let pts = null, matriz = null, normalizados = null;
-  if (res.faceLandmarks.length) {
-    normalizados = res.faceLandmarks[0].map((p) => [p.x, p.y]);
-    pts = pontosEmPixels(res.faceLandmarks[0], video.videoWidth, video.videoHeight);
-    const m = res.facialTransformationMatrixes?.[0];
+  // o MediaPipe devolve primeiro o rosto em que mais confia, que pode ser alguém ao fundo
+  const rostos = res.faceLandmarks.map((r) => pontosEmPixels(r, video.videoWidth, video.videoHeight));
+  const i = indiceDoMaiorRosto(rostos);
+  if (i !== null) {
+    pts = rostos[i];
+    normalizados = res.faceLandmarks[i].map((p) => [p.x, p.y]);
+    const m = res.facialTransformationMatrixes?.[i];
     matriz = m ? matrizEmLinhas(m) : null;
   }
   const registro = S.calc.calcular(pts, matriz, t, S.quadro++, performance.now() - captura);
   S.historico.push(registro);
   while (S.historico.length && S.historico[0].t_ms < t - RETENCAO) S.historico.shift();
   if (S.linhas.length < 108000) S.linhas.push(linhaCsv(contrato, registro)); // até ~1 h a 30 fps
-  S.ultimo = { ...S.ultimo, registro, pontos: normalizados, abertura: abertura(registro) };
+  // olhos, boca e cabeça pela geometria, com os limiares de config/analise.json
+  const ear = registro.ear_esq != null && registro.ear_dir != null ? (registro.ear_esq + registro.ear_dir) / 2 : null;
+  const rosto = S.monitor.registrar(t, pts ? ear : null, pts ? registro.abertura_boca : null, matriz ? rotuloDaCabeca(matriz) : null);
+  for (const evento of rosto.eventos) {
+    if (evento.startsWith("piscada")) S.piscadas++; // piscadas são normais: só contadas
+    else V.log("Rosto: " + evento, "monitor");
+  }
+  S.ultimo = { ...S.ultimo, registro, pontos: normalizados, matriz, abertura: abertura(registro), rosto,
+    olhar: pts ? rotuloDoOlhar(pts, indices) : null, piscadas: S.piscadas,
+    evento: rosto.eventos.length ? { texto: rosto.eventos.at(-1), t } : S.ultimo?.evento };
 }
 
 function tick() {
   if (!S.ativo) return;
   const t = agora();
   try {
-    const estimativa = estimar(S.historico.filter((r) => r.t_ms <= t), cfgEstimador, t);
+    let estimativa = estimar(S.historico.filter((r) => r.t_ms <= t), cfgEstimador, t);
+    // O modelo de imagens comanda quando há resultado recente; a confiança continua sendo a do
+    // rastreio do rosto, então sem rosto o estimador degrada do mesmo jeito.
+    const cnn = V.cnn?.indice();
+    if (cnn != null && estimativa.indice != null) estimativa = { ...estimativa, indice_geometria: estimativa.indice, indice: cnn };
+    S.fonte = cnn != null ? "cnn" : "geometria";
     S.estado = transicionar(S.estado, estimativa, t, cfgEstimador, S.respondeu);
     S.respondeu = false;
     let mensagens;
     [S.emissor, mensagens] = emitir(S.emissor, S.estado, estimativa, t, cfgEstimador);
-    const prob = preverModelo(modeloParte4, S.historico, estimativa);
-    S.ultimo = { ...S.ultimo, estimativa, estado: mensagens.find((m) => m.tipo === "acao")?.estado ?? S.ultimo?.estado, prob };
+    S.ultimo = { ...S.ultimo, estimativa, estado: mensagens.find((m) => m.tipo === "acao")?.estado ?? S.ultimo?.estado, fonte: S.fonte };
     for (const m of mensagens) V.sinal.receber(m, "ia");
-    atualizarPainel();
+    $("metricsCsvBtn").disabled = !S.linhas.length;
   } catch (e) {
     V.log("Scanner: erro no estimador — " + e.message, "error");
     parar();
@@ -127,7 +147,8 @@ async function iniciar(visivel = true) {
   S.carregando = false;
   Object.assign(S, { ativo: true, t0: performance.now(), ultimoT: -1, quadro: 0, historico: [], linhas: [],
     calc: new CalculadoraMetricas(cfgExtrator.confianca, indices), estado: estadoInicial(),
-    sessao: "pagina-" + Date.now().toString(36), respondeu: false, ultimo: null });
+    sessao: "pagina-" + Date.now().toString(36), respondeu: false, ultimo: null,
+    monitor: new MonitorRosto(cfgAnalise.rosto), piscadas: 0 });
   S.emissor = estadoEmissorInicial(S.sessao);
   V.sinal.abrirCanal("ia", S.sessao);
   laco();
@@ -166,13 +187,6 @@ function atualizarBotoes() {
   });
   $("metricsCsvBtn").disabled = !S.linhas.length;
 }
-function atualizarPainel() {
-  const p = S.ultimo?.prob;
-  const txt = !modeloParte4 ? "Modelo (Parte 4): ainda não treinado"
-    : p == null ? "Modelo (Parte 4): carregado · aguardando dados" : `Modelo (Parte 4): ${Math.round(p * 100)}% de sonolência`;
-  document.querySelectorAll("[data-modelo]").forEach((el) => { if (el.textContent !== txt) el.textContent = txt; });
-  $("metricsCsvBtn").disabled = !S.linhas.length;
-}
 function baixarCsv() {
   const csv = [cabecalhoCsv(contrato), ...S.linhas].join("\n") + "\n";
   const a = document.createElement("a");
@@ -191,10 +205,10 @@ V.on("cameraOff", parar);
 
 V.ia = {
   get ativo() { return S.ativo; }, get visivel() { return S.visivel; }, get carregando() { return !!S.carregando; },
-  get ultimo() { return S.ultimo; }, get sessao() { return S.sessao; }, get modelo() { return modeloParte4; }, indices,
+  get ultimo() { return S.ultimo; }, get sessao() { return S.sessao; }, indices, limiares: cfgAnalise.rosto,
+  geo: { direcaoDaCabeca, olharDaIris, olhos }, // para o desenho em driver-monitor.js (script clássico)
   iniciar, parar, mostrar: () => alternarVisivel(true), ocultar: () => alternarVisivel(false),
   responder: () => { S.respondeu = true; },
   csv: () => [cabecalhoCsv(contrato), ...S.linhas].join("\n") + "\n",
 };
 atualizarBotoes();
-atualizarPainel();

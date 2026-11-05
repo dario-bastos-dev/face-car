@@ -312,7 +312,25 @@ kbd{font-family:inherit;font-size:9.5px;border:1px solid #33557e;border-bottom-w
 .scanner-btn{border:1px solid #2a4870;border-radius:8px;background:#0b1830;padding:5px 8px;font-size:10px;font-weight:800;color:#cfe2ff;pointer-events:auto}
 .scanner-btn.on{border-color:#2fe08f;background:#0b2b23;color:#9ff7d9;box-shadow:0 0 12px #2fe08f33}
 .scanner-btn:disabled{opacity:.5}
-.model-line{color:#8fb1d4;font-weight:700;letter-spacing:.02em;text-transform:none;padding-top:0}
+/* resultado do modelo de imagens (CNN) no cartão da câmera */
+.cnn-panel{margin-top:10px;padding:8px 10px 9px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05)}
+.cnn-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:9.5px;letter-spacing:.08em}
+.cnn-head b{color:#cfe6ff;font-weight:900}
+.cnn-head span{color:#8fb1d4;font-weight:700;letter-spacing:.02em;text-align:right;margin-left:auto}
+.cnn-recal{padding:3px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:#dcebff;font-size:9px;font-weight:800;letter-spacing:.03em}
+.cnn-recal:hover{background:rgba(255,255,255,.16)}
+.cnn-panel[data-estado=pronto] .cnn-head span{color:#5ef0c7}
+.cnn-panel[data-estado=indisponivel] .cnn-head span,.cnn-panel[data-estado=sem_servidor] .cnn-head span,.cnn-panel[data-estado=desconectado] .cnn-head span{color:#ffcf7a}
+.cnn-barras{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px}
+.cnn-classe{display:grid;grid-template-columns:1fr auto;gap:3px 6px;align-items:center}
+.cnn-classe small{grid-column:1/-1;font-size:9px;color:#9ab3d5;font-weight:700}
+.cnn-classe .bar{height:5px;border-radius:4px;background:rgba(255,255,255,.1);overflow:hidden}
+.cnn-classe .bar i{display:block;height:100%;width:0;background:#4f7fae;transition:width .25s}
+.cnn-classe b{font-size:10.5px;color:#b9cde6}
+.cnn-classe.top small,.cnn-classe.top b{color:#fff}
+.cnn-classe[data-classe=alerta].top .bar i{background:#2fe08f}
+.cnn-classe[data-classe=sonolento].top .bar i{background:#ff5a4f}
+.cnn-classe[data-classe=bocejo].top .bar i{background:#ffc44d}
 
 /* câmera grande na coluna direita (no lugar do velocímetro) */
 .cam-big .cam-head{gap:8px;flex-wrap:wrap}
@@ -340,9 +358,11 @@ kbd{font-family:inherit;font-size:9.5px;border:1px solid #33557e;border-bottom-w
 .cam-backdrop{position:fixed;inset:0;z-index:1000;background:rgba(2,6,16,.38);-webkit-backdrop-filter:blur(12px) saturate(120%);backdrop-filter:blur(12px) saturate(120%);opacity:0;transition:opacity .4s ease}
 .cam-backdrop.show{opacity:1}
 @media(prefers-reduced-motion:reduce){.cam-backdrop{transition:none}}
-.cam-big.ir .ov-cam-body video{filter:grayscale(1) brightness(1.35) contrast(1.45)}
+/* filtro visual (webcam comum): monocromático, sem estourar o branco; com o sensor IR, imagem crua */
+.cam-big.ir .ov-cam-body video{filter:grayscale(1) contrast(1.18) brightness(.94)}
 .cam-big.ir .ov-cam-body{background:radial-gradient(ellipse at 50% 40%,#3a3a3a,#0b0b0b)}
-.cam-big.ir .ov-cam-body:after{content:'IR';position:absolute;top:8px;left:10px;padding:2px 7px;border-radius:6px;background:#000a;color:#e6c4ff;font-size:10px;font-weight:900;letter-spacing:.1em;pointer-events:none}
+.cam-big.ir .ov-cam-body:after,.cam-big.ir-real .ov-cam-body:after{content:'IR · FILTRO';position:absolute;top:8px;left:10px;padding:2px 7px;border-radius:6px;background:#000a;color:#e6c4ff;font-size:10px;font-weight:900;letter-spacing:.1em;pointer-events:none}
+.cam-big.ir-real .ov-cam-body:after{content:'IR · SENSOR'}
 .cam-big .cam-status{margin-left:auto;font-size:10px;font-weight:900;letter-spacing:.08em;color:#ffcf7a}
 .cam-big.live .cam-status{color:#5ef0c7}
 .cam-big .ov-cam-body{position:relative;width:100%;aspect-ratio:4/3;margin:0;border:1px solid #4c9dffbb;border-radius:12px;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#122640,#060d18);box-shadow:0 0 0 1px #36baff30,0 0 20px #087fff30}
