@@ -136,7 +136,44 @@ uv run python -m entrada video <seu-video.mp4> [--mostrar]
 | `--segundos` | sem limite | webcam: parar depois deste tempo |
 | `--sem-janela` | — | webcam: analisar sem abrir a janela |
 | `--sem-log` | — | mostrar só os eventos e as médias, sem uma linha por quadro |
+| `--porta-sensor` | `sensor.porta` | webcam: porta serial do sensor de pressão |
+| `--sem-sensor` | — | webcam: analisar sem o sensor, só com o modelo |
 | `--mostrar` | ligado na webcam, desligado no vídeo | janela com o resultado e o mapeamento do rosto |
+
+#### Sensor de pressão no volante (FSR402)
+
+Com o sensor conectado, a análise junta o modelo com a pressão das mãos no volante, lida pela
+serial com o `pyserial`: abaixo de **400** é sinal de sonolência (a mão afrouxa), 400 ou mais é sinal
+de alerta. O sensor chega por um microcontrolador que envia um número por linha; com um Arduino, o
+FSR402 num divisor de tensão (por exemplo, com um resistor de 10 kΩ) ligado ao pino A0:
+
+```cpp
+void setup() { Serial.begin(9600); }
+void loop() { Serial.println(analogRead(A0)); delay(20); }   // 0 a 1023, ~50 leituras por segundo
+```
+
+```bash
+uv run python -m entrada webcam --camera rgb                          # porta de sensor.porta
+uv run python -m entrada webcam --camera rgb --porta-sensor /dev/ttyACM0
+uv run python -m entrada webcam --camera rgb --sem-sensor             # só o modelo
+```
+
+- **Índice de sonolência**, de 0 a 1: 0,6 × a probabilidade média de `sonolento` do modelo nos
+  últimos 2 s + 0,4 × a fração das leituras do volante abaixo de 400 na mesma janela. Sem sensor,
+  é só o modelo.
+- **Alerta:** começa quando o índice chega a 0,6 e só termina abaixo de 0,4, para não ficar ligando e
+  desligando. Com esses pesos, o volante frouxo sozinho leva o índice a 0,4 e não dispara o alerta:
+  o modelo e o volante precisam concordar.
+- **Motorista fora da câmera:** o quadro não vai para o modelo, o sensor é ignorado e nenhum alerta
+  é gerado; o terminal mostra `motorista não visível`, e um alerta em andamento é suspenso.
+- **Sensor ausente ou desconectado:** a análise avisa e segue só com o modelo.
+- Ao abrir a porta, o que estava no buffer (enviado antes) e a primeira linha, que pode vir pela
+  metade, são descartados.
+
+Porta, velocidade e limiar ficam em `sensor`, e os pesos e limiares do alerta em `fusao`, em
+`config/analise.json`; são pontos de partida a ajustar com testes reais. No Linux, o usuário precisa
+estar no grupo da serial (`uucp` no Arch, `dialout` no Debian e no Ubuntu); veja a porta com
+`ls /dev/ttyUSB* /dev/ttyACM*`.
 
 #### O modelo
 

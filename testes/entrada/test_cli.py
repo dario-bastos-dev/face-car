@@ -71,16 +71,20 @@ def test_video_mostra_uma_linha_por_segundo_e_nao_grava_nada(tmp_path, capsys, m
     assert main(["video", str(VIDEO)]) == 0
     saida = capsys.readouterr().out.splitlines()
     linhas = [l for l in saida if l.startswith("[rgb") and "média" in l]
-    assert [l[:14] for l in linhas] == ["[rgb    0,0 s]", "[rgb    1,0 s]", "[rgb    2,0 s]",
-                                         "[rgb    3,0 s]"]
+    # Em 1 s o vídeo está na tela preta (1 a 1,5 s): sem motorista, sem média.
+    assert [l[:14] for l in linhas] == ["[rgb    0,0 s]", "[rgb    2,0 s]", "[rgb    3,0 s]"]
+    assert "[rgb    1,0 s] motorista não visível: análise pausada" in saida
     assert all("alerta" in l or "sonolento" in l for l in linhas)
-    assert "q/s" not in linhas[0] and all("30 q/s" in l for l in linhas[1:])  # 1 por quadro
+    # Quadros sem motorista não são analisados: com a tela preta na janela de 2 s, a taxa
+    # cai; em 3 s a janela já saiu dela e volta a 1 análise por quadro (30 q/s).
+    assert "q/s" not in linhas[0] and all("q/s" in l for l in linhas[1:])
+    assert linhas[-1].endswith("· 30 q/s")
     # Uma linha por quadro com o que o modelo devolveu e o estado do rosto.
     logs = [l for l in saida if "saída [" in l]
-    assert len(logs) == 120 and logs[1].startswith("[rgb    0,033 s] saída [")
+    assert len(logs) == 104 and logs[1].startswith("[rgb    0,033 s] saída [")
     assert all(" | " in l for l in logs)
     assert "olhos abertos (EAR " in logs[0] and "boca fechada" in logs[0] and "cabeça " in logs[0]
-    assert all("rosto não detectado" in l for l in logs[30:46])   # tela preta do vídeo
+    assert all("rosto não detectado" not in l for l in logs)   # sem rosto, nem vai ao modelo
     depois = sorted(p for p in RAIZ.rglob("*") if p.is_file() and ".git" not in p.parts)
     novos = [p for p in set(depois) - set(antes) if "__pycache__" not in p.parts
              and ".pytest_cache" not in p.parts]
@@ -253,7 +257,7 @@ def test_sem_tela_nao_abre_a_janela_e_avisa(capsys):
 def test_sem_log_mostra_so_as_medias(capsys):
     assert main(["video", str(VIDEO), "--sem-log"]) == 0
     saida = capsys.readouterr().out
-    assert "saída [" not in saida and saida.count("média") == 4
+    assert "saída [" not in saida and saida.count("média") == 3   # 1 s: sem motorista
 
 
 def test_desenho_mostra_olhos_e_boca_no_painel():
@@ -278,3 +282,90 @@ def test_linhas_do_terminal_com_e_sem_log():
         "[rgb    1,5 s] média 2 s: alerta 90,0%  (sonolento 10,0%)  · 18 q/s",
     ]
     assert _linhas_do_terminal("rgb", 1500, analise, sem_log=True, janela_s="2") == linhas[1:]
+
+
+# ---- motorista visível, sensor de pressão e junção -------------------------
+
+class DetectorComRosto:
+    def detectar(self, _quadro, _t_ms):
+        return rosto_sintetico()
+
+
+class SensorFalso:
+    """Leituras fixas do volante, como o SensorPressao."""
+
+    def __init__(self, valores):
+        self.valores = valores
+
+    def leituras_desde(self, _t_ms):
+        return [(0, v) for v in self.valores]
+
+
+def analisador_completo(detector, sensor=None):
+    from entrada.contexto import carregar_pontos_rosto
+    from entrada.pressao import Fusao
+    from entrada.rosto import LimiaresRosto, MonitorRosto
+    return Analisador(ClassificadorFalso(), detector, monitor=MonitorRosto(LimiaresRosto(), carregar_pontos_rosto()),
+                      sensor=sensor, fusao=Fusao(0.6, 0.4, 0.6, 0.4), limiar_pressao=400)
+
+
+def test_sem_motorista_na_camera_nao_ha_analise_nem_alerta():
+    analisador = analisador_completo(DetectorSemRosto(), SensorFalso([100, 100]))
+    quadro = np.zeros((8, 8, 3), np.uint8)
+    analises = [analisador.processar(quadro, t) for t in range(0, 1000, 100)]
+    assert analisador.classificador.chamadas == 0          # o modelo nem é chamado
+    assert all(not a.visivel and a.resultado is None and a.indice is None for a in analises)
+    eventos = [e for a in analises for e in a.eventos]
+    assert eventos == ["motorista não visível: análise pausada"]   # só na transição
+
+
+def test_motorista_volta_e_a_analise_retoma_com_o_sensor():
+    sensor = SensorFalso([100, 100, 100, 900])               # 75% abaixo de 400
+    analisador = analisador_completo(DetectorComRosto(), sensor)
+    analise = analisador.processar(np.zeros((8, 8, 3), np.uint8), 0)
+    assert analise.visivel and analise.fracao_sensor == pytest.approx(0.75)
+    assert analise.pressao == 900
+    # ClassificadorFalso: 1ª chamada dá sonolento 0,1 → índice 0,6·0,1 + 0,4·0,75 = 0,36
+    assert analise.indice == pytest.approx(0.36)
+
+
+def test_alerta_de_sonolencia_quando_modelo_e_volante_concordam():
+    class ClassificadorSono:
+        def classificar(self, _q):
+            return Resultado("sonolento", {"alerta": 0.1, "sonolento": 0.9}, saida=[0.1, 0.9], ms=5)
+
+    analisador = analisador_completo(DetectorComRosto(), SensorFalso([100] * 10))
+    analisador.classificador = ClassificadorSono()
+    analise = analisador.processar(np.zeros((8, 8, 3), np.uint8), 0)
+    assert any(e.startswith("ALERTA de sonolência") for e in analise.eventos)
+    linhas = _linhas_do_terminal("rgb", 0, analise, sem_log=True, janela_s="2")
+    assert any("ALERTA de sonolência" in l for l in linhas)   # alerta aparece mesmo com --sem-log
+    assert any("índice de sonolência 0,94" in l and "volante" in l for l in linhas)
+
+
+def test_linhas_sem_motorista():
+    analisador = analisador_completo(DetectorSemRosto())
+    analise = analisador.processar(np.zeros((8, 8, 3), np.uint8), 0)
+    linhas = _linhas_do_terminal("rgb", 0, analise, sem_log=False, janela_s="2")
+    assert linhas == ["[rgb    0,000 s] motorista não visível: sem análise",
+                      "[rgb    0,000 s] evento: motorista não visível: análise pausada",
+                      "[rgb    0,0 s] motorista não visível: análise pausada"]
+
+
+@tem_modelo_ia
+def test_video_nao_analisa_os_quadros_sem_rosto(capsys):
+    assert main(["video", str(VIDEO)]) == 0
+    saida = capsys.readouterr().out.splitlines()
+    analisados = [l for l in saida if "saída [" in l]
+    sem_rosto = [l for l in saida if "motorista não visível: sem análise" in l]
+    assert len(analisados) == 104 and len(sem_rosto) == 16   # tela preta: quadros 30 a 45
+    assert any("evento: motorista não visível" in l for l in saida)
+    assert any("evento: motorista visível: análise retomada" in l for l in saida)
+
+
+def test_sensor_ausente_avisa_e_segue_sem_ele(capsys):
+    from entrada.__main__ import _abrir_sensor
+    config = carregar_config()
+    config["sensor"]["porta"] = "/dev/nao_existe_fsr402"
+    assert _abrir_sensor(config, relogio_ms=lambda: 0) is None
+    assert "sensor de pressão indisponível" in capsys.readouterr().err
