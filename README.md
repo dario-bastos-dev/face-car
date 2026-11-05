@@ -91,13 +91,13 @@ previsão; uma vez por segundo, mostra a média das probabilidades dos últimos 
 aparece no painel da janela:
 
 ```
-[rgb    0,790 s] saída [1,0000 0,0000] → alerta (34 ms) | olhos abertos (EAR 0,24) · boca fechada (0,01) · cabeça frente
-[rgb    0,838 s] saída [0,0027 0,9973] → sonolento (17 ms) | olhos fechados (EAR 0,09) · boca fechada (0,01) · cabeça baixo
-[rgb    1,042 s] evento: piscada (0,20 s)
-[rgb    2,6 s] média 2 s: alerta 73,4%  (sonolento 26,6%)  · 20 q/s
+[rgb    3,645 s] saída [0,9965 0,0000 0,0035] → alerta (11 ms) | olhos abertos (EAR 0,27) · boca fechada (0,01) · cabeça frente
+[rgb    3,697 s] saída [0,0351 0,9636 0,0013] → sonolento (21 ms) | olhos fechados (EAR 0,09) · boca fechada (0,01) · cabeça baixo
+[rgb    3,901 s] evento: piscada (0,20 s)
+[rgb    4,6 s] média 2 s: alerta 73,4%  (sonolento 21,3%, bocejo 5,3%)  · 20 q/s
 ```
 
-O vetor segue a ordem de `classificador.classes` (`alerta`, `sonolento`). A saída de um quadro
+O vetor segue a ordem de `classificador.classes` (`alerta`, `sonolento`, `bocejo`) e soma 1. A saída de um quadro
 oscila bastante de um quadro para o seguinte; a média separa uma piscada, que dura uma fração de
 segundo, do olho que fica fechado. `q/s` é quantos quadros por segundo estão sendo analisados, e
 `--sem-log` mostra só os eventos e as médias. Os avisos internos do TensorFlow ficam desligados;
@@ -143,9 +143,10 @@ uv run python -m entrada video <seu-video.mp4> [--mostrar]
 O modelo atual é o FaceCar_CNN_V2 (MobileNetV2), treinado com o quadro inteiro em RGB,
 redimensionado para 160×160, com os pixels de 0 a 255 (a normalização é uma camada dele); a análise
 lê o tamanho do próprio modelo e prepara a imagem do mesmo jeito, antes de qualquer desenho na
-janela. As saídas são, na ordem, `sonolento` (0), `alerta` (1) e `bocejo` (2), as pastas Drowsy,
-Non Drowsy e Yawn do treino em ordem alfabética (`classificador.classes` em `config/analise.json`;
-o programa confere que o número de classes bate com o de saídas do modelo), que também define a janela da média
+janela. O modelo devolve 3 probabilidades, nesta ordem: `alerta` (0), `sonolento` (1) e
+`bocejo` (2), com valores de 0 a 1 que somam 1 (`classificador.classes` em `config/analise.json`;
+o programa confere que o número de classes bate com o de saídas e que cada previsão soma 1, e
+termina com erro se não for assim), que também define a janela da média
 (`janela_ms`) e o intervalo das linhas no terminal (`intervalo_terminal_ms`). O arquivo fica fora
 do git (cerca de 10 MB) e deve estar na raiz do projeto; sem ele, o comando termina com erro. A câmera
 infravermelha entrega imagens em cinza, diferentes das coloridas do treino, então o resultado dela

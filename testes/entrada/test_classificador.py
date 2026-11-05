@@ -71,11 +71,33 @@ def test_modelo_real_carrega_com_as_classes_da_configuracao_e_preve():
     assert sum(r.probabilidades.values()) == pytest.approx(1, abs=1e-4)
 
 
-def test_configuracao_segue_a_ordem_das_pastas_do_treino():
-    # FaceCar_CNN_V2: pastas Drowsy, Non Drowsy e Yawn, em ordem alfabética.
+def test_configuracao_segue_a_ordem_de_saida_do_modelo():
+    # FaceCar_CNN_V2 devolve, nesta ordem: alerta, sonolência e bocejo. Os nomes
+    # "sonolento", "alerta" e "bocejo" são os que o simulador da Parte 3 usa.
     from entrada.contexto import carregar_config
 
-    assert carregar_config()["classificador"]["classes"] == ["sonolento", "alerta", "bocejo"]
+    assert carregar_config()["classificador"]["classes"] == ["alerta", "sonolento", "bocejo"]
+
+
+class ModeloTresSaidas(ModeloFalso):
+    output_shape = (None, 3)
+
+
+@pytest.mark.parametrize("saida, problema", [
+    ((2.1, -0.4, 0.3), "entre 0 e 1"),   # valores brutos, sem softmax
+    ((0.2, 0.3, 0.4), "somar 1"),        # soma 0,9
+])
+def test_saida_que_nao_e_probabilidade_da_erro_claro(saida, problema):
+    c = ClassificadorSonolencia(["alerta", "sonolento", "bocejo"], modelo=ModeloTresSaidas(saida))
+    with pytest.raises(ValueError, match=problema):
+        c.classificar(np.zeros((480, 640, 3), np.uint8))
+
+
+def test_saida_com_soma_1_e_aceita_com_tolerancia_de_arredondamento():
+    c = ClassificadorSonolencia(["alerta", "sonolento", "bocejo"],
+                                modelo=ModeloTresSaidas((0.7, 0.2, 0.1000004)))
+    r = c.classificar(np.zeros((480, 640, 3), np.uint8))
+    assert r.classe == "alerta" and r.saida == pytest.approx([0.7, 0.2, 0.1], abs=1e-5)
 
 
 def test_formatar_com_tres_classes():
