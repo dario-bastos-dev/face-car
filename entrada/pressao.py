@@ -1,7 +1,7 @@
 """Sensor de pressão FSR402 lido pela serial, e a junção dele com o modelo de imagens.
 
 O sensor chega por um microcontrolador (por exemplo, um Arduino com
-Serial.println(analogRead(A0))), um número por linha. Pressão abaixo do limiar
+Serial.println(analogRead(A0))), um número por linha, a 115200 baud. Pressão abaixo do limiar
 (400) é sinal de sonolência, como a mão que afrouxa no volante; 400 ou mais é
 sinal de alerta. A junção pondera a probabilidade média de "sonolento" do modelo
 com a fração de leituras baixas do sensor na mesma janela de tempo.
@@ -12,6 +12,10 @@ import threading
 from collections import deque
 
 from entrada.contexto import numero
+
+# Limite de bytes por linha: com bytes soltos sem '\n' (velocidade errada, ruído), um
+# readline() sem limite esperaria a quebra de linha para sempre e o sensor ficaria mudo.
+TAMANHO_MAX_LINHA = 32
 
 
 def ler_pressao(linha) -> int | None:
@@ -57,9 +61,9 @@ class SensorPressao:
         try:
             # A 1ª linha pode ter começado antes da limpeza do buffer e vir pela metade
             # ("0" de um "800"), o que seria uma falsa pressão baixa: é descartada.
-            self._serial.readline()
+            self._serial.readline(TAMANHO_MAX_LINHA)
             while self._rodando:
-                valor = ler_pressao(self._serial.readline())
+                valor = ler_pressao(self._serial.readline(TAMANHO_MAX_LINHA))
                 if valor is not None:
                     with self._trava:
                         self._leituras.append((int(self._relogio_ms()), valor))

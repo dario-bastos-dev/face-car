@@ -148,7 +148,7 @@ de alerta. O sensor chega por um microcontrolador que envia um número por linha
 FSR402 num divisor de tensão (por exemplo, com um resistor de 10 kΩ) ligado ao pino A0:
 
 ```cpp
-void setup() { Serial.begin(9600); }
+void setup() { Serial.begin(115200); }
 void loop() { Serial.println(analogRead(A0)); delay(20); }   // 0 a 1023, ~50 leituras por segundo
 ```
 

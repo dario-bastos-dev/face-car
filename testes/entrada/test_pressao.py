@@ -111,3 +111,21 @@ def test_leituras_de_antes_de_abrir_a_porta_sao_descartadas():
         assert esperar(lambda: len(sensor.leituras_desde(0)) >= 1)
         time.sleep(0.1)
         assert [v for _, v in sensor.leituras_desde(0)] == [700]
+
+
+def test_lixo_sem_quebra_de_linha_nao_trava_o_sensor():
+    # Com a velocidade errada chegam bytes soltos (0xFF) sem '\n'; o readline() sem limite
+    # esperaria a quebra de linha para sempre, e o sensor ficaria mudo.
+    import serial
+
+    porta = serial.serial_for_url("loop://", 115200, timeout=0.05)
+    with SensorPressao("loop://", 115200, relogio_ms=lambda: 0,
+                       abrir=lambda *_a, **_k: porta) as sensor:
+        porta.write(b"\xff" * 40 + b"523\r\n")
+        assert esperar(lambda: len(sensor.leituras_desde(0)) >= 1)
+        assert sensor.leituras_desde(0)[0][1] == 523
+
+
+def test_configuracao_usa_a_velocidade_do_arduino():
+    from entrada.contexto import carregar_config
+    assert carregar_config()["sensor"]["baud"] == 115200

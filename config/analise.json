@@ -43,7 +43,7 @@
   },
   "sensor": {
     "porta": "/dev/ttyUSB0",
-    "baud": 9600,
+    "baud": 115200,
     "limiar_sonolencia": 400
   },
   "fusao": {
