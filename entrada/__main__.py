@@ -48,6 +48,7 @@ class Analise:
     pressao: int | None = None           # última leitura do sensor na janela
     em_alerta: bool = False              # alerta de sonolência ativo
     eventos: list = field(default_factory=list)  # visibilidade e alertas
+    bonus_cabeca: float = 0.0            # somado ao índice pela cabeça baixa prolongada
 
 
 class Analisador:
@@ -56,8 +57,8 @@ class Analisador:
     O detector de rosto decide se o motorista está na câmera; sem ele no quadro, o
     modelo não é chamado, o sensor é ignorado e nenhum alerta é gerado. Com ele, o
     modelo recebe o quadro inteiro, e a fusão junta a média do modelo com a fração de
-    leituras baixas do sensor na mesma janela. Sem detector (testes), todo quadro conta
-    como visível.
+    leituras baixas do sensor na mesma janela, mais um bônus se a cabeça estiver baixa há
+    muito tempo. Sem detector (testes), todo quadro conta como visível.
     """
 
     def __init__(self, classificador, detector=None, janela_ms: int = 2000,
@@ -98,14 +99,16 @@ class Analisador:
             valores = [v for _, v in self.sensor.leituras_desde(t_ms - self.janela_ms)]
             fracao = fracao_abaixo(valores, self.limiar_pressao)
             pressao = valores[-1] if valores else None
-        indice, em_alerta = None, False
+        indice, em_alerta, bonus = None, False, 0.0
         if self.fusao is not None:
+            cabeca_baixa = estado is not None and estado.cabeca_baixa_prolongada
             indice, alertas = self.fusao.atualizar(resumo.probabilidades.get("sonolento", 0.0),
-                                                   fracao)
+                                                   fracao, cabeca_baixa)
             eventos += alertas
             em_alerta = self.fusao.em_alerta
+            bonus = self.fusao.bonus_cabeca_baixa if cabeca_baixa else 0.0
         return Analise(resultado, resumo, qps, rosto, estado, mostrar_resumo, True, indice,
-                       fracao, pressao, em_alerta, eventos)
+                       fracao, pressao, em_alerta, eventos, bonus)
 
     def _mudanca_de_visibilidade(self, visivel: bool) -> list:
         """Eventos quando o motorista sai ou volta; ao sair, o alerta é suspenso."""
@@ -133,6 +136,8 @@ def desenhar(quadro, resumo, rosto=None, pontos_rosto=None, estado=None, analise
                       + f"  (indice {numero(analise.indice, '.2f')})")
     if analise is not None and analise.pressao is not None:
         linhas.append(f"volante: {analise.pressao}")
+    if analise is not None and analise.bonus_cabeca:
+        linhas.append(f"cabeca baixa: +{numero(analise.bonus_cabeca, '.2f')}")
     if estado is not None and estado.olhos is not None:
         linhas += [f"olhos: {estado.olhos}", f"boca: {estado.boca}"]
     if rosto is not None:
@@ -199,9 +204,11 @@ def _linhas_do_terminal(camera: str, t_ms: int, analise: Analise, sem_log: bool,
             p_sono = analise.resumo.probabilidades.get("sonolento", 0.0)
             volante = ("" if analise.fracao_sensor is None
                        else f" · volante {numero(analise.fracao_sensor, '.2f')}")
+            cabeca = (f" · cabeça baixa +{numero(analise.bonus_cabeca, '.2f')}"
+                      if analise.bonus_cabeca else "")
             estado = "SONOLÊNCIA" if analise.em_alerta else "alerta"
             linhas.append(f"{segundo} índice de sonolência {numero(analise.indice, '.2f')} "
-                          f"(modelo {numero(p_sono, '.2f')}{volante}) → {estado}")
+                          f"(modelo {numero(p_sono, '.2f')}{volante}{cabeca}) → {estado}")
     return linhas
 
 

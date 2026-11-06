@@ -4,7 +4,8 @@ O sensor chega por um microcontrolador (por exemplo, um Arduino com
 Serial.println(analogRead(A0))), um número por linha, a 115200 baud. Pressão abaixo do limiar
 (400) é sinal de sonolência, como a mão que afrouxa no volante; 400 ou mais é
 sinal de alerta. A junção pondera a probabilidade média de "sonolento" do modelo
-com a fração de leituras baixas do sensor na mesma janela de tempo.
+com a fração de leituras baixas do sensor na mesma janela de tempo; a cabeça baixa por
+muito tempo (15 s) soma um bônus a esse índice.
 """
 
 import re
@@ -102,34 +103,40 @@ class Fusao:
     """Índice de sonolência de 0 a 1 a partir do modelo e do sensor, com alerta e histerese.
 
     O índice é a média ponderada da probabilidade de "sonolento" do modelo e da fração
-    de leituras baixas do sensor; sem sensor, é só o modelo. O alerta começa quando o
-    índice chega a `limiar_alerta` e só termina abaixo de `limiar_fim_alerta`, para não
+    de leituras baixas do sensor; sem sensor, é só o modelo. Com a cabeça baixa por muito
+    tempo, soma-se `bonus_cabeca_baixa` (o índice não passa de 1). O alerta começa quando
+    o índice chega a `limiar_alerta` e só termina abaixo de `limiar_fim_alerta`, para não
     ficar ligando e desligando perto do limiar.
     """
 
     def __init__(self, peso_modelo: float, peso_sensor: float, limiar_alerta: float,
-                 limiar_fim_alerta: float):
+                 limiar_fim_alerta: float, bonus_cabeca_baixa: float = 0.0):
         self.peso_modelo = peso_modelo
         self.peso_sensor = peso_sensor
         self.limiar_alerta = limiar_alerta
         self.limiar_fim_alerta = limiar_fim_alerta
+        self.bonus_cabeca_baixa = bonus_cabeca_baixa
         self.em_alerta = False
         self.indice = None
 
-    def atualizar(self, p_sono_modelo: float, fracao_sensor: float | None):
+    def atualizar(self, p_sono_modelo: float, fracao_sensor: float | None,
+                  cabeca_baixa: bool = False):
         """(índice, eventos de alerta) deste quadro."""
         if fracao_sensor is None:
             indice = p_sono_modelo
         else:
             indice = ((self.peso_modelo * p_sono_modelo + self.peso_sensor * fracao_sensor)
                       / (self.peso_modelo + self.peso_sensor))
+        bonus = self.bonus_cabeca_baixa if cabeca_baixa else 0.0
+        indice = min(1.0, indice + bonus)
         self.indice = indice
         eventos = []
         if not self.em_alerta and indice >= self.limiar_alerta:
             self.em_alerta = True
             volante = "" if fracao_sensor is None else f", volante {numero(fracao_sensor, '.2f')}"
+            cabeca = f", cabeça baixa +{numero(bonus, '.2f')}" if bonus else ""
             eventos.append(f"ALERTA de sonolência (índice {numero(indice, '.2f')}: "
-                           f"modelo {numero(p_sono_modelo, '.2f')}{volante})")
+                           f"modelo {numero(p_sono_modelo, '.2f')}{volante}{cabeca})")
         elif self.em_alerta and indice < self.limiar_fim_alerta:
             self.em_alerta = False
             eventos.append(f"fim do alerta de sonolência (índice {numero(indice, '.2f')})")

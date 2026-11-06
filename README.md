@@ -117,6 +117,7 @@ dividida pela largura da boca. Os eventos aparecem numa linha própria, também 
 | `olhos fechados há mais de 1 s` | enquanto continuam fechados; ao reabrir, `olhos reabertos após …` |
 | `olhos fechados por …` | fechados por mais que uma piscada e menos de 1 s |
 | `bocejo` | boca aberta por mais de 1,5 s (menos que isso é fala) |
+| `cabeça baixa há mais de 15 s` | cabeça apontando para baixo por 15 s seguidos; ao levantar, `cabeça levantada após …`. Olhar para baixo por menos tempo (painel, rádio) não gera evento, e a linha mostra `cabeça baixo há 4 s` enquanto conta |
 
 Os limiares ficam em `rosto`, em `config/analise.json`: EAR abaixo de 0,18 é olho fechado
 (`ear_olho_fechado`) e abertura acima de 0,40 é boca aberta (`abertura_boca_aberta`). São pontos de
@@ -164,6 +165,12 @@ uv run python -m entrada webcam --camera rgb --sem-sensor             # só o mo
 - **Alerta:** começa quando o índice chega a 0,6 e só termina abaixo de 0,4, para não ficar ligando e
   desligando. Com esses pesos, o volante frouxo sozinho leva o índice a 0,4 e não dispara o alerta:
   o modelo e o volante precisam concordar.
+- **Cabeça baixa por 15 s:** soma 0,3 ao índice (que não passa de 1) enquanto ela continuar baixa, e
+  o terminal mostra `cabeça baixa +0,30` na linha do índice. Sozinha, com o volante firme e o modelo
+  em alerta, não dispara o alerta (pode ser distração, como olhar o celular); com o volante frouxo
+  ou o modelo em dúvida (0,5), dispara. Se a cabeça baixar tanto que o MediaPipe perca o rosto,
+  vale a regra do motorista fora da câmera. O tempo fica em `rosto.cabeca_baixa_alerta_ms` e o
+  bônus em `fusao.bonus_cabeca_baixa`.
 - **Motorista fora da câmera:** o quadro não vai para o modelo, o sensor é ignorado e nenhum alerta
   é gerado; o terminal mostra `motorista não visível`, e um alerta em andamento é suspenso.
 - **Sensor ausente ou desconectado:** a análise avisa e segue só com o modelo.

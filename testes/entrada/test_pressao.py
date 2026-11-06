@@ -129,3 +129,20 @@ def test_lixo_sem_quebra_de_linha_nao_trava_o_sensor():
 def test_configuracao_usa_a_velocidade_do_arduino():
     from entrada.contexto import carregar_config
     assert carregar_config()["sensor"]["baud"] == 115200
+
+
+def test_cabeca_baixa_soma_o_bonus_ao_indice():
+    fusao = Fusao(**PARAMS, bonus_cabeca_baixa=0.3)
+    indice, eventos = fusao.atualizar(p_sono_modelo=0.2, fracao_sensor=0.0)
+    assert indice == pytest.approx(0.12) and eventos == []
+    indice, eventos = fusao.atualizar(p_sono_modelo=0.2, fracao_sensor=0.0, cabeca_baixa=True)
+    assert indice == pytest.approx(0.42) and eventos == []   # firme no volante: não alerta
+    indice, eventos = fusao.atualizar(p_sono_modelo=0.5, fracao_sensor=0.0, cabeca_baixa=True)
+    assert indice == pytest.approx(0.6)                       # modelo em dúvida + cabeça baixa
+    assert eventos == ["ALERTA de sonolência (índice 0,60: modelo 0,50, volante 0,00, "
+                       "cabeça baixa +0,30)"]
+
+
+def test_bonus_da_cabeca_nao_passa_o_indice_de_1():
+    fusao = Fusao(**PARAMS, bonus_cabeca_baixa=0.3)
+    assert fusao.atualizar(0.95, None, cabeca_baixa=True)[0] == pytest.approx(1.0)

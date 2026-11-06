@@ -343,6 +343,24 @@ def test_alerta_de_sonolencia_quando_modelo_e_volante_concordam():
     assert any("índice de sonolência 0,94" in l and "volante" in l for l in linhas)
 
 
+def test_cabeca_baixa_prolongada_aumenta_o_indice():
+    from entrada.pressao import Fusao
+    from entrada.rosto import EstadoRosto
+
+    class MonitorCabecaBaixa:
+        def atualizar(self, _t_ms, _rosto):
+            return EstadoRosto("abertos", 0.3, "fechada", 0.02, "baixo", [], 16000, True)
+
+    analisador = Analisador(ClassificadorFalso(), DetectorComRosto(), monitor=MonitorCabecaBaixa(),
+                            fusao=Fusao(0.6, 0.4, 0.6, 0.4, bonus_cabeca_baixa=0.3))
+    analise = analisador.processar(np.zeros((8, 8, 3), np.uint8), 0)
+    # ClassificadorFalso: sonolento 0,1; sem sensor, índice = 0,1 + 0,3
+    assert analise.bonus_cabeca == pytest.approx(0.3) and analise.indice == pytest.approx(0.4)
+    linhas = _linhas_do_terminal("rgb", 0, analise, sem_log=True, janela_s="2")
+    assert linhas[-1] == ("[rgb    0,0 s] índice de sonolência 0,40 (modelo 0,10 · "
+                          "cabeça baixa +0,30) → alerta")
+
+
 def test_linhas_sem_motorista():
     analisador = analisador_completo(DetectorSemRosto())
     analise = analisador.processar(np.zeros((8, 8, 3), np.uint8), 0)
