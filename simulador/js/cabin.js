@@ -10,24 +10,99 @@ let canvas, ctx, W = 0, H = 0, dpr = 1;
 let under, over; // camadas estáticas pré-renderizadas
 const emblem = new Image(); emblem.src = 'assets/vigia_v.png'; // "V" do volante, sem fundo
 emblem.onload = () => { if (W) buildStatic(); };
-// Mãos do motorista segurando o volante, recortadas de uma imagem de referência do volante com
-// as mãos (o aro passa por trás do dorso e reaparece em cima e embaixo). Cada imagem guarda onde
-// ficava o centro do volante (`centro`, em px da imagem), o raio da linha média do aro (`raio`) e
-// o ângulo da pegada (`angulo`); `giro` sobe um pouco a mão no aro. São desenhadas a cada quadro,
-// não na camada pré-renderizada: girando com o volante, os braços continuam até fora da tela.
+// Volante e mãos a partir das referências do projeto:
+//  - assets/volante.webp: o volante sozinho. `centro` e `raioExt` (borda externa do aro) foram
+//    medidos ajustando um círculo à borda; o aro tem 88 px, então a linha média fica em `raioMeio`.
+//    O aro original não era redondo (a borda variava de 548 a 575 px em volta do centro): girando,
+//    outro trecho passava sob as mãos e abria um vão. assets/volante_redondo.webp é a mesma imagem
+//    com o aro corrigido para um círculo de 552 px (o raio onde as mãos se encaixam com o volante
+//    reto), sem mexer no miolo; é ela que a cabine usa.
+//  - assets/mao_esquerda.webp / mao_direita.webp: as mãos tiradas da referência com as mãos no
+//    volante, só a pele e a manga. O que o aro cobre na referência (os dedos por trás dele) não
+//    entra na imagem, então o aro desenhado embaixo aparece ali. A manga foi prolongada além da foto
+//    ao longo do braço. `centro`/`raio` são o centro e a linha média do aro da referência, em px de
+//    cada imagem (mãos 14 px para fora: o volante da referência é um pouco oval, o nosso é redondo);
+//    `pega` é o ponto do aro sob a mão.
+// Mão e braço se movem inteiros (uma peça só) e giram exatamente junto com o aro, então o recorte
+// dos dedos atrás do aro continua coberto por ele (sem vão). Para o braço não passar do ombro
+// invisível, há um ombro fixo na tela, fora da vista: onde o braço chega com o volante reto
+// (`OMBRO` px da imagem além do punho `pulso`, na direção `braco`). A mão acompanha o volante
+// enquanto a linha do braço passa perto desse ombro (até OMBRO_DESVIO px da imagem) e não encolhe
+// demais (BRACO_MIN), e enquanto não desce para fora da tela. Dali em diante o volante desliza
+// dentro da mão, como numa curva fechada.
+const VOLANTE = { img: new Image(), centro: [619.3, 636.4], raioExt: 560, raioMeio: 516, escala: 1.06 };
+VOLANTE.img.src = 'assets/volante_redondo.webp?v=1';
+VOLANTE.img.onload = () => { if (W) buildStatic(); };
 const MAOS = [
-  { img: new Image(), src: 'assets/mao_esquerda.png', centro: [370.2, 119.4], raio: 250.2, giro: .12 },
-  { img: new Image(), src: 'assets/mao_direita.png', centro: [-185.4, 118.2], raio: 250.2, giro: -.12 },
+  { img: new Image(), src: 'assets/mao_esquerda.webp?v=6', centro: [1540, 478.7], raio: 414.5, giro: 0, pega: [1130.8, 385.1], pulso: [975, 570], braco: [-.45, .89] },
+  { img: new Image(), src: 'assets/mao_direita.webp?v=6', centro: [-14, 478.7], raio: 414.5, giro: 0, pega: [396.2, 389.4], pulso: [552, 570], braco: [.45, .89] },
 ];
 for (const m of MAOS) m.img.src = m.src;
-function drawHands(c, w) {
+const OMBRO = 1100, OMBRO_DESVIO = 560, BRACO_MIN = .8;
+/* Troca de marcha: a mão direita solta o volante, desce até a alavanca (no console, abaixo e à
+ * direita do volante, fora da vista) e volta. O braço inteiro recua ao longo dele mesmo, em direção
+ * ao ombro, e continua saindo do mesmo lugar.
+ * Tempos: sai em 0,22 s, fica 0,28 s na alavanca e volta em 0,28 s. Uma troca seguida, com a mão
+ * ainda fora, só prolonga a espera. */
+const TROCA = { sai: .22, fica: .28, volta: .28, recuo: 1.5 };
+const trocaMao = { t: 9 };
+const smoothT = x => x * x * (3 - 2 * x);
+function trocaEnvelope() {
+  const t = trocaMao.t, { sai, fica, volta } = TROCA;
+  if (t < sai) return smoothT(t / sai);
+  if (t < sai + fica) return 1;
+  return 1 - smoothT(Math.min(1, (t - sai - fica) / volta));
+}
+V.on('marcha', () => {
+  const { sai, fica } = TROCA, t = trocaMao.t;
+  if (t < sai) return;                          // ainda saindo
+  if (t < sai + fica) { trocaMao.t = sai; return; } // na alavanca: espera mais um pouco
+  trocaMao.t = sai * trocaEnvelope();            // voltando ou no volante: sai de novo de onde está
+});
+// Geometria de uma mão com o aro girado `a` (rad): pega na tela, giro da peça, e o braço em
+// relação ao ombro (desvio da linha do braço até ele e distância ao longo do braço).
+function poseMao(m, w, a, recuo = 0) {
+  const k = w.r / m.raio, cs = (x, y, r) => [x * Math.cos(r) - y * Math.sin(r), x * Math.sin(r) + y * Math.cos(r)];
+  const pegaEm = r => { const [x, y] = cs((m.pega[0] - m.centro[0]) * k, (m.pega[1] - m.centro[1]) * k, r); return [w.cx + x, w.cy + y]; };
+  const pulsoEm = (P, r) => { const [x, y] = cs((m.pulso[0] - m.pega[0]) * k, (m.pulso[1] - m.pega[1]) * k, r); return [P[0] + x, P[1] + y]; };
+  // ombro: onde o braço chega com o volante reto
+  const P0 = pegaEm(m.giro), W0 = pulsoEm(P0, m.giro), [bx, by] = cs(m.braco[0], m.braco[1], m.giro);
+  const S = [W0[0] + bx * OMBRO * k, W0[1] + by * OMBRO * k];
+  const rot = m.giro + a, [ux, uy] = cs(m.braco[0], m.braco[1], rot);
+  let P = pegaEm(rot), Wp = pulsoEm(P, rot);
+  if (recuo) { // troca de marcha: a peça inteira recua ao longo do braço, em direção ao ombro
+    P = [P[0] + ux * recuo, P[1] + uy * recuo]; Wp = [Wp[0] + ux * recuo, Wp[1] + uy * recuo];
+  }
+  const sx = S[0] - Wp[0], sy = S[1] - Wp[1];
+  return { k, P, rot, desvio: Math.abs(sx * uy - sy * ux) / k, ao_longo: (sx * ux + sy * uy) / k };
+}
+// Limites: a linha do braço passa perto do ombro, o braço não encolhe demais e a mão não desce
+// para fora da tela (a metade de baixo do volante fica escondida). Em telas baixas a mão já fica
+// perto da borda com o volante reto: aí o limite é não descer mais.
+const maoCabe = (p, baixo) => p.desvio <= OMBRO_DESVIO && p.ao_longo >= BRACO_MIN * OMBRO && p.P[1] <= baixo;
+// Quanto a mão acompanha o giro do volante: tudo, até chegar a um limite.
+function giroDaMao(m, w, giro) {
+  const passo = Math.sign(giro) * Math.PI / 180;
+  if (!passo) return 0;
+  const baixo = Math.max(H - w.r * .3, poseMao(m, w, 0).P[1] + 1);
+  let a = 0;
+  while (Math.abs(a + passo) <= Math.abs(giro)) {
+    if (!maoCabe(poseMao(m, w, a + passo), baixo)) return a;
+    a += passo;
+  }
+  return maoCabe(poseMao(m, w, giro), baixo) ? giro : a; // completa o resto (menos de 1°)
+}
+function drawHands(c, w, giroGraus) {
+  const giro = giroGraus * Math.PI / 180;
+  const fora = state.reduceMotion ? 0 : trocaEnvelope();
   for (const m of MAOS) {
     if (!m.img.complete || !m.img.naturalWidth) continue;
-    const k = w.r / m.raio;
+    const troca = m === MAOS[1] && fora > 0;
+    const p = poseMao(m, w, giroDaMao(m, w, giro), troca ? TROCA.recuo * w.r * fora : 0);
     c.save();
-    c.translate(w.cx, w.cy); c.rotate(m.giro); c.scale(k, k);
+    c.translate(p.P[0], p.P[1]); c.rotate(p.rot); c.scale(p.k, p.k);
     c.shadowColor = 'rgba(0,0,0,.4)'; c.shadowBlur = 14; c.shadowOffsetY = 5;
-    c.drawImage(m.img, -m.centro[0], -m.centro[1]);
+    c.drawImage(m.img, -m.pega[0], -m.pega[1]);
     c.restore();
   }
 }
@@ -185,19 +260,42 @@ function buildStatic() {
 
   drawDmsCamera(c, L);
 
-  // camada sobreposta: volante
-  [over, c] = layer();
+  // Volante: numa imagem própria, inteiro (aro completo e raio inferior). Antes só a metade de
+  // cima era desenhada, numa camada do tamanho da tela; ao girar o volante, a parte que faltava
+  // (e a cortada pela borda da tela) aparecia como um corte no aro.
   const w = L.wheel;
+  if (VOLANTE.img.complete && VOLANTE.img.naturalWidth) {
+    // a imagem do volante (assets/volante.webp), com a linha média do aro no raio w.r
+    // VOLANTE.escala: o volante um pouco maior que a medida, para o aro cobrir toda a pegada das
+    // mãos (sem ele, sobrava um vão entre os dedos e o aro, onde aparecia o painel)
+    const s = VOLANTE.escala * w.r / VOLANTE.raioMeio, img = VOLANTE.img;
+    const lado = Math.ceil(2 * VOLANTE.raioExt * s * 1.08 + 60);
+    over = document.createElement('canvas'); over.width = over.height = Math.round(lado * dpr);
+    c = over.getContext('2d'); c.scale(dpr, dpr);
+    c.shadowColor = 'rgba(0,0,0,.55)'; c.shadowBlur = 22; c.shadowOffsetY = 8;
+    c.drawImage(img, lado / 2 - VOLANTE.centro[0] * s, lado / 2 - VOLANTE.centro[1] * s, img.naturalWidth * s, img.naturalHeight * s);
+    return;
+  }
+  // sem a imagem (ainda carregando): volante desenhado
+  const lado = Math.ceil((w.r + w.t) * 2 + 80);
+  over = document.createElement('canvas'); over.width = over.height = Math.round(lado * dpr);
+  over.lado = lado;
+  c = over.getContext('2d'); c.scale(dpr, dpr); c.translate(lado / 2 - w.cx, lado / 2 - w.cy);
   c.save();
   c.shadowColor = 'rgba(0,0,0,.6)'; c.shadowBlur = 24; c.shadowOffsetY = 8;
   c.lineWidth = w.t; c.strokeStyle = '#141517';
-  c.beginPath(); c.arc(w.cx, w.cy, w.r, Math.PI, 2 * Math.PI); c.stroke();
+  c.beginPath(); c.arc(w.cx, w.cy, w.r, 0, 2 * Math.PI); c.stroke();
   c.restore();
-  // relevo e costura do aro
-  c.lineWidth = w.t * .55; c.strokeStyle = grad(c, 0, w.cy - w.r - w.t, 0, w.cy - w.r + w.t, [[0, '#3a3d42'], [1, '#141517']]);
-  c.beginPath(); c.arc(w.cx, w.cy, w.r + w.t * .1, Math.PI * 1.02, Math.PI * 1.98); c.stroke();
+  // relevo e costura do aro (a luz vem de cima: o relevo acompanha o aro inteiro)
+  c.lineWidth = w.t * .55; c.strokeStyle = grad(c, 0, w.cy - w.r - w.t, 0, w.cy + w.r + w.t, [[0, '#3a3d42'], [.5, '#1d1f23'], [1, '#141517']]);
+  c.beginPath(); c.arc(w.cx, w.cy, w.r + w.t * .1, 0, 2 * Math.PI); c.stroke();
   c.setLineDash([3, 5]); c.lineWidth = 1; c.strokeStyle = 'rgba(160,160,160,.35)';
-  c.beginPath(); c.arc(w.cx, w.cy, w.r - w.t * .28, Math.PI * 1.05, Math.PI * 1.95); c.stroke(); c.setLineDash([]);
+  c.beginPath(); c.arc(w.cx, w.cy, w.r - w.t * .28, 0, 2 * Math.PI); c.stroke(); c.setLineDash([]);
+  // raio inferior, do cubo até a parte de baixo do aro
+  c.fillStyle = grad(c, 0, w.cy, 0, w.cy + w.r, [[0, '#24272b'], [1, '#111214']]);
+  c.beginPath();
+  c.moveTo(w.cx - w.r * .1, w.cy); c.lineTo(w.cx - w.r * .17, w.cy + w.r - w.t * .3);
+  c.lineTo(w.cx + w.r * .17, w.cy + w.r - w.t * .3); c.lineTo(w.cx + w.r * .1, w.cy); c.closePath(); c.fill();
   // raios e cubo
   const hubR = w.r * .26;
   for (const s of [-1, 1]) {
@@ -322,10 +420,6 @@ function drawDmsCamera(c, L) {
   lg.addColorStop(0, '#6aa7ff'); lg.addColorStop(.35, '#1b2f6e'); lg.addColorStop(1, '#05070c');
   c.fillStyle = lg; c.beginPath(); c.arc(0, 0, lr, 0, 7); c.fill();
   c.fillStyle = 'rgba(255,255,255,.55)'; c.beginPath(); c.arc(-lr * .35, -lr * .35, lr * .18, 0, 7); c.fill();
-  // LEDs infravermelhos (visão noturna) dos dois lados
-  for (const sx of [-1, 1]) for (const k of [0, 1]) {
-    c.fillStyle = '#2a0f12'; c.beginPath(); c.arc(sx * (lr * 1.9 + k * d.h * .2), 0, d.h * .07, 0, 7); c.fill();
-  }
   c.restore();
 }
 function drawDmsStatus(L, t) {
@@ -336,15 +430,6 @@ function drawDmsStatus(L, t) {
   // LED de status
   c.fillStyle = on ? color : '#1d2a22'; c.shadowColor = color; c.shadowBlur = on ? 8 : 0;
   c.beginPath(); c.arc(d.w * .38, -d.h * .22, Math.max(1.6, d.h * .06), 0, 7); c.fill(); c.shadowBlur = 0;
-  // brilho dos LEDs infravermelhos à noite (iluminam o rosto no escuro)
-  if (env.night > .2) {
-    const lr = d.h * .3;
-    for (const sx of [-1, 1]) for (const k of [0, 1]) {
-      c.fillStyle = `rgba(255,60,70,${env.night * .55})`; c.shadowColor = '#ff3b4a'; c.shadowBlur = 5;
-      c.beginPath(); c.arc(sx * (lr * 1.9 + k * d.h * .2), 0, d.h * .06, 0, 7); c.fill();
-    }
-    c.shadowBlur = 0;
-  }
   c.restore();
   // etiqueta
   if (!L.narrow) {
@@ -356,7 +441,36 @@ function drawDmsStatus(L, t) {
     c.fillStyle = color; c.beginPath(); c.arc(lx + fs * .8, ly + fs * .95, fs * .28, 0, 7); c.fill();
     txt(c, label, lx + fs * 1.3, ly + fs * 1.3, fs, '#e6f2fb', 800);
   }
+  // LED do flash: logo abaixo do LED colorido de status, no módulo; apagado é uma lente branca opaca
+  const fl = state.flash || 0, [fx, fy] = ledFlash(d);
+  c.save();
+  c.fillStyle = fl > .02 ? '#ffffff' : '#56606b'; c.shadowColor = '#ffffff'; c.shadowBlur = fl > .02 ? 4 + 10 * fl : 0;
+  c.beginPath(); c.arc(fx, fy, Math.max(1.6, d.h * .06), 0, 7); c.fill();
+  c.restore();
+  if (fl > .01) { // brilho saindo do LED
+    const r = d.h * (1 + 2.2 * fl), g = c.createRadialGradient(fx, fy, 0, fx, fy, r);
+    g.addColorStop(0, `rgba(255,255,255,${Math.min(1, .6 + fl)})`); g.addColorStop(.3, `rgba(235,245,255,${.5 * fl})`); g.addColorStop(1, 'rgba(235,245,255,0)');
+    c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = g; c.beginPath(); c.arc(fx, fy, r, 0, 7); c.fill(); c.restore();
+  }
 }
+// Posição do LED do flash na tela: logo abaixo do LED de status (mesmo giro de 0,06 rad do módulo).
+function ledFlash(d) {
+  const lx = d.w * .38, ly = d.h * .08, a = .06;
+  return [d.x + d.w / 2 + lx * Math.cos(a) - ly * Math.sin(a), d.y + d.h / 2 + lx * Math.sin(a) + ly * Math.cos(a)];
+}
+/* Luz do flash na cabine: sai do LED do flash e clareia a vista inteira (como no rosto do motorista).
+ * Suave no crítico; forte na intervenção, quase branco no pico. */
+function drawFlash(L) {
+  const fl = state.flash || 0; if (fl < .01) return;
+  const d = dmsRect(L), [cx0, cy0] = ledFlash(d), R = Math.hypot(W, H);
+  const c = ctx;
+  c.save(); c.globalCompositeOperation = 'lighter';
+  const g = c.createRadialGradient(cx0, cy0, 0, cx0, cy0, R);
+  g.addColorStop(0, `rgba(255,255,255,${.75 * fl})`); g.addColorStop(.35, `rgba(240,246,255,${.4 * fl})`); g.addColorStop(1, `rgba(230,240,255,${.12 * fl})`);
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+  c.restore();
+}
+
 
 /* ---------- elementos dinâmicos ---------- */
 const LEVEL_UI = {
@@ -451,10 +565,10 @@ function drawCluster(L, t) {
   // visão de faixa (ADAS)
   const lx = mx, ly = k.y + 42 * S, lw = mw, lh = k.h - 50 * S;
   // pisca-alerta: setas nos cantos superiores da área da faixa, abaixo dos textos e dentro do quadro
-  if (state.hazardOn || state.leftOn) { // seta para a esquerda: só a do lado esquerdo
+  if (state.hazardOn || state.leftOn || state.rightOn) { // seta: só a do lado indicado
     const as = 8 * S, ay = ly + as * .9;
     c.save(); c.fillStyle = '#2fe08f'; c.shadowColor = '#2fe08f'; c.shadowBlur = 8;
-    for (const s of state.hazardOn ? [-1, 1] : [-1]) {
+    for (const s of state.hazardOn ? [-1, 1] : state.leftOn ? [-1] : [1]) {
       const tip = s < 0 ? lx + 1 : lx + lw - 1; // ponta da seta junto à borda da coluna
       c.beginPath(); c.moveTo(tip, ay); c.lineTo(tip - s * as, ay - as * .62); c.lineTo(tip - s * as, ay - as * .25);
       c.lineTo(tip - s * as * 1.6, ay - as * .25); c.lineTo(tip - s * as * 1.6, ay + as * .25); c.lineTo(tip - s * as, ay + as * .25);
@@ -526,6 +640,7 @@ function drawScreen(L) {
 }
 
 function draw(dt, t) {
+  trocaMao.t += dt;
   if (state.viewMode !== '3d' || !under || !V.world3d?.ready) return;
   const L = cabin.layout, dy = snap(V.motion.bob); // balanço vertical da cabine (suspensão)
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -551,10 +666,17 @@ function draw(dt, t) {
   // volante: leves correções para os lados, girando em torno do próprio centro
   const w = L.wheel;
   ctx.setTransform(1, 0, 0, 1, 0, dy * dpr);
-  ctx.translate(w.cx * dpr, w.cy * dpr); ctx.rotate(V.motion.steer * Math.PI / 180); ctx.translate(-w.cx * dpr, -w.cy * dpr);
-  ctx.drawImage(over, 0, 0);
-  ctx.scale(dpr, dpr);
-  drawHands(ctx, w); // mesmo giro do volante
+  const giro = V.motion.steer * Math.PI / 180;
+  const desenharAro = () => {
+    ctx.setTransform(1, 0, 0, 1, 0, dy * dpr);
+    ctx.translate(w.cx * dpr, w.cy * dpr); ctx.rotate(giro);
+    ctx.drawImage(over, -over.width / 2, -over.height / 2);
+  };
+  desenharAro();
+  ctx.setTransform(dpr, 0, 0, dpr, 0, dy * dpr);
+  drawHands(ctx, w, V.motion.steer);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawFlash(L);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 V.addRenderer(draw);

@@ -91,6 +91,8 @@ function resize() {
   CX = narrow ? W * .5 : W * .505;
   lane = narrow ? W * .25 : clamp(W * .15, 110, 260);
   ppm = clamp(H / 62, 6, 18);
+  // largura desenhada de um veículo, em metros da pista: o núcleo usa nas batidas vistas na 2D
+  V.escala2d = { lat: VSCALE * ppm / lane * V.ROAD.laneWidth };
   if (!grassPat) buildPatterns();
 }
 
@@ -129,10 +131,18 @@ function drawGround(scroll) {
   const lw = Math.max(3, lane * .045);
   c.fillStyle = '#d9dcdc';
   for (const s of [-1, 1]) c.fillRect(lx(s * .97) - lw / 2, 0, lw, H);
-  // linha central amarela tracejada
-  const dash = 5.5 * ppm, gap = 4.5 * ppm, period = dash + gap, off = scroll % period;
-  c.fillStyle = '#e8b52e'; c.shadowColor = 'rgba(232,181,46,.35)'; c.shadowBlur = 6;
-  for (let y = -period + off; y < H; y += period) c.fillRect(CX - lw * .55, y, lw * 1.1, dash);
+  // mão única: linha branca tracejada entre as duas faixas (4 m pintados, 8 m de intervalo)
+  const dash = 4 * ppm, gap = 8 * ppm, period = dash + gap, off = scroll % period;
+  c.fillStyle = '#e4e7e7'; c.shadowColor = 'rgba(255,255,255,.25)'; c.shadowBlur = 4;
+  const [lt, lb] = trechoLogo(); // a linha é interrompida onde o logo está pintado
+  for (let y = -period + off; y < H; y += period) {
+    if (y + dash > lt && y < lb) {
+      if (y < lt) c.fillRect(CX - lw * .5, y, lw, lt - y);
+      if (y + dash > lb) c.fillRect(CX - lw * .5, lb, lw, y + dash - lb);
+      continue;
+    }
+    c.fillRect(CX - lw * .5, y, lw, dash);
+  }
   c.shadowBlur = 0;
   // guard-rail com postes
   for (const s of [-1, 1]) {
@@ -176,8 +186,8 @@ function drawLaneLabels() {
   c.textBaseline = 'middle'; c.fillStyle = 'rgba(225,232,238,.82)'; c.shadowColor = 'rgba(0,0,0,.6)'; c.shadowBlur = 4;
   c.textAlign = 'center';
   const short = lane < 130;
-  c.fillText(short ? '↓ OPOSTO' : '↓  SENTIDO OPOSTO', lx(-.5), y);
-  c.fillText(short ? 'SEU ↑' : 'SEU SENTIDO  ↑', lx(.5), y);
+  c.fillText(short ? 'ESQ ↑' : 'ULTRAPASSAGEM  ↑', lx(-.5), y);
+  c.fillText(short ? 'DIR ↑' : 'FAIXA DA DIREITA  ↑', lx(.5), y);
   c.restore();
 }
 
@@ -199,6 +209,7 @@ function egoLane() {
   const limite = (SHOULDER - .04) * (1 - cidade) + (CURB - .05) * cidade;
   // no meio do acostamento, sem tocar a linha de bordo nem o limite externo
   const alvo = Math.max(.5, Math.min(Math.max((EDGE + limite) / 2, EDGE + .08 + meia), limite - meia));
+  if (world.egoOffset < 0) return .5 + world.egoOffset / V.ROAD.laneWidth; // na faixa da esquerda (ou entre as duas)
   return .5 + (world.pullFrac || 0) * (alvo - .5);
 }
 function drawCity() {
@@ -392,7 +403,7 @@ function drawVehicle(x, z, kind, color, dir, opts = {}) {
   const len = T.len * ppm * VSCALE, wid = T.width * ppm * VSCALE;
   const cx = x, cy = sy(z);
   if (cy < -len || cy > H + len) return null;
-  c.save(); c.translate(cx, cy); if (dir > 0) c.rotate(Math.PI);
+  c.save(); c.translate(cx, cy); if (dir > 0) c.rotate(Math.PI); if (opts.ang) c.rotate(opts.ang);
   // sombra suave
   c.fillStyle = 'rgba(0,0,0,.22)'; rr(c, -wid / 2 + 1, -len / 2 + 3, wid + 6, len + 6, wid * .35); c.fill();
   c.fillStyle = 'rgba(0,0,0,.3)'; rr(c, -wid / 2 + 3, -len / 2 + 5, wid, len, wid * .3); c.fill();
@@ -407,13 +418,29 @@ function drawVehicle(x, z, kind, color, dir, opts = {}) {
   c.restore();
   // lanternas
   const brake = opts.brake;
-  c.save(); c.shadowColor = '#ff1a1a'; c.shadowBlur = brake ? 22 : 6 + n * 12;
-  c.fillStyle = brake ? '#ff3030' : `rgba(220,25,25,${.75 + n * .25})`;
-  for (const s of [-1, 1]) rr(c, s * wid * .32 - wid * .13, len / 2 - wid * .07, wid * .26, wid * .06, 2), c.fill();
+  if (brake) {
+    // freando: reflexo vermelho forte no asfalto atrás do veículo
+    c.save(); c.globalCompositeOperation = 'lighter';
+    const ry = len / 2 + wid * .1, g = c.createRadialGradient(0, ry, wid * .1, 0, ry, wid * 1.5);
+    g.addColorStop(0, 'rgba(255,40,30,.75)'); g.addColorStop(.45, 'rgba(255,20,20,.3)'); g.addColorStop(1, 'rgba(255,0,0,0)');
+    c.fillStyle = g; c.beginPath(); c.ellipse(0, ry + wid * .35, wid * 1.5, wid * .95, 0, 0, 7); c.fill();
+    c.restore();
+  }
+  c.save(); c.shadowColor = '#ff1a1a'; c.shadowBlur = brake ? 36 : 6 + n * 12;
+  c.fillStyle = brake ? '#ff2222' : `rgba(220,25,25,${.75 + n * .25})`;
+  const lh = brake ? wid * .1 : wid * .06, ly = len / 2 - lh - wid * .01;
+  for (const s of [-1, 1]) rr(c, s * wid * .32 - wid * .14, ly, wid * .28, lh, 2), c.fill();
+  if (brake) {
+    // brake light central e o miolo quase branco das lanternas (lâmpada no máximo)
+    rr(c, -wid * .13, ly + lh * .1, wid * .26, lh * .55, 2); c.fill();
+    c.shadowBlur = 12; c.fillStyle = '#ffd6cc';
+    for (const s of [-1, 1]) rr(c, s * wid * .32 - wid * .09, ly + lh * .25, wid * .18, lh * .5, 2), c.fill();
+  }
   c.restore();
-  if (opts.hazard || opts.left) { // pisca-alerta (os quatro cantos) ou seta para a esquerda (só o lado esquerdo)
+  if (opts.hazard || opts.left || opts.right) { // pisca-alerta (os quatro cantos) ou seta (só um lado)
     c.save(); c.fillStyle = '#ffb22c'; c.shadowColor = '#ffb22c'; c.shadowBlur = 18;
-    const cantos = [[-wid / 2, -len / 2 + 4], [-wid / 2, len / 2 - 4], ...(opts.hazard ? [[wid / 2, -len / 2 + 4], [wid / 2, len / 2 - 4]] : [])];
+    const esq = [[-wid / 2, -len / 2 + 4], [-wid / 2, len / 2 - 4]], dir = [[wid / 2, -len / 2 + 4], [wid / 2, len / 2 - 4]];
+    const cantos = [...(opts.hazard || opts.left ? esq : []), ...(opts.hazard || opts.right ? dir : [])];
     for (const [px, py] of cantos) { c.beginPath(); c.arc(px, py, 4, 0, 7); c.fill(); }
     c.restore();
   }
@@ -467,19 +494,23 @@ function drawFrame(small) {
   c.setTransform(dpr, 0, 0, dpr, 0, 0);
   const scroll = world.distance * ppm;
   drawGround(scroll);
+  drawLogoLargada();
   drawVegetation();
   drawCity();
   drawSigns();
   if (!small) drawLaneLabels();
 
   const n = env.night, R = V.ROAD;
-  const opp = lx(-.5), own = lx(.5);
-  const inter = !state.degraded && state.level === 'intervention';
   const vis = [];
-  for (const t of world.traffic) vis.push({ x: opp, z: t.z, kind: t.kind, color: t.color || '#b7bec7', dir: 1, opts: { cab: t.cab, box: t.color } });
-  if (world.lead) vis.push({ x: own, z: world.lead.z, kind: world.lead.kind, color: world.lead.color, dir: -1, opts: { cab: world.lead.cab, box: world.lead.color } });
-  if (world.follower) vis.push({ x: own, z: world.follower.z, kind: world.follower.kind, color: world.follower.color, dir: -1, opts: { cab: world.follower.cab, box: world.follower.color } });
-  vis.push({ x: lx(egoLane()), z: V.egoExtent().center, kind: state.vehicle, color: '#2f7fd6', dir: -1, ego: true, opts: { cab: '#1f5fa8', box: '#eef0f2', brake: inter && state.speed > .5, hazard: state.hazardOn, left: state.leftOn } });
+  // tráfego nas duas faixas, no mesmo sentido do ego; na troca de faixa, o veículo inclina (a
+  // inclinação usa as escalas da 2D: a lateral, em larguras de faixa, é bem maior que a longitudinal)
+  for (const t of world.traffic) {
+    const ang = Math.atan2((t.latV || 0) * lane / R.laneWidth, Math.max(t.kmh / 3.6, 2) * ppm);
+    const pisca = world.pisca;
+    vis.push({ x: lx(t.x / R.laneWidth), z: t.z, kind: t.kind, color: t.color || '#b7bec7', dir: -1,
+      opts: { cab: t.cab, box: t.color, ang, brake: t.braking, hazard: t.crash && pisca, left: t.seta < 0 && pisca, right: t.seta > 0 && pisca } });
+  }
+  vis.push({ x: lx(egoLane()), z: V.egoExtent().center, kind: state.vehicle, color: '#2f7fd6', dir: -1, ego: true, opts: { cab: '#1f5fa8', box: '#eef0f2', brake: !!state.luzFreio, hazard: state.hazardOn, left: state.leftOn, right: state.rightOn } });
 
   // fachos de luz sobre o asfalto (sempre acesos; mais fortes à noite)
   for (const v of vis) {
@@ -487,14 +518,74 @@ function drawFrame(small) {
     const len = T.len * ppm * VSCALE, wid = T.width * ppm * VSCALE;
     const front = sy(v.z) + v.dir * len / 2;
     if (v.ego) beam(v.x, front, -1, 19 * ppm, wid * .9, '150,200,255', .22 + n * .3);
-    else if (v.dir > 0) beam(v.x, front, 1, 13 * ppm, wid * .8, '255,226,160', .12 + n * .18);
+    else beam(v.x, front, v.dir, 13 * ppm, wid * .8, '255,226,160', .1 + n * .18);
   }
   const lights = [];
   for (const v of vis) {
     const r = drawVehicle(v.x, v.z, v.kind, v.color, v.dir, v.opts);
-    if (r && (v.ego || v.dir > 0)) lights.push({ ...r, ego: v.ego });
+    if (r) lights.push({ ...r, ego: v.ego });
   }
   drawNight(lights);
+  drawEstouro(lx(egoLane()));
+}
+/* Logotipo VIGIA pintado no asfalto, na largada (world.largada), atravessando as duas faixas.
+ * Visto de cima, sem a perspectiva: mantém a proporção do logo. */
+const logoPista = new Image(); logoPista.src = 'assets/vigia_asfalto.png?v=1';
+// Faixa da tela (y de cima, y de baixo) ocupada pelo logo, com uma folga; fora da tela: vazia.
+function trechoLogo() {
+  if (world.largada == null || !logoPista.naturalWidth) return [1e9, -1e9];
+  const w = lane * 1.85, h = w * logoPista.naturalHeight / logoPista.naturalWidth, y = sy(world.largada - world.distance);
+  return [y - h / 2 - 1.5 * ppm, y + h / 2 + 1.5 * ppm];
+}
+function drawLogoLargada() {
+  if (world.largada == null || !logoPista.complete || !logoPista.naturalWidth) return;
+  const w = lane * 1.85, h = w * logoPista.naturalHeight / logoPista.naturalWidth, y = sy(world.largada - world.distance);
+  if (y < -h || y > H + h) return;
+  ctx.save(); ctx.globalAlpha = .92; ctx.drawImage(logoPista, CX - w / 2, y - h / 2, w, h); ctx.restore();
+}
+/* Tiro no escapamento (muito tempo no limitador): uma chama sai do escapamento, atrás do ego
+ * (lado direito da traseira), com faíscas, e some em ESTOURO.dura s. */
+const faiscas = [];
+let tiroNovo = false;
+V.on('estouro', () => { tiroNovo = true; });
+function drawEstouro(ex) {
+  const t = world.estouroT ?? 9, dur = V.ESTOURO.dura;
+  if (t > dur && !faiscas.length) return;
+  const T = V.VEHICLE_TYPES[state.vehicle] || V.VEHICLE_TYPES.car;
+  const len = T.len * ppm * VSCALE, wid = T.width * ppm * VSCALE;
+  const x = ex + wid * .27, y = sy(V.egoExtent().center) + len / 2; // ponta do escapamento
+  const c = ctx;
+  if (tiroNovo) { // faíscas novas a cada tiro
+    tiroNovo = false;
+    for (let i = 0; i < 14; i++) faiscas.push({ x, y, vx: (Math.random() - .5) * wid * 2.2, vy: wid * (1.5 + Math.random() * 3), vida: .25 + Math.random() * .3, t: 0 });
+  }
+  c.save(); c.globalCompositeOperation = 'lighter';
+  if (t <= dur) {
+    const k = 1 - t / dur, f = world.estouroForca || 1, comp = wid * (.6 + 1.4 * f) * (.35 + .65 * k), larg = wid * .22 * (.5 + .5 * k);
+    // clarão no asfalto
+    const g0 = c.createRadialGradient(x, y + comp * .3, 0, x, y + comp * .3, comp * 1.1);
+    g0.addColorStop(0, `rgba(255,150,40,${.45 * k})`); g0.addColorStop(1, 'rgba(255,90,0,0)');
+    c.fillStyle = g0; c.beginPath(); c.arc(x, y + comp * .3, comp * 1.1, 0, 7); c.fill();
+    // chama: miolo amarelo-claro, borda laranja, ponta azulada
+    const g = c.createLinearGradient(x, y, x, y + comp);
+    g.addColorStop(0, `rgba(255,250,210,${k})`); g.addColorStop(.35, `rgba(255,170,40,${.9 * k})`);
+    g.addColorStop(.8, `rgba(255,70,10,${.6 * k})`); g.addColorStop(1, 'rgba(120,90,255,0)');
+    c.fillStyle = g; c.beginPath();
+    c.moveTo(x - larg / 2, y);
+    c.quadraticCurveTo(x - larg * 1.4, y + comp * .45, x + (Math.random() - .5) * larg * .6, y + comp);
+    c.quadraticCurveTo(x + larg * 1.4, y + comp * .45, x + larg / 2, y);
+    c.closePath(); c.fill();
+  }
+  // faíscas
+  const dt = 1 / 60;
+  for (let i = faiscas.length - 1; i >= 0; i--) {
+    const p = faiscas[i]; p.t += dt;
+    if (p.t > p.vida) { faiscas.splice(i, 1); continue; }
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    c.fillStyle = `rgba(255,${180 + Math.random() * 60},80,${1 - p.t / p.vida})`;
+    c.fillRect(p.x - 1.5, p.y - 1.5, 3, 3);
+  }
+  c.restore();
 }
 
 V.on('ready', () => {

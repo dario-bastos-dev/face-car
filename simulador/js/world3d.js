@@ -70,7 +70,10 @@ function makeAsphalt() {
       for (let i = 0; i < 900; i++) ctx.fillRect((x - wid / 2) * ppm + r() * wid * ppm, r() * h, 2, 2);
     };
     line(.6, .15, '#e6e6e0'); line(ROAD_W - .6, .15, '#e6e6e0');
-    line(ROAD_W / 2 - .11, .12, '#e4ad35'); line(ROAD_W / 2 + .11, .12, '#e4ad35');
+    // mão única: linha branca tracejada entre as duas faixas (4,2 m pintados e 12,6 m de intervalo por ladrilho)
+    ctx.fillStyle = '#e6e6e0'; ctx.fillRect((ROAD_W / 2 - .075) * ppm, 0, .15 * ppm, h * .25);
+    ctx.fillStyle = 'rgba(70,70,70,.25)';
+    for (let i = 0; i < 160; i++) ctx.fillRect((ROAD_W / 2 - .075) * ppm + r() * .15 * ppm, r() * h * .25, 2, 2);
   }, true);
 }
 // Acostamento: o mesmo asfalto, um pouco mais claro e gasto, sem faixas nem trilhas de pneus.
@@ -1027,11 +1030,15 @@ function addLightGlows(g, fronts, tails, half, scale) {
   beam.rotation.x = -Math.PI / 2; beam.position.set(0, .03, -half - 13); g.add(beam);
   g.userData.frontGlows = fg; g.userData.tailGlows = tg; g.userData.beam = beam;
 }
-function setVehicleLights(g, night, braking, hazard) {
+// seta: -1 esquerda, 1 direita; pisca junto com o pisca-alerta (world.pisca), no lado da lanterna
+function setVehicleLights(g, night, braking, hazard, seta = 0) {
   const u = g.userData;
-  // faróis de quem vem na contramão: halo contido para não ofuscar a visão
+  // faróis: halo contido para não ofuscar a visão
   u.frontGlows.forEach(s => { s.material.opacity = .18 + night * .37; const k = .8 + night * .7; s.scale.set(s.userData.size * k, s.userData.size * k, 1); });
-  u.tailGlows.forEach(s => { s.material.opacity = (braking ? .9 : night * .7) + (hazard ? .5 : 0); });
+  u.tailGlows.forEach(s => {
+    const lado = Math.sign(s.position.x), pisca = world.pisca && (hazard || (seta && seta === lado));
+    s.material.opacity = Math.min(1, (braking ? .9 : night * .7) + (pisca ? .7 : 0));
+  });
   u.tails.forEach(t => t.material.color.copy(t.userData.base).multiplyScalar(braking || night > .3 ? 1 : .55));
   u.beam.material.opacity = night * .3;
 }
@@ -1090,25 +1097,15 @@ function release(key) {
 
 function updateVehicles(dt) {
   const night = env.night, seen = new Set();
+  // tráfego nas duas faixas, no mesmo sentido do ego (posição lateral e rumo na troca de faixa)
   for (const t of world.traffic) {
-    if (t.z > 700 || t.z < -330) continue;
-    const key = 'o' + t.id; seen.add(key);
+    if (t.z > 700 || t.z < -340) continue;
+    const key = 'v' + t.id; seen.add(key);
     const g = acquire(key, t);
-    g.position.set(V.ROAD.oppositeLaneX, 0, -t.z);
-    g.rotation.y = Math.PI;
-    setVehicleLights(g, night, false, false);
+    g.position.set(t.x, 0, -t.z);
+    g.rotation.y = -(t.heading || 0);
+    setVehicleLights(g, night, t.braking, t.crash, t.seta);
     spin(g, (t.kmh / 3.6) * dt);
-  }
-  for (const [key, v] of [['lead', world.lead], ['follow', world.follower]]) {
-    if (!v || v.z < -330) continue; // longe demais (ex.: afastado enquanto o ego volta do acostamento)
-    seen.add(key);
-    const g = acquire(key, v);
-    g.position.set(V.ROAD.egoLaneX, 0, -v.z);
-    g.rotation.y = 0;
-    const braking = key === 'lead' && v.prevKmh != null && v.kmh < v.prevKmh - .02;
-    v.prevKmh = v.kmh;
-    setVehicleLights(g, night, braking, false);
-    spin(g, (v.kmh / 3.6) * dt);
   }
   for (const key of [...active.keys()]) if (!seen.has(key)) release(key);
 }
@@ -1161,7 +1158,7 @@ function buildSign(s) {
   g.rotation.y = -.12; // levemente voltada para a pista
   return g;
 }
-const BACK_SIDE = new Set(['animals', 'noPassing', 'pedestrian']); // placas pequenas também no sentido oposto (vemos o verso)
+const BACK_SIDE = new Set(); // mão única: não há placas para o sentido oposto
 function updateSigns() {
   const from = world.distance - 300, to = world.distance + 650; // atrás: continua nos retrovisores
   const list = V.signsBetween(from, to), seen = new Set();
@@ -1180,6 +1177,34 @@ function updateSigns() {
   for (const [k, g] of signCache) if (!seen.has(k)) { scene.remove(g); signCache.delete(k); }
 }
 
+/* ---------- logotipo pintado no asfalto, na largada ----------
+ * assets/vigia_asfalto.png: o logo VIGIA como tinta de marcação (branco, listras do V em amarelo,
+ * com desgaste). Atravessa as duas faixas e é alongado no sentido da via, como as inscrições de
+ * pista, para ser lido em perspectiva por quem vem. Fica em world.largada (posição na rodovia). */
+const LOGO_PISTA = { largura: 6.6, alonga: 10 };
+function buildLogoLargada() {
+  const tex = new THREE.TextureLoader().load('assets/vigia_asfalto.png?v=1');
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy?.() || 1;
+  const comp = LOGO_PISTA.largura / (1404 / 360) * LOGO_PISTA.alonga;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(LOGO_PISTA.largura, comp), new THREE.MeshStandardMaterial({
+    map: tex, transparent: true, roughness: .85, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 }));
+  m.rotation.x = -Math.PI / 2; m.position.y = .012; m.receiveShadow = true; m.renderOrder = 1;
+  R.logoPista = m; scene.add(m);
+  // a linha tracejada do meio é interrompida no logo: um remendo do mesmo asfalto, tirado de uma
+  // área sem pintura nem trilha de pneu (3,35-3,85 m da borda esquerda da textura), cobre o trecho
+  const largura = .5, cobre = comp + 3, t = R.tex.asphalt.clone();
+  t.needsUpdate = true; t.repeat.set(largura / ROAD_W, cobre / ROAD_TILE); t.offset.set(3.35 / ROAD_W, 0);
+  const r = new THREE.Mesh(new THREE.PlaneGeometry(largura, cobre), std(0xffffff, { map: t, roughness: .92, polygonOffset: true, polygonOffsetFactor: -1 }));
+  r.rotation.x = -Math.PI / 2; r.position.y = .006; r.receiveShadow = true;
+  R.logoRemendo = r; scene.add(r);
+}
+function updateLogoLargada() {
+  const m = R.logoPista; if (!m) return;
+  const z = (world.largada ?? -1e9) - world.distance;
+  m.visible = R.logoRemendo.visible = z > -300 && z < 700;
+  m.position.z = R.logoRemendo.position.z = -z;
+}
+
 /* ---------- veículo próprio (visto apenas pelos retrovisores) ---------- */
 function buildEgo() {
   if (R.ego) scene.remove(R.ego);
@@ -1195,7 +1220,19 @@ function buildEgo() {
     const lower = new THREE.Mesh(new THREE.BoxGeometry(1.8, .62, 4.5), body); lower.position.set(0, .66, 1.3); g.add(lower);
     const top = new THREE.Mesh(new THREE.BoxGeometry(1.6, .6, 2.2), [std('#121a22', { metalness: .8, roughness: .1 }), std('#121a22', { metalness: .8, roughness: .1 }), body, body, body, body]); top.position.set(0, 1.27, 1.4); g.add(top);
   }
+  // lanternas traseiras (a cor muda com o freio, em update)
+  R.egoTails = [];
+  const [tz, ty, tx] = truck ? [15.16, 1.25, 1.12] : [3.56, .82, .68];
+  for (const s of [-1, 1]) {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(truck ? .32 : .36, truck ? .22 : .14), new THREE.MeshBasicMaterial({ color: 0x400505 }));
+    m.position.set(s * tx, ty, tz); g.add(m); R.egoTails.push(m);
+    const brilho = glowSprite(0xff2418, truck ? 1.6 : 1.3); // halo: forte ao frear
+    brilho.position.set(s * tx, ty, tz + .05); g.add(brilho); m.userData.brilho = brilho;
+  }
   g.position.x = egoX();
+  // tiro no escapamento: chama atrás do veículo (vista pelos retrovisores)
+  R.egoChama = glowSprite(0xff8a20, truck ? 2.2 : 1.6);
+  R.egoChama.position.set(truck ? .9 : .5, truck ? .7 : .32, (truck ? 15.4 : 3.6) + .5); g.add(R.egoChama);
   R.ego = g; scene.add(g);
 }
 
@@ -1270,13 +1307,27 @@ function updateCamera(dt) {
   const by = (Math.sin(bobT * 1.7) * .006 + Math.sin(bobT * 4.3) * .003) * sp * calm + (Math.random() - .5) * shake * .05 * calm;
   const bx = Math.sin(bobT * .6) * .01 * sp * calm + (Math.random() - .5) * shake * .04 * calm;
   // pequenas correções do volante deslocam o veículo na faixa; a suspensão inclina a vista
-  const drift = V.motion.steer * .012;
+  // (no modo volante o deslocamento já é o real, em egoOffset: o giro não desloca a vista de novo)
+  const motorista = state.controle === 'volante' && !(state.level === 'intervention' && !state.degraded);
+  const drift = motorista ? 0 : V.motion.steer * .012;
   camera.position.set(e.x + bx + drift, e.y + by, e.z);
   // o rumo do veículo (manobra para o acostamento) gira a vista suavemente para o lado
   camera.lookAt(e.x + bx * .3 + drift * 1.6 + Math.tan(world.heading) * 40, e.y - (state.vehicle === 'truck' ? 4.6 : 3.4), e.z - 40);
   camera.rotateZ(V.motion.roll);
   const ex = egoX();
-  if (R.ego) { R.ego.position.x = ex; R.ego.rotation.y = -world.heading; }
+  if (R.ego) {
+    R.ego.position.x = ex; R.ego.rotation.y = -world.heading;
+    // lanternas traseiras: acesas à noite, fortes ao frear (vistas pelos retrovisores)
+    const forca = state.luzFreio ? 1 : env.night > .3 ? .45 : .12;
+    if (R.egoChama) { // tiro no escapamento: acende forte e apaga em ESTOURO.dura s
+      const k = Math.max(0, 1 - (world.estouroT ?? 9) / V.ESTOURO.dura);
+      R.egoChama.material.opacity = k; const s = R.egoChama.userData.size * (.6 + .8 * k); R.egoChama.scale.set(s, s, 1);
+    }
+    for (const m of R.egoTails || []) {
+      m.material.color.setRGB(.25 + .75 * forca, .02 + (state.luzFreio ? .12 : 0), .02);
+      m.userData.brilho.material.opacity = state.luzFreio ? 1 : forca * .5;
+    }
+  }
   R.headL.position.set(ex - .7, .75, -1.8); R.headR.position.set(ex + .7, .75, -1.8);
   const front = state.vehicle === 'truck' ? 1.3 : 1.0; // para-choque à frente do motorista
   R.egoBeam.position.set(ex, .03, -(front + 2 + 26));
@@ -1355,7 +1406,7 @@ function init() {
     R[k] = s; scene.add(s, s.target);
   }
 
-  buildSky(); buildTerrain(); buildRoadside(); buildEgo(); buildAnimals(); buildCity(); buildPeople();
+  buildSky(); buildTerrain(); buildLogoLargada(); buildRoadside(); buildEgo(); buildAnimals(); buildCity(); buildPeople();
   // facho dos faróis no asfalto: amplo + núcleo mais intenso (como na visão 2D)
   const beamMat = o => new THREE.MeshBasicMaterial({ map: R.egoBeamTex, color: 0xdbe8ff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: o });
   R.egoBeamTex = egoBeamTex();
@@ -1363,7 +1414,7 @@ function init() {
   R.egoBeamCore = new THREE.Mesh(new THREE.PlaneGeometry(4, 26), beamMat(.1));
   for (const b of [R.egoBeam, R.egoBeamCore]) { b.rotation.x = -Math.PI / 2; b.renderOrder = 2; scene.add(b); }
   V.on('vehicle', buildEgo);
-  V.on('pass', t => { if (V.VEHICLE_TYPES[t.kind]?.heavy) shake = .9; else shake = Math.max(shake, .35); });
+  V.on('pass', t => { if (t.rel > 25) shake = Math.max(shake, (V.VEHICLE_TYPES[t.kind]?.heavy ? .7 : .25) * Math.min(1, t.rel / 80)); });
   new ResizeObserver(resize).observe(container);
   resize();
   warmUp();
@@ -1430,7 +1481,7 @@ function render(dt) {
   t.shoulder.offset.y = (world.distance / ROAD_TILE) % 1;
   t.grass.offset.y = (world.distance / 5) % 1;
   for (const c of R.clouds) { c.position.x += c.userData.drift * dt; if (c.position.x > 1400) c.position.x = -1400; }
-  updateScrollers(); updateVehicles(dt); updateSigns(); updateAnimals(dt, performance.now()); updatePeople(performance.now()); updateLighting(); updateCamera(dt);
+  updateScrollers(); updateLogoLargada(); updateVehicles(dt); updateSigns(); updateAnimals(dt, performance.now()); updatePeople(performance.now()); updateLighting(); updateCamera(dt);
 
   const w = container.clientWidth, h = container.clientHeight;
   renderer.setScissorTest(false);

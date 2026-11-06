@@ -47,6 +47,13 @@ webcam (navegador) ─┬─ MediaPipe → olhos, boca, cabeça, olhar e eventos
   mesma buzina em três toques seguidos, como um alarme. As buzinas gravadas ficam em
   `simulador/assets/sons/`; em algumas passagens, quem vem na contramão dá duas buzinadas, com
   volume, lado e tom acompanhando a distância.
+- **Modo de condução (Padrão / Volante):** no Padrão, o simulador dirige sozinho. No Volante, o
+  motorista dirige por um controlador de jogo (Gamepad API; o navegador só o enxerga depois de
+  apertar um botão dele): eixo X é o volante (gira o da cabine 3D e liga a seta do lado), eixo Y
+  para cima acelera e para baixo freia (nunca dá ré) e o chapéu (POV), em qualquer direção, buzina (um som contínuo enquanto estiver apertado). O botão 5 alterna a visão entre 2D e cabine 3D.
+  Sem controlador, valem as setas do teclado e B. Na intervenção, os comandos travam e o VIGIA leva
+  o veículo ao acostamento; ao terminar, o motorista volta a dirigir. O estado do controlador
+  aparece nas configurações.
 - **Eventos:** olhos fechados por mais de 1 s, olhos reabertos e bocejo vão para o registro de
   eventos; piscadas são só contadas.
 - **Privacidade:** os quadros só existem na memória do navegador e do servidor; nada é gravado.

@@ -53,7 +53,7 @@ function opcoesMediapipe() {
 }
 function criarWorker(modelo) {
   return new Promise((ok, falha) => {
-    const w = new Worker(new URL("./rosto-worker.js?v=0.9.24", import.meta.url));
+    const w = new Worker(new URL("./rosto-worker.js?v=0.9.70", import.meta.url));
     const fim = (erro) => { clearTimeout(limite); w.onmessage = w.onerror = null; if (erro) { w.terminate(); falha(erro); } else ok(w); };
     const limite = setTimeout(() => fim(new Error("o worker não respondeu")), 60000);
     w.onmessage = (e) => {
