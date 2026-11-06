@@ -40,7 +40,7 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"  # o extrator pelo navegador usa o WebSocket global (Node 22+)
 
       - name: Executar testes JavaScript
         run: npm test
