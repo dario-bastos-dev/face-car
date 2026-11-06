@@ -8,7 +8,7 @@
 <link rel="icon" href="assets/favicon.ico" sizes="any" />
 <link rel="icon" type="image/png" href="assets/vigia_icon.png" />
 <link rel="apple-touch-icon" href="assets/vigia_icon.png" />
-<link rel="stylesheet" href="css/vigia.css?v=0.9.20" />
+<link rel="stylesheet" href="css/vigia.css?v=0.9.75" />
 </head>
 <body>
 <div class="app">
@@ -33,9 +33,14 @@
           <button id="view2dBtn" class="view-btn selected" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M4 15 6 9h12l2 6v4H4v-4ZM7 9l2-4h6l2 4"/><circle cx="8" cy="15" r="1"/><circle cx="16" cy="15" r="1"/></svg>VISÃO 2D</button>
           <button id="view3dBtn" class="view-btn" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/><path d="M3.5 10.5 10 12M20.5 10.5 14 12M12 14v7"/></svg>CABINE 3D</button>
         </div>
+        <div class="view-switch drive-switch" role="group" aria-label="Modo de condução">
+          <button id="ctrlPadraoBtn" class="view-btn selected" aria-pressed="true" title="O simulador dirige sozinho">PADRÃO</button>
+          <button id="ctrlVolanteBtn" class="view-btn" aria-pressed="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/><path d="M3.2 11h6.4M14.4 11h6.4M12 14.5V21"/></svg>VOLANTE<i class="pad-dot" aria-hidden="true"></i></button>
+        </div>
       </div>
       <div class="scene" id="scene" data-level="normal">
         <canvas id="view2d" class="view2d" aria-label="Rodovia vista de cima" role="img"></canvas>
+        <div class="aviso-volante" id="avisoVolante" hidden role="alert">✋ ATENÇÃO · SEGURE FIRME NO VOLANTE</div>
         <div id="view3d" class="view3d">
           <canvas id="glCanvas" aria-label="Visão do motorista em 3D" role="img"></canvas>
           <canvas id="cabinCanvas" class="cabin-canvas" aria-hidden="true"></canvas>
@@ -102,8 +107,20 @@
             </div>
             <div class="cc-foot" id="monitorSource">MÉTRICAS SIMULADAS</div>
             <div class="cnn-panel" data-cnn data-estado="desligado" title="Modelo de imagens da Parte 1 (cnn_sonolencia.keras), média dos últimos 2 s">
-              <div class="cnn-head"><b>MODELO CNN</b><span data-cnn-status>liga com o scanner</span><button class="cnn-recal" data-cnn-recalibrar hidden title="Medir de novo a linha de base deste motorista (olhe para a frente por 5 s)">↺ Recalibrar</button></div>
+              <div class="cnn-head"><b>MODELO CNN</b><span data-cnn-status>liga com o scanner</span></div>
               <div class="cnn-barras" data-cnn-barras></div>
+            </div>
+            <div class="pressao-panel" id="pressaoPanel" data-estado="nenhum" title="Pressão das mãos no volante (sensor FSR402 no Arduino, 0 a 1023). Abaixo de 400 por 5 s: mãos frouxas, ATENÇÃO e +30 no índice de sonolência">
+              <div class="cnn-head"><b>VOLANTE · PRESSÃO</b><span id="pressaoStatus">use os botões ou conecte o Arduino</span></div>
+              <div class="pressao-medidor"><span class="bar"><i id="pressaoBar"></i><em id="pressaoLimiar" title="Limiar: abaixo dele a mão está frouxa"></em></span><b id="pressaoValor">—</b></div>
+              <div class="pressao-botoes" role="group" aria-label="Simular a pressão do sensor (temporário, sem o sensor)">
+                <button data-pressao="firme" title="Simula ~820: mãos firmes no volante">Firme</button>
+                <button data-pressao="leve" title="Simula ~520: pegada leve, ainda acima do limiar">Leve</button>
+                <button data-pressao="frouxa" title="Simula ~180: mãos frouxas (abaixo de 400); a ATENÇÃO vem após 5 s">Frouxa</button>
+                <button data-pressao="solta" title="Simula 0: mãos fora do volante">Solta</button>
+                <button id="pressaoParar" title="Desliga a simulação do sensor">Desligar</button>
+              </div>
+              <div class="pressao-linha"><input type="range" id="pressaoSlider" min="0" max="1023" step="1" value="820" aria-label="Pressão simulada (0 a 1023)" /><button id="pressaoConectar" title="Lê o Arduino com o FSR402 pela USB (Web Serial; Chrome ou Edge)">Conectar Arduino</button></div>
             </div>
           </section>
     </div>
@@ -113,7 +130,7 @@
     <div class="card footer-card">
       <div class="footer-title"><b>REGISTRO DE EVENTOS</b><span id="eventCount">0 eventos</span></div>
       <div class="log" id="log" role="log" aria-live="off"></div>
-      <div class="meta-actions"><button id="exportBtn">↓ Exportar JSONL</button><button id="importReplayBtn">↑ Importar replay</button><input class="visually-hidden" type="file" id="replayFile" accept=".json,.jsonl,application/json,application/x-ndjson" /><button id="metricsCsvBtn" disabled title="Métricas reais do scanner no contrato metricas.v1 (para a Parte 4)">↓ Métricas reais (CSV)</button><button id="clearLogBtn">Limpar histórico</button></div>
+      <div class="meta-actions"><button id="exportBtn">↓ Exportar JSONL</button><button id="importReplayBtn">↑ Importar replay</button><input class="visually-hidden" type="file" id="replayFile" accept=".json,.jsonl,application/json,application/x-ndjson" /><button id="cnnCsvBtn" disabled title="Cada leitura do modelo CNN (classe, probabilidades, média de 2 s, índice e nível do simulador) para validar o modelo">↓ Leituras do CNN (CSV)</button><button id="metricsCsvBtn" disabled title="Métricas reais do scanner no contrato metricas.v1 (para a Parte 4)">↓ Métricas reais (CSV)</button><button id="clearLogBtn">Limpar histórico</button></div>
     </div>
   </section>
   <footer class="app-foot">VIGIA · simulador acadêmico · nenhuma função comanda veículos reais</footer>
@@ -133,22 +150,28 @@
     <label for="zoneSeconds">Troca campo ↔ cidade a cada <span id="zoneLabelSetting">30 s</span></label>
     <input type="range" min="15" max="300" step="15" value="30" id="zoneSeconds" />
     <label class="check"><span>Reduzir trepidação da câmera</span><input type="checkbox" id="reduceMotion" /></label>
+    <h3 class="settings-sub">Controlador (modo Volante)</h3>
+    <p class="pad-map">Eixo X: volante e setas · Eixo Y: para cima acelera, para baixo freia (sem ré) · Chapéu (setas do centro, inclusive diagonais): buzina · Botão 5: visão 2D / cabine 3D.</p>
+    <pre class="pad-status" id="padStatus" aria-live="polite"></pre>
+    <label class="check"><span>Inverter acelerar e frear (eixo Y)</span><input type="checkbox" id="invertePedal" /></label>
     <button id="closeSettings">Concluir</button>
   </div>
 </div>
 
 <script src="vendor/three.min.js"></script>
 <script>window.THREE || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');</script>
-<script src="js/core.js?v=0.9.20"></script>
-<script src="js/scene2d.js?v=0.9.20"></script>
-<script src="js/world3d.js?v=0.9.20"></script>
-<script src="js/cabin.js?v=0.9.20"></script>
-<script src="js/audio.js?v=0.9.20"></script>
-<script src="js/driver-monitor.js?v=0.9.20"></script>
-<script src="js/overlay2d.js?v=0.9.20"></script>
+<script src="js/core.js?v=0.9.75"></script>
+<script src="js/scene2d.js?v=0.9.75"></script>
+<script src="js/world3d.js?v=0.9.75"></script>
+<script src="js/cabin.js?v=0.9.75"></script>
+<script src="js/volante.js?v=0.9.75"></script>
+<script src="js/audio.js?v=0.9.75"></script>
+<script src="js/driver-monitor.js?v=0.9.75"></script>
+<script src="js/overlay2d.js?v=0.9.75"></script>
+<script src="js/pressao.js?v=0.9.75"></script>
 <!-- Parte 3: canal de sinal (sinal.v1) e scanner real (Partes 1 e 2 na página) -->
-<script type="module" src="js/sinal.js?v=0.9.20"></script>
-<script type="module" src="js/ia.js?v=0.9.20" onerror="VIGIA.log('Scanner indisponível: não foi possível carregar o MediaPipe', 'error')"></script>
-<script type="module" src="js/cnn.js?v=0.9.20"></script>
+<script type="module" src="js/sinal.js?v=0.9.75"></script>
+<script type="module" src="js/ia.js?v=0.9.75" onerror="VIGIA.log('Scanner indisponível: não foi possível carregar o MediaPipe', 'error')"></script>
+<script type="module" src="js/cnn.js?v=0.9.75"></script>
 </body>
 </html>

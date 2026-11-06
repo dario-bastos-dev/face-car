@@ -317,8 +317,7 @@ kbd{font-family:inherit;font-size:9.5px;border:1px solid #33557e;border-bottom-w
 .cnn-head{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:9.5px;letter-spacing:.08em}
 .cnn-head b{color:#cfe6ff;font-weight:900}
 .cnn-head span{color:#8fb1d4;font-weight:700;letter-spacing:.02em;text-align:right;margin-left:auto}
-.cnn-recal{padding:3px 8px;border-radius:8px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.08);color:#dcebff;font-size:9px;font-weight:800;letter-spacing:.03em}
-.cnn-recal:hover{background:rgba(255,255,255,.16)}
+
 .cnn-panel[data-estado=pronto] .cnn-head span{color:#5ef0c7}
 .cnn-panel[data-estado=indisponivel] .cnn-head span,.cnn-panel[data-estado=sem_servidor] .cnn-head span,.cnn-panel[data-estado=desconectado] .cnn-head span{color:#ffcf7a}
 .cnn-barras{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:6px}
@@ -400,3 +399,38 @@ kbd{font-family:inherit;font-size:9.5px;border:1px solid #33557e;border-bottom-w
 .stage-levels{display:flex;flex:1;gap:8px;max-width:620px}
 .stage-levels .level-btn{flex:1;padding:11px 8px;font-size:12px}
 @media(max-width:720px){.stage-levels{max-width:none;flex-basis:100%}}
+
+/* modo de condução: Padrão / Volante (controlador) */
+.drive-switch .view-btn{padding:11px 14px}
+.pad-dot{width:7px;height:7px;border-radius:50%;background:#4a5d74;box-shadow:none;margin-left:2px}
+.view-btn.pad-on .pad-dot{background:#38f0b0;box-shadow:0 0 8px #38f0b0}
+.settings-sub{margin:14px 0 4px;font-size:13px;color:#cfe2f1}
+.pad-map{margin:0 0 6px;font-size:11.5px;color:#8fb1d4}
+.pad-status{margin:0 0 8px;padding:8px 10px;border-radius:8px;background:#0b1830;border:1px solid #2a4870;color:#dcebff;font:600 11px/1.5 ui-monospace,Consolas,monospace;white-space:pre-wrap}
+/* com o seletor de condução, a barra quebra linha antes de cortar algum botão */
+.stage .card-heading{flex-wrap:wrap}
+.stage .card-heading .view-switch{flex-wrap:nowrap}
+@media(max-width:1100px){.drive-switch .view-btn{padding:11px 12px}.drive-switch .view-btn svg{display:none}}
+
+/* Pressão das mãos no volante (pressao.js) */
+.pressao-panel{margin-top:8px;padding:8px 10px 9px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05)}
+.pressao-panel[data-estado=firme] #pressaoStatus{color:#5ef0c7}
+.pressao-panel[data-estado=baixa] #pressaoStatus{color:#ffcf7a}
+.pressao-panel[data-estado=frouxo]{border-color:#ff5a4f99;background:rgba(255,60,50,.09)}
+.pressao-panel[data-estado=frouxo] #pressaoStatus{color:#ff7a70}
+.pressao-medidor{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin-top:6px}
+.pressao-medidor .bar{position:relative;height:7px;border-radius:4px;background:rgba(255,255,255,.1);overflow:visible}
+.pressao-medidor .bar i{display:block;height:100%;width:0;border-radius:4px;background:#2fe08f;transition:width .12s}
+.pressao-panel[data-estado=baixa] .bar i{background:#ffc44d}
+.pressao-panel[data-estado=frouxo] .bar i{background:#ff5a4f}
+.pressao-medidor em{position:absolute;top:-3px;bottom:-3px;width:2px;background:#fff;opacity:.7;border-radius:1px}
+.pressao-medidor b{font-size:11px;color:#e6f2fb;min-width:34px;text-align:right}
+.pressao-botoes{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px}
+.pressao-botoes button,.pressao-linha button{font:700 10px Inter,"Segoe UI",system-ui,sans-serif;color:#cfe6ff;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:4px 8px;cursor:pointer}
+.pressao-botoes button.selected{background:#1f5fa8;border-color:#5aa7ff;color:#fff}
+.pressao-botoes button:hover,.pressao-linha button:hover{border-color:#5aa7ff}
+.pressao-linha{display:flex;gap:8px;align-items:center;margin-top:6px}
+.pressao-linha input{flex:1;accent-color:#3aa7ff}
+.aviso-volante{position:absolute;z-index:6;left:50%;top:22%;transform:translateX(-50%);padding:8px 16px;border-radius:12px;font:900 14px Inter,"Segoe UI",system-ui,sans-serif;letter-spacing:.06em;color:#fff;background:rgba(200,30,30,.82);border:1px solid #ff8a80;box-shadow:0 0 22px rgba(255,60,50,.55);pointer-events:none;animation:avisoVolante 1.6s ease-in-out infinite}
+@keyframes avisoVolante{50%{box-shadow:0 0 6px rgba(255,60,50,.3);opacity:.85}}
+@media (prefers-reduced-motion:reduce){.aviso-volante{animation:none}}

@@ -29,19 +29,31 @@ webcam (navegador) ─┬─ MediaPipe → olhos, boca, cabeça, olhar e eventos
 - **Infravermelho:** usa o sensor IR se o navegador enxergar uma câmera com "IR" ou "infra" no
   nome (o registro de eventos lista as câmeras encontradas); senão, aplica só um filtro visual
   monocromático. Muitas câmeras IR de notebook (Windows Hello) não são liberadas para o navegador.
-- **Calibração por motorista:** nos primeiros 5 s com o rosto à frente, a página mede quanto o
-  modelo já marca de sono nesta pessoa acordada (linha de base) e passa a contar só o que passar
-  dela, com folga para o ruído; **↺ Recalibrar** mede de novo. Se a base de sonolência passar de
-  60%, o modelo não separa nada para esse rosto: o painel avisa e os níveis seguem pela geometria.
-  O modelo atual (`cnn_sonolencia_v2`) marca 75% a 98% de "sonolento" num retrato acordado e
-  sorrindo, no quadro inteiro e no rosto recortado; vale reavaliar o treino com imagens de webcam.
-- **Comando dos níveis:** com o modelo calibrado, confiável e com resultado recente (menos de 0,8 s), o índice da
-  política vem do modelo; sem o servidor, sem TensorFlow ou sem o arquivo do modelo, volta ao
-  índice geométrico (PERCLOS) e o painel avisa. Bocejo sozinho leva no máximo a ATENÇÃO. A
-  confiança continua sendo a do rastreio do rosto: sem rosto, o simulador degrada sem frear.
+- **Leitura só pelo modelo (Parte 4):** o estado do motorista vem apenas do modelo treinado pelo
+  time, com as classes e a janela de `config/analise.json` (média de 2 s, como em `entrada/__main__.py`).
+  A média vira o índice `100 × (sonolento + 0,45 × bocejo)`, que passa pela política da Parte 2.
+  Sem resultado recente do modelo (servidor, TensorFlow ou arquivo ausentes), o simulador fica em
+  DEGRADADO, sem frear. A geometria do rosto (olhos, PERCLOS, boca, cabeça) continua medida e
+  mostrada, mas não comanda. O modelo atual (`cnn_sonolencia_v2`) marca 75% a 98% de "sonolento"
+  num retrato acordado e sorrindo; vale reavaliar o treino com imagens de webcam.
+- **Validação:** **↓ Leituras do CNN (CSV)**, no registro de eventos, exporta cada resultado do
+  modelo (classe e probabilidades do quadro, média da janela, índice, estado do sinal e nível do
+  simulador) para comparar com o que de fato aconteceu.
 - **Intervenção:** com o pisca-alerta ligado, o veículo reduz para cerca de 30 km/h, vai devagar
-  para o centro do acostamento (pico de ~0,45 m/s de lado) e só então para. Quando a intervenção
-  termina, volta à faixa em movimento e só com espaço livre atrás e à frente.
+  para o centro do acostamento e só então para. Quando a intervenção termina, volta à faixa com
+  seta para a esquerda, só com espaço livre; nenhum veículo aparece atrás durante a volta nem nos
+  3 s seguintes.
+- **Alarmes sonoros:** atenção e crítico com os toques de sempre; na intervenção, a sirene e a
+  mesma buzina em três toques seguidos, como um alarme. As buzinas gravadas ficam em
+  `simulador/assets/sons/`; em algumas passagens, quem vem na contramão dá duas buzinadas, com
+  volume, lado e tom acompanhando a distância.
+- **Modo de condução (Padrão / Volante):** no Padrão, o simulador dirige sozinho. No Volante, o
+  motorista dirige por um controlador de jogo (Gamepad API; o navegador só o enxerga depois de
+  apertar um botão dele): eixo X é o volante (gira o da cabine 3D e liga a seta do lado), eixo Y
+  para cima acelera e para baixo freia (nunca dá ré) e o chapéu (POV), em qualquer direção, buzina (um som contínuo enquanto estiver apertado). O botão 5 alterna a visão entre 2D e cabine 3D.
+  Sem controlador, valem as setas do teclado e B. Na intervenção, os comandos travam e o VIGIA leva
+  o veículo ao acostamento; ao terminar, o motorista volta a dirigir. O estado do controlador
+  aparece nas configurações.
 - **Eventos:** olhos fechados por mais de 1 s, olhos reabertos e bocejo vão para o registro de
   eventos; piscadas são só contadas.
 - **Privacidade:** os quadros só existem na memória do navegador e do servidor; nada é gravado.

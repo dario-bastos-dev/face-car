@@ -6,8 +6,10 @@
 //          → a cada 100 ms: estimar → transicionar → emitir (Parte 2, módulos JS)
 //          → mensagens sinal.v1 → sinal.js (mesmo caminho do WebSocket e do replay)
 //
-// Com o modelo de imagens da Parte 1 conectado (cnn.js), o índice que entra na política é o
-// do modelo (média da janela); sem ele, é o índice geométrico do estimador (PERCLOS).
+// O estado do motorista vem só do modelo de imagens treinado pelo time (cnn.js): o índice do
+// modelo entra na política da Parte 2. Sem resultado recente do modelo, a evidência é inválida e
+// o simulador fica em DEGRADADO (sem frear). A geometria (olhos, PERCLOS, boca, cabeça) segue
+// sendo medida e mostrada, mas não comanda.
 //
 // Os ticks rodam a cada 100 ms mesmo sem quadros novos, como pede docs/parte2.md:
 // sem rosto ou sem câmera, o estimador degrada e o simulador não freia.
@@ -23,6 +25,8 @@ import { MonitorRosto, direcaoDaCabeca, olharDaIris, olhos, rotuloDaCabeca, rotu
 const V = window.VIGIA;
 const $ = (id) => document.getElementById(id);
 const WASM = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.0/wasm";
+const BUNDLE_CJS = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.0/vision_bundle.cjs"; // para o worker
+const LARGURA_MAX = 640;   // quadro mandado ao worker: o MediaPipe e o CNN reduzem bem mais que isso
 // Baixado por scripts/preparar.sh; sem ele, usa a mesma versão publicada pelo Google.
 const MODELO_LOCAL = "../modelos/face_landmarker.task";
 const MODELO_REMOTO = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
@@ -34,26 +38,47 @@ const [cfgExtrator, cfgEstimador, contrato, indices, cfgAnalise] = await Promise
     "../config/analise.json"].map(json));
 validarConfig(cfgEstimador);
 
-let landmarker = null, carregando = null;
+// O MediaPipe roda num Web Worker (rosto-worker.js): na thread da página, cada quadro custava de
+// 60 a 85 ms e travava a animação 2D e 3D. Se o worker não puder ser criado, roda aqui mesmo.
+let landmarker = null, worker = null, carregando = null;
+function opcoesMediapipe() {
+  const mpc = cfgExtrator.mediapipe;
+  return {
+    runningMode: "VIDEO", numFaces: mpc.max_rostos ?? 1, // mapeia só o maior: o motorista
+    minFaceDetectionConfidence: mpc.min_confianca_deteccao,
+    minFacePresenceConfidence: mpc.min_confianca_presenca,
+    minTrackingConfidence: mpc.min_confianca_rastreio,
+    outputFacialTransformationMatrixes: true,
+  };
+}
+function criarWorker(modelo) {
+  return new Promise((ok, falha) => {
+    const w = new Worker(new URL("./rosto-worker.js?v=0.9.75", import.meta.url));
+    const fim = (erro) => { clearTimeout(limite); w.onmessage = w.onerror = null; if (erro) { w.terminate(); falha(erro); } else ok(w); };
+    const limite = setTimeout(() => fim(new Error("o worker não respondeu")), 60000);
+    w.onmessage = (e) => {
+      if (e.data.tipo === "pronto") { V.log(`Scanner: MediaPipe em segundo plano (worker, ${e.data.delegate})`, "camera"); fim(); }
+      else if (e.data.tipo === "erro") fim(new Error(e.data.erro));
+    };
+    w.onerror = (e) => { e.preventDefault?.(); fim(new Error(e.message || "falha ao criar o worker")); };
+    w.postMessage({ tipo: "iniciar", bundle: BUNDLE_CJS, wasm: WASM, modelo, opcoes: opcoesMediapipe() });
+  });
+}
 async function prepararLandmarker() {
-  if (landmarker) return landmarker;
+  if (landmarker || worker) return;
   carregando ??= (async () => {
-    const arquivos = await FilesetResolver.forVisionTasks(WASM);
     const local = await fetch(MODELO_LOCAL, { method: "HEAD" }).then((r) => r.ok).catch(() => false);
-    const mpc = cfgExtrator.mediapipe;
-    const opcoes = (delegate) => ({
-      baseOptions: { modelAssetPath: local ? MODELO_LOCAL : MODELO_REMOTO, delegate },
-      runningMode: "VIDEO", numFaces: mpc.max_rostos ?? 1, // mapeia só o maior: o motorista
-      minFaceDetectionConfidence: mpc.min_confianca_deteccao,
-      minFacePresenceConfidence: mpc.min_confianca_presenca,
-      minTrackingConfidence: mpc.min_confianca_rastreio,
-      outputFacialTransformationMatrixes: true,
-    });
-    // GPU quando disponível; sem WebGL utilizável, cai para CPU (mesmo resultado, mais lento)
-    try { landmarker = await FaceLandmarker.createFromOptions(arquivos, opcoes("GPU")); }
-    catch { landmarker = await FaceLandmarker.createFromOptions(arquivos, opcoes("CPU")); }
+    const modelo = new URL(local ? MODELO_LOCAL : MODELO_REMOTO, location.href).href;
+    try { worker = await criarWorker(modelo); }
+    catch (e) {
+      V.log("Scanner: worker indisponível, MediaPipe na página (" + e.message + ")", "error");
+      const arquivos = await FilesetResolver.forVisionTasks(WASM);
+      const opcoes = (delegate) => ({ ...opcoesMediapipe(), baseOptions: { modelAssetPath: modelo, delegate } });
+      // GPU quando disponível; sem WebGL utilizável, cai para CPU (mesmo resultado, mais lento)
+      try { landmarker = await FaceLandmarker.createFromOptions(arquivos, opcoes("GPU")); }
+      catch { landmarker = await FaceLandmarker.createFromOptions(arquivos, opcoes("CPU")); }
+    }
     V.log(`Scanner: modelo do MediaPipe carregado (${local ? "local" : "remoto"})`, "camera");
-    return landmarker;
   })().catch((e) => { carregando = null; throw e; }); // permite tentar de novo
   return carregando;
 }
@@ -72,19 +97,49 @@ function abertura(reg) {
   return (a(reg.ear_esq, "esq") + a(reg.ear_dir, "dir")) / 2;
 }
 
-function aoQuadro(video, captura) {
+// Marca de tempo da sessão para o quadro (estritamente crescente); null se não avançou.
+function marcar(captura) {
   const t = Math.round(Math.min(captura, performance.now()) - S.t0);
-  if (t <= S.ultimoT) return; // o MediaPipe exige marcas estritamente crescentes
-  S.ultimoT = t;
+  if (t <= S.ultimoT) return null;
+  return (S.ultimoT = t);
+}
+// Sem worker: detecta aqui mesmo (bloqueia a página pelo tempo da detecção).
+function aoQuadro(video, captura) {
+  const t = marcar(captura);
+  if (t == null) return;
   const res = landmarker.detectForVideo(video, t);
+  analisar(res.faceLandmarks, res.facialTransformationMatrixes, video.videoWidth, video.videoHeight, t, captura);
+}
+// Com worker: copia o quadro (barato) e o transfere; o resultado chega em aoResultado.
+let pendente = null; // quadro em análise no worker (um por vez: a página nunca acumula fila)
+function mandarAoWorker(video, captura) {
+  const t = marcar(captura);
+  if (t == null) return;
+  const vw = video.videoWidth, vh = video.videoHeight, escala = Math.min(1, LARGURA_MAX / vw);
+  const cnn = V.cnn?.querQuadro?.() || 0; // aproveita o mesmo quadro para o modelo CNN
+  const q = (pendente = { sessao: S.sessao, t, captura, vw, vh, cnnEm: cnn ? performance.now() : 0 });
+  createImageBitmap(video, escala < 1 ? { resizeWidth: Math.round(vw * escala), resizeHeight: Math.round(vh * escala), resizeQuality: "medium" } : {})
+    .then((bmp) => worker.postMessage({ tipo: "quadro", id: t, bmp, cnn }, [bmp]))
+    .catch(() => { if (pendente === q) pendente = null; });
+}
+function aoResultado(e) {
+  const d = e.data, q = pendente;
+  if (!q || d.id !== q.t) return;
+  pendente = null;
+  if (!S.ativo || q.sessao !== S.sessao) return;
+  if (d.tipo === "erro") { V.log("Scanner: erro no MediaPipe — " + d.erro, "error"); return; }
+  if (d.cnn) V.cnn?.enviar?.(d.cnn, q.cnnEm);
+  analisar(d.faceLandmarks, d.matrizes, q.vw, q.vh, q.t, q.captura);
+}
+function analisar(faceLandmarks, matrizes, vw, vh, t, captura) {
   let pts = null, matriz = null, normalizados = null;
   // o MediaPipe devolve primeiro o rosto em que mais confia, que pode ser alguém ao fundo
-  const rostos = res.faceLandmarks.map((r) => pontosEmPixels(r, video.videoWidth, video.videoHeight));
+  const rostos = faceLandmarks.map((r) => pontosEmPixels(r, vw, vh));
   const i = indiceDoMaiorRosto(rostos);
   if (i !== null) {
     pts = rostos[i];
-    normalizados = res.faceLandmarks[i].map((p) => [p.x, p.y]);
-    const m = res.facialTransformationMatrixes?.[i];
+    normalizados = faceLandmarks[i].map((p) => [p.x, p.y]);
+    const m = matrizes?.[i];
     matriz = m ? matrizEmLinhas(m) : null;
   }
   const registro = S.calc.calcular(pts, matriz, t, S.quadro++, performance.now() - captura);
@@ -107,12 +162,13 @@ function tick() {
   if (!S.ativo) return;
   const t = agora();
   try {
-    let estimativa = estimar(S.historico.filter((r) => r.t_ms <= t), cfgEstimador, t);
-    // O modelo de imagens comanda quando há resultado recente; a confiança continua sendo a do
-    // rastreio do rosto, então sem rosto o estimador degrada do mesmo jeito.
-    const cnn = V.cnn?.indice();
-    if (cnn != null && estimativa.indice != null) estimativa = { ...estimativa, indice_geometria: estimativa.indice, indice: cnn };
-    S.fonte = cnn != null ? "cnn" : "geometria";
+    const geometria = estimar(S.historico.filter((r) => r.t_ms <= t), cfgEstimador, t); // só para exibir (PERCLOS)
+    // índice do modelo + bônus do volante frouxo (pressao.js), como a fusão da Parte 1 (entrada/pressao.py)
+    const modelo = V.cnn?.indice() ?? null, volante = V.pressao?.bonusIndice() ?? 0;
+    // mão frouxa: no mínimo ATENÇÃO (limiar 35 da política), mas nunca ALERTA só por ela (65)
+    const cnn = modelo == null ? null : Math.min(100, volante ? Math.max(modelo + volante, 40) : modelo);
+    const estimativa = { t_ms: t, indice: cnn, indice_modelo: modelo, bonus_volante: volante, confianca: cnn == null ? 0 : 1, perclos: geometria.perclos, indice_geometria: geometria.indice };
+    S.fonte = cnn != null ? "cnn" : "sem_cnn";
     S.estado = transicionar(S.estado, estimativa, t, cfgEstimador, S.respondeu);
     S.respondeu = false;
     let mensagens;
@@ -129,9 +185,17 @@ function tick() {
 let rvfc = 0;
 function laco() {
   const video = $("cameraFeed");
+  let processado = -1e9;
+  pendente = null;
+  if (worker) worker.onmessage = aoResultado;
   const passo = (now, meta) => {
     if (!S.ativo) return;
-    if (video.readyState >= 2 && video.videoWidth) aoQuadro(video, meta?.captureTime ?? now);
+    // até ~22 quadros/s (o estimador aceita intervalos de até max_intervalo_ms); com o worker,
+    // só manda outro quadro quando o anterior voltou
+    if (!(worker && pendente) && video.readyState >= 2 && video.videoWidth && now - processado >= 45) {
+      processado = now;
+      if (worker) mandarAoWorker(video, meta?.captureTime ?? now); else aoQuadro(video, meta?.captureTime ?? now);
+    }
     rvfc = video.requestVideoFrameCallback(passo);
   };
   rvfc = video.requestVideoFrameCallback(passo);
@@ -206,6 +270,7 @@ V.on("cameraOff", parar);
 V.ia = {
   get ativo() { return S.ativo; }, get visivel() { return S.visivel; }, get carregando() { return !!S.carregando; },
   get ultimo() { return S.ultimo; }, get sessao() { return S.sessao; }, indices, limiares: cfgAnalise.rosto,
+  get emWorker() { return !!worker; }, // com o worker, o quadro do CNN vem junto (cnn.js não captura)
   geo: { direcaoDaCabeca, olharDaIris, olhos }, // para o desenho em driver-monitor.js (script clássico)
   iniciar, parar, mostrar: () => alternarVisivel(true), ocultar: () => alternarVisivel(false),
   responder: () => { S.respondeu = true; },

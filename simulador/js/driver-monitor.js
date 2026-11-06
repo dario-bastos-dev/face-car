@@ -306,7 +306,7 @@ function facePanel(c, r) {
   const cnn = V.cnn?.media() ?? null;
   const pct = v => Math.round(v * 100) + '%';
   const linhas = [
-    ['CNN', cnn ? `${cnn.classe} ${pct(cnn.probabilidades[cnn.classe])}` : V.cnn?.estado === 'pronto' ? (!V.cnn.fresco() ? '…' : V.cnn.base ? 'não confiável' : 'calibrando') : '—'],
+    ['CNN', cnn ? `${cnn.classe} ${pct(cnn.probabilidades[cnn.classe])}` : V.cnn?.estado === 'pronto' ? '…' : '—'],
     ['cabeça', r.rosto?.cabeca ?? '—'], ['olhar', r.olhar ?? '—'],
     ['olhos', r.rosto?.olhos ?? '—'], ['boca', r.rosto?.boca ?? '—'],
   ];
@@ -351,8 +351,7 @@ function realBars() {
   mouthBar(reg?.abertura_boca, !!r?.rosto?.bocejando, V.ia.limiares.abertura_boca_aberta);
   const ix = est?.indice;
   setBar('mFatigue', ix ?? 0, f(ix), ix == null ? 'warn' : ix > 65 ? 'bad' : ix > 35 ? 'warn' : 'ok');
-  $('monitorSource').textContent = 'IA REAL · MEDIAPIPE' + (r?.fonte === 'cnn' ? ' + CNN' : '') + (V.ia.visivel ? '' : ' · OCULTO');
-  $('monitorSource').classList.add('real');
+  fonte('IA REAL · MEDIAPIPE' + (r?.fonte === 'cnn' ? ' + CNN' : '') + (V.ia.visivel ? '' : ' · OCULTO'), true);
 }
 function draw(dt, t) {
   if (!canvas || !W) return;
@@ -388,7 +387,7 @@ function draw(dt, t) {
   c.beginPath(); c.moveTo(nx, ny); c.lineTo(nx + m.headYaw * 2, ny + m.headPitch * 1.6 + 18); c.stroke();
   c.fillStyle = '#fff'; c.beginPath(); c.arc(nx, ny, 2.5, 0, 7); c.fill();
   // rótulo de estado
-  const labels = { normal: 'MOTORISTA ATENTO', attention: 'SINAIS DE FADIGA', critical: 'OLHOS SEMICERRADOS', intervention: 'OLHOS FECHADOS · CABEÇA BAIXA', degraded: 'SEM SINAL DA IA' };
+  const labels = { normal: 'MOTORISTA ATENTO', attention: V.pressao?.frouxo ? 'MÃOS FROUXAS NO VOLANTE' : 'SINAIS DE FADIGA', critical: 'OLHOS SEMICERRADOS', intervention: 'OLHOS FECHADOS · CABEÇA BAIXA', degraded: 'SEM SINAL DA IA' };
   const lab = labels[lvl];
   c.font = '800 10px Inter, system-ui, sans-serif';
   const tw = c.measureText(lab).width + 16;
@@ -400,8 +399,13 @@ function draw(dt, t) {
   setBar('mHead', clamp(m.headPitch / 35 * 100, 0, 100), Math.round(m.headPitch) + '°', m.headPitch > 20 ? 'bad' : m.headPitch > 8 ? 'warn' : 'ok');
   setBar('mPerclos', m.perclos, Math.round(m.perclos) + '%', m.perclos > 40 ? 'bad' : m.perclos > 15 ? 'warn' : 'ok');
   setBar('mFatigue', m.fatigue, Math.round(m.fatigue), m.fatigue > 70 ? 'bad' : m.fatigue > 35 ? 'warn' : 'ok');
-  $('monitorSource').textContent = M.external ? 'IA CONECTADA' : 'MÉTRICAS SIMULADAS';
-  $('monitorSource').classList.toggle('real', M.external);
+  fonte(M.external ? 'IA CONECTADA' : 'MÉTRICAS SIMULADAS', M.external);
+}
+// Rótulo da fonte: só mexe no DOM quando muda (escrever o mesmo texto a cada quadro refaz o layout).
+let fonteAtual = '';
+function fonte(texto, real) {
+  if (fonteAtual === texto + real) return; fonteAtual = texto + real;
+  const el = $('monitorSource'); el.textContent = texto; el.classList.toggle('real', real);
 }
 const barCache = {};
 function setBar(id, pct, text, cls) {

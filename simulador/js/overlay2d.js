@@ -53,8 +53,8 @@ function update(dt) {
   set('ovStatus', 'fontSize', V.LABEL[lvl].length > 8 ? '14px' : '');
   set('ovTarget', 'text', 'ALVO: ' + Math.round(state.target) + ' km/h');
   const inter = !state.degraded && state.level === 'intervention';
-  cls('ovHazard', 'on', state.hazardOn || state.leftOn);
-  cls('ovBrake', 'alert', inter && state.speed > .3);
+  cls('ovHazard', 'on', state.hazardOn || state.leftOn || state.rightOn);
+  cls('ovBrake', 'alert', !!state.luzFreio);
   cls('ovSignal', 'on', !state.degraded);
   cls('ovSignal', 'lost', state.degraded);
 }
