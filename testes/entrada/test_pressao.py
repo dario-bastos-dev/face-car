@@ -7,7 +7,7 @@ import time
 
 import pytest
 
-from entrada.pressao import Fusao, SensorPressao, fracao_abaixo, ler_pressao
+from entrada.pressao import Fusao, PressaoBaixa, SensorPressao, ler_pressao
 
 
 @pytest.mark.parametrize("linha, esperado", [
@@ -21,11 +21,6 @@ from entrada.pressao import Fusao, SensorPressao, fracao_abaixo, ler_pressao
 ])
 def test_ler_pressao(linha, esperado):
     assert ler_pressao(linha) == esperado
-
-
-def test_fracao_abaixo_do_limiar():
-    assert fracao_abaixo([500, 300, 399, 400, 800], limiar=400) == pytest.approx(2 / 5)
-    assert fracao_abaixo([], limiar=400) is None
 
 
 def esperar(condicao, limite=2.0):
@@ -54,39 +49,49 @@ def test_sensor_ausente_da_erro_de_porta():
         SensorPressao("/dev/nao_existe_fsr402", 9600, relogio_ms=lambda: 0)
 
 
-PARAMS = dict(peso_modelo=0.6, peso_sensor=0.4, limiar_alerta=0.6, limiar_fim_alerta=0.4)
+PARAMS = dict(limiar_alerta=0.6, limiar_fim_alerta=0.4, bonus_volante_frouxo=0.3,
+              bonus_cabeca_baixa=0.3)
 
 
-def test_fusao_pondera_modelo_e_volante():
+def test_fusao_soma_os_bonus_ao_modelo():
     fusao = Fusao(**PARAMS)
-    indice, eventos = fusao.atualizar(p_sono_modelo=0.5, fracao_sensor=1.0)
-    assert indice == pytest.approx(0.6 * 0.5 + 0.4 * 1.0)
-    assert eventos == ["ALERTA de sonolência (índice 0,70: modelo 0,50, volante 1,00)"]
+    assert fusao.atualizar(0.2) == (pytest.approx(0.2), [])
+    assert fusao.atualizar(0.2, volante_frouxo=True)[0] == pytest.approx(0.5)
+    assert fusao.atualizar(0.2, cabeca_baixa=True)[0] == pytest.approx(0.5)
+    indice, eventos = fusao.atualizar(0.2, volante_frouxo=True, cabeca_baixa=True)
+    assert indice == pytest.approx(0.8)   # volante frouxo e cabeça baixa: alerta mesmo com o modelo em 0,2
+    assert eventos == ["ALERTA de sonolência (índice 0,80: modelo 0,20, volante frouxo +0,30, "
+                       "cabeça baixa +0,30)"]
 
 
-def test_fusao_sem_sensor_usa_so_o_modelo():
+def test_fusao_volante_frouxo_com_o_modelo_em_duvida_alerta():
     fusao = Fusao(**PARAMS)
-    indice, eventos = fusao.atualizar(p_sono_modelo=0.3, fracao_sensor=None)
-    assert indice == pytest.approx(0.3) and eventos == []
+    indice, eventos = fusao.atualizar(0.3, volante_frouxo=True)
+    assert indice == pytest.approx(0.6)
+    assert eventos == ["ALERTA de sonolência (índice 0,60: modelo 0,30, volante frouxo +0,30)"]
+
+
+def test_fusao_sem_bonus_usa_so_o_modelo_e_nao_passa_de_1():
+    assert Fusao(**PARAMS).atualizar(0.3) == (pytest.approx(0.3), [])
+    assert Fusao(**PARAMS).atualizar(0.95, True, True)[0] == pytest.approx(1.0)
 
 
 def test_fusao_tem_histerese():
     fusao = Fusao(**PARAMS)
-    sequencia = [(0.9, 1.0), (0.5, 0.5), (0.45, 0.4), (0.2, 0.0), (0.5, 0.5)]
-    resultados = [fusao.atualizar(m, s) for m, s in sequencia]
-    eventos = [e for _, ev in resultados for e in ev]
-    # entra a 0,94; segue a 0,50 e 0,43 (acima de 0,4); sai a 0,12; não volta a 0,50
+    sequencia = [0.9, 0.5, 0.43, 0.12, 0.5]
+    eventos = [e for m in sequencia for e in fusao.atualizar(m)[1]]
+    # entra a 0,9; segue a 0,50 e 0,43 (acima de 0,4); sai a 0,12; não volta a 0,50
     assert [e.split(" (")[0] for e in eventos] == ["ALERTA de sonolência", "fim do alerta de sonolência"]
     assert fusao.em_alerta is False
 
 
 def test_fusao_pausada_nao_gera_alerta_e_recomeca():
     fusao = Fusao(**PARAMS)
-    fusao.atualizar(0.9, 1.0)
+    fusao.atualizar(0.9)
     assert fusao.em_alerta
     fusao.pausar()   # motorista saiu da câmera: nenhum alerta, nem de fim
     assert fusao.em_alerta is False
-    _, eventos = fusao.atualizar(0.9, 1.0)
+    _, eventos = fusao.atualizar(0.9)
     assert eventos[0].startswith("ALERTA")   # ao voltar, avalia do zero
 
 
@@ -94,7 +99,52 @@ def test_configuracao_do_sensor_e_da_fusao():
     from entrada.contexto import carregar_config
     config = carregar_config()
     assert config["sensor"]["limiar_sonolencia"] == 400
+    assert config["sensor"]["pressao_baixa_alerta_ms"] == 15000
     Fusao(**config["fusao"])
+
+
+# ---- pressão baixa por muito tempo -----------------------------------------
+
+def leituras(inicio, fim, valor, passo=50):
+    return [(t, valor) for t in range(inicio, fim, passo)]
+
+
+def test_pressao_baixa_por_pouco_tempo_nao_conta():
+    baixa = PressaoBaixa(limiar=400, alerta_ms=15000)
+    duracao, eventos = baixa.atualizar(leituras(0, 5000, 100), 5000)   # 5 s com a mão solta
+    assert duracao == 5000 and eventos == [] and not baixa.prolongada(duracao)
+    duracao, eventos = baixa.atualizar(leituras(5000, 6000, 800), 6000)  # apertou de novo
+    assert duracao is None and eventos == []
+
+
+def test_pressao_baixa_por_15_s_avisa_e_ao_apertar_de_novo():
+    baixa = PressaoBaixa(limiar=400, alerta_ms=15000)
+    eventos = []
+    for segundo in range(0, 17):   # um quadro por segundo, com as leituras desse segundo
+        duracao, ev = baixa.atualizar(leituras(segundo * 1000, (segundo + 1) * 1000, 120),
+                                      (segundo + 1) * 1000)
+        eventos += [(segundo + 1, e) for e in ev]
+    assert baixa.prolongada(duracao) and duracao == 17000
+    _, ev = baixa.atualizar([(17000, 120), (17300, 650)], 17300)
+    eventos += [(17.3, e) for e in ev]
+    assert eventos == [(15, "pressão no volante abaixo de 400 há mais de 15 s"),
+                       (17.3, "volante apertado de novo após 17,30 s")]
+
+
+def test_um_aperto_no_meio_recomeca_a_contagem():
+    baixa = PressaoBaixa(limiar=400, alerta_ms=15000)
+    baixa.atualizar(leituras(0, 10000, 100) + [(10000, 400)], 10000)   # 400 já é alerta
+    duracao, _ = baixa.atualizar(leituras(10050, 20000, 100), 20000)
+    assert duracao == 9950 and not baixa.prolongada(duracao)
+
+
+def test_leituras_repetidas_contam_uma_vez_e_reiniciar_esquece():
+    baixa = PressaoBaixa(limiar=400, alerta_ms=1000)
+    janela = leituras(0, 2000, 100)
+    baixa.atualizar(janela, 2000)
+    assert baixa.atualizar(janela, 2000)[1] == []                # mesma janela: sem aviso repetido
+    baixa.reiniciar(2000)
+    assert baixa.atualizar(janela, 2500) == (None, [])           # leituras antigas são ignoradas
 
 
 def test_leituras_de_antes_de_abrir_a_porta_sao_descartadas():
@@ -129,20 +179,3 @@ def test_lixo_sem_quebra_de_linha_nao_trava_o_sensor():
 def test_configuracao_usa_a_velocidade_do_arduino():
     from entrada.contexto import carregar_config
     assert carregar_config()["sensor"]["baud"] == 115200
-
-
-def test_cabeca_baixa_soma_o_bonus_ao_indice():
-    fusao = Fusao(**PARAMS, bonus_cabeca_baixa=0.3)
-    indice, eventos = fusao.atualizar(p_sono_modelo=0.2, fracao_sensor=0.0)
-    assert indice == pytest.approx(0.12) and eventos == []
-    indice, eventos = fusao.atualizar(p_sono_modelo=0.2, fracao_sensor=0.0, cabeca_baixa=True)
-    assert indice == pytest.approx(0.42) and eventos == []   # firme no volante: não alerta
-    indice, eventos = fusao.atualizar(p_sono_modelo=0.5, fracao_sensor=0.0, cabeca_baixa=True)
-    assert indice == pytest.approx(0.6)                       # modelo em dúvida + cabeça baixa
-    assert eventos == ["ALERTA de sonolência (índice 0,60: modelo 0,50, volante 0,00, "
-                       "cabeça baixa +0,30)"]
-
-
-def test_bonus_da_cabeca_nao_passa_o_indice_de_1():
-    fusao = Fusao(**PARAMS, bonus_cabeca_baixa=0.3)
-    assert fusao.atualizar(0.95, None, cabeca_baixa=True)[0] == pytest.approx(1.0)

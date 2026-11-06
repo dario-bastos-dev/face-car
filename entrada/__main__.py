@@ -23,7 +23,7 @@ import cv2
 from entrada.classificador import (ClassificadorSonolencia, MediaTemporal, Resultado, formatar,
                                    formatar_classe, formatar_saida)
 from entrada.contexto import CAMINHO_CONFIG, RAIZ, carregar_config, carregar_pontos_rosto, numero
-from entrada.pressao import Fusao, SensorPressao, fracao_abaixo
+from entrada.pressao import Fusao, PressaoBaixa, SensorPressao
 from entrada.rosto import EstadoRosto, LimiaresRosto, MonitorRosto, desenhar_mapa, formatar_estado
 
 JANELA = "analise (q para sair)"
@@ -43,12 +43,13 @@ class Analise:
     estado: EstadoRosto | None           # olhos, boca, cabeça e eventos da geometria
     mostrar_resumo: bool                 # hora de mostrar a média no terminal
     visivel: bool = True                 # motorista na câmera
-    indice: float | None = None          # índice de sonolência (modelo e sensor)
-    fracao_sensor: float | None = None   # fração das leituras de pressão abaixo do limiar
+    indice: float | None = None          # índice de sonolência (modelo, volante e cabeça)
+    pressao_baixa_ms: int | None = None  # há quanto tempo a pressão está abaixo do limiar
     pressao: int | None = None           # última leitura do sensor na janela
     em_alerta: bool = False              # alerta de sonolência ativo
-    eventos: list = field(default_factory=list)  # visibilidade e alertas
+    eventos: list = field(default_factory=list)  # visibilidade, volante e alertas
     bonus_cabeca: float = 0.0            # somado ao índice pela cabeça baixa prolongada
+    bonus_volante: float = 0.0           # somado ao índice pela pressão baixa prolongada
 
 
 class Analisador:
@@ -56,21 +57,21 @@ class Analisador:
 
     O detector de rosto decide se o motorista está na câmera; sem ele no quadro, o
     modelo não é chamado, o sensor é ignorado e nenhum alerta é gerado. Com ele, o
-    modelo recebe o quadro inteiro, e a fusão junta a média do modelo com a fração de
-    leituras baixas do sensor na mesma janela, mais um bônus se a cabeça estiver baixa há
-    muito tempo. Sem detector (testes), todo quadro conta como visível.
+    modelo recebe o quadro inteiro, e a fusão parte da média do modelo e soma um bônus se
+    a pressão no volante estiver baixa há muito tempo e outro se a cabeça estiver. Sem
+    detector (testes), todo quadro conta como visível.
     """
 
     def __init__(self, classificador, detector=None, janela_ms: int = 2000,
                  intervalo_terminal_ms: int = 1000, monitor: MonitorRosto | None = None,
                  sensor: SensorPressao | None = None, fusao: Fusao | None = None,
-                 limiar_pressao: int = 400):
+                 pressao_baixa: PressaoBaixa | None = None):
         self.classificador = classificador
         self.detector = detector
         self.monitor = monitor
         self.sensor = sensor
         self.fusao = fusao
-        self.limiar_pressao = limiar_pressao
+        self.pressao_baixa = pressao_baixa
         self.janela_ms = janela_ms
         self.media = MediaTemporal(janela_ms)
         self.intervalo_terminal_ms = intervalo_terminal_ms
@@ -88,27 +89,35 @@ class Analisador:
             self._ultimo_resumo = t_ms
         eventos = self._mudanca_de_visibilidade(visivel)
         if not visivel:
+            if self.pressao_baixa is not None:
+                self.pressao_baixa.reiniciar(t_ms)   # o volante só conta com o motorista à vista
             return Analise(None, None, 0.0, None, estado, mostrar_resumo, visivel=False,
                            eventos=eventos)
 
         resultado = self.classificador.classificar(quadro)
         self.media.adicionar(t_ms, resultado)
         resumo, qps = self.media.resumo()
-        fracao = pressao = None
+        pressao = baixa_ms = None
         if self.sensor is not None:
-            valores = [v for _, v in self.sensor.leituras_desde(t_ms - self.janela_ms)]
-            fracao = fracao_abaixo(valores, self.limiar_pressao)
-            pressao = valores[-1] if valores else None
-        indice, em_alerta, bonus = None, False, 0.0
+            leituras = self.sensor.leituras_desde(t_ms - self.janela_ms)
+            pressao = leituras[-1][1] if leituras else None
+            if self.pressao_baixa is not None:
+                if leituras:
+                    baixa_ms, eventos_volante = self.pressao_baixa.atualizar(leituras, t_ms)
+                    eventos += eventos_volante
+                else:
+                    self.pressao_baixa.reiniciar(t_ms)   # sensor mudo: não dá para saber
+        indice, em_alerta, bonus_volante, bonus_cabeca = None, False, 0.0, 0.0
         if self.fusao is not None:
+            frouxo = self.pressao_baixa is not None and self.pressao_baixa.prolongada(baixa_ms)
             cabeca_baixa = estado is not None and estado.cabeca_baixa_prolongada
             indice, alertas = self.fusao.atualizar(resumo.probabilidades.get("sonolento", 0.0),
-                                                   fracao, cabeca_baixa)
+                                                   frouxo, cabeca_baixa)
             eventos += alertas
             em_alerta = self.fusao.em_alerta
-            bonus = self.fusao.bonus_cabeca_baixa if cabeca_baixa else 0.0
+            bonus_volante, bonus_cabeca = self.fusao.bonus(frouxo, cabeca_baixa)
         return Analise(resultado, resumo, qps, rosto, estado, mostrar_resumo, True, indice,
-                       fracao, pressao, em_alerta, eventos, bonus)
+                       baixa_ms, pressao, em_alerta, eventos, bonus_cabeca, bonus_volante)
 
     def _mudanca_de_visibilidade(self, visivel: bool) -> list:
         """Eventos quando o motorista sai ou volta; ao sair, o alerta é suspenso."""
@@ -136,6 +145,8 @@ def desenhar(quadro, resumo, rosto=None, pontos_rosto=None, estado=None, analise
                       + f"  (indice {numero(analise.indice, '.2f')})")
     if analise is not None and analise.pressao is not None:
         linhas.append(f"volante: {analise.pressao}")
+    if analise is not None and analise.bonus_volante:
+        linhas.append(f"volante frouxo: +{numero(analise.bonus_volante, '.2f')}")
     if analise is not None and analise.bonus_cabeca:
         linhas.append(f"cabeca baixa: +{numero(analise.bonus_cabeca, '.2f')}")
     if estado is not None and estado.olhos is not None:
@@ -189,7 +200,11 @@ def _linhas_do_terminal(camera: str, t_ms: int, analise: Analise, sem_log: bool,
             linhas.append(f"{instante} motorista não visível: sem análise")
         else:
             rosto = f" | {formatar_estado(analise.estado)}" if analise.estado is not None else ""
-            volante = f" | volante {analise.pressao}" if analise.pressao is not None else ""
+            volante = ""
+            if analise.pressao is not None:
+                baixa = analise.pressao_baixa_ms
+                tempo = f" (baixo há {baixa // 1000} s)" if baixa is not None and baixa >= 1000 else ""
+                volante = f" | volante {analise.pressao}{tempo}"
             linhas.append(f"{instante} {formatar_saida(analise.resultado)}{rosto}{volante}")
     if analise.estado is not None:
         linhas += [f"{instante} evento: {evento}" for evento in analise.estado.eventos]
@@ -202,8 +217,8 @@ def _linhas_do_terminal(camera: str, t_ms: int, analise: Analise, sem_log: bool,
         linhas.append(f"{segundo} média {janela_s} s: {formatar(analise.resumo)}{taxa}")
         if analise.indice is not None:
             p_sono = analise.resumo.probabilidades.get("sonolento", 0.0)
-            volante = ("" if analise.fracao_sensor is None
-                       else f" · volante {numero(analise.fracao_sensor, '.2f')}")
+            volante = (f" · volante frouxo +{numero(analise.bonus_volante, '.2f')}"
+                       if analise.bonus_volante else "")
             cabeca = (f" · cabeça baixa +{numero(analise.bonus_cabeca, '.2f')}"
                       if analise.bonus_cabeca else "")
             estado = "SONOLÊNCIA" if analise.em_alerta else "alerta"
@@ -222,7 +237,8 @@ def _abrir_sensor(config: dict, relogio_ms) -> SensorPressao | None:
               f"analisando só com o modelo", file=sys.stderr)
         return None
     print(f"Sensor de pressão em {cfg['porta']} ({cfg['baud']} baud); abaixo de "
-          f"{cfg['limiar_sonolencia']} é sinal de sonolência.")
+          f"{cfg['limiar_sonolencia']} por "
+          f"{numero(cfg['pressao_baixa_alerta_ms'] / 1000, 'g')} s é sinal de sonolência.")
     return sensor
 
 
@@ -245,7 +261,9 @@ def _analisar(args, config: dict, classificador, cameras: list, quadros, sensor=
             camera: Analisador(classificador, pilha.enter_context(DetectorRosto(config)),
                                cfg["janela_ms"], cfg["intervalo_terminal_ms"],
                                MonitorRosto(limiares, pontos_rosto), sensor,
-                               Fusao(**config["fusao"]), config["sensor"]["limiar_sonolencia"])
+                               Fusao(**config["fusao"]),
+                               PressaoBaixa(config["sensor"]["limiar_sonolencia"],
+                                            config["sensor"]["pressao_baixa_alerta_ms"]))
             for camera in cameras
         }
         avisou_sensor = False

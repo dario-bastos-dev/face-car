@@ -159,26 +159,33 @@ uv run python -m entrada webcam --camera rgb --porta-sensor /dev/ttyACM0
 uv run python -m entrada webcam --camera rgb --sem-sensor             # só o modelo
 ```
 
-- **Índice de sonolência**, de 0 a 1: 0,6 × a probabilidade média de `sonolento` do modelo nos
-  últimos 2 s + 0,4 × a fração das leituras do volante abaixo de 400 na mesma janela. Sem sensor,
-  é só o modelo.
+- **Índice de sonolência**, de 0 a 1: a probabilidade média de `sonolento` do modelo nos últimos
+  2 s, mais os bônus abaixo (o índice não passa de 1). Sem bônus, é só o modelo.
+- **Volante frouxo por 15 s:** com a pressão abaixo de 400 por 15 s seguidos, soma 0,3 ao índice
+  enquanto continuar baixa. Soltar a mão por menos tempo (trocar a marcha, ajustar o rádio) não
+  conta, e uma leitura de 400 ou mais recomeça a contagem. A linha de cada quadro mostra
+  `volante 112 (baixo há 4 s)` enquanto conta; aos 15 s aparece o evento
+  `pressão no volante abaixo de 400 há mais de 15 s` e, ao apertar de novo,
+  `volante apertado de novo após …`.
+- **Cabeça baixa por 15 s:** da mesma forma, soma 0,3 enquanto a cabeça continuar baixa. Se ela
+  baixar tanto que o MediaPipe perca o rosto, vale a regra do motorista fora da câmera.
+- A linha do índice mostra o que entrou, por exemplo
+  `índice de sonolência 0,70 (modelo 0,40 · volante frouxo +0,30) → SONOLÊNCIA`.
 - **Alerta:** começa quando o índice chega a 0,6 e só termina abaixo de 0,4, para não ficar ligando e
-  desligando. Com esses pesos, o volante frouxo sozinho leva o índice a 0,4 e não dispara o alerta:
-  o modelo e o volante precisam concordar.
-- **Cabeça baixa por 15 s:** soma 0,3 ao índice (que não passa de 1) enquanto ela continuar baixa, e
-  o terminal mostra `cabeça baixa +0,30` na linha do índice. Sozinha, com o volante firme e o modelo
-  em alerta, não dispara o alerta (pode ser distração, como olhar o celular); com o volante frouxo
-  ou o modelo em dúvida (0,5), dispara. Se a cabeça baixar tanto que o MediaPipe perca o rosto,
-  vale a regra do motorista fora da câmera. O tempo fica em `rosto.cabeca_baixa_alerta_ms` e o
-  bônus em `fusao.bonus_cabeca_baixa`.
+  desligando. Um bônus sozinho, com o modelo em alerta, não dispara o alerta (a mão solta pode ser
+  só cansaço do braço; a cabeça baixa, distração com o celular); dispara com o modelo em dúvida
+  (0,3 ou mais) ou com os dois juntos, volante frouxo e cabeça baixa.
 - **Motorista fora da câmera:** o quadro não vai para o modelo, o sensor é ignorado e nenhum alerta
-  é gerado; o terminal mostra `motorista não visível`, e um alerta em andamento é suspenso.
-- **Sensor ausente ou desconectado:** a análise avisa e segue só com o modelo.
+  é gerado; o terminal mostra `motorista não visível`, e um alerta em andamento é suspenso. As
+  contagens de 15 s do volante e da cabeça recomeçam quando ele volta.
+- **Sensor ausente ou desconectado:** a análise avisa e segue só com o modelo; se o sensor parar de
+  enviar, a contagem do volante recomeça.
 - Ao abrir a porta, o que estava no buffer (enviado antes) e a primeira linha, que pode vir pela
   metade, são descartados.
 
-Porta, velocidade e limiar ficam em `sensor`, e os pesos e limiares do alerta em `fusao`, em
-`config/analise.json`; são pontos de partida a ajustar com testes reais. No Linux, o usuário precisa
+Porta, velocidade, limiar e o tempo do volante frouxo (`pressao_baixa_alerta_ms`) ficam em
+`sensor`; o tempo da cabeça baixa em `rosto.cabeca_baixa_alerta_ms`; os bônus e os limiares do
+alerta em `fusao`, em `config/analise.json`; são pontos de partida a ajustar com testes reais. No Linux, o usuário precisa
 estar no grupo da serial (`uucp` no Arch, `dialout` no Debian e no Ubuntu); veja a porta com
 `ls /dev/ttyUSB* /dev/ttyACM*`.
 

@@ -3,9 +3,10 @@
 O sensor chega por um microcontrolador (por exemplo, um Arduino com
 Serial.println(analogRead(A0))), um número por linha, a 115200 baud. Pressão abaixo do limiar
 (400) é sinal de sonolência, como a mão que afrouxa no volante; 400 ou mais é
-sinal de alerta. A junção pondera a probabilidade média de "sonolento" do modelo
-com a fração de leituras baixas do sensor na mesma janela de tempo; a cabeça baixa por
-muito tempo (15 s) soma um bônus a esse índice.
+sinal de alerta. Como na cabeça baixa, só a pressão baixa por muito tempo (15 s
+seguidos) conta: soltar a mão por pouco tempo, para trocar a marcha, é normal. A junção
+parte da probabilidade média de "sonolento" do modelo e soma um bônus para o volante
+frouxo e outro para a cabeça baixa.
 """
 
 import re
@@ -25,14 +26,6 @@ def ler_pressao(linha) -> int | None:
         linha = linha.decode("ascii", errors="ignore")
     achado = re.search(r"\d+", linha)
     return int(achado.group()) if achado else None
-
-
-def fracao_abaixo(valores, limiar: int) -> float | None:
-    """Fração das leituras abaixo do limiar, ou None sem leituras."""
-    valores = list(valores)
-    if not valores:
-        return None
-    return sum(v < limiar for v in valores) / len(valores)
 
 
 class SensorPressao:
@@ -99,44 +92,96 @@ class SensorPressao:
         self.fechar()
 
 
-class Fusao:
-    """Índice de sonolência de 0 a 1 a partir do modelo e do sensor, com alerta e histerese.
+def _duracao(ms: float) -> str:
+    return f"{numero(ms / 1000, '.2f')} s"
 
-    O índice é a média ponderada da probabilidade de "sonolento" do modelo e da fração
-    de leituras baixas do sensor; sem sensor, é só o modelo. Com a cabeça baixa por muito
-    tempo, soma-se `bonus_cabeca_baixa` (o índice não passa de 1). O alerta começa quando
-    o índice chega a `limiar_alerta` e só termina abaixo de `limiar_fim_alerta`, para não
-    ficar ligando e desligando perto do limiar.
+
+class PressaoBaixa:
+    """Acompanha há quanto tempo a pressão no volante está abaixo do limiar, sem interrupção.
+
+    Recebe as leituras (t_ms, valor) do sensor e usa cada uma só uma vez. Avisa quando a
+    pressão fica baixa por `alerta_ms` e de novo quando o volante volta a ser apertado.
     """
 
-    def __init__(self, peso_modelo: float, peso_sensor: float, limiar_alerta: float,
-                 limiar_fim_alerta: float, bonus_cabeca_baixa: float = 0.0):
-        self.peso_modelo = peso_modelo
-        self.peso_sensor = peso_sensor
+    def __init__(self, limiar: int, alerta_ms: int):
+        self.limiar = limiar
+        self.alerta_ms = alerta_ms
+        self.reiniciar()
+
+    def reiniciar(self, t_ms: int = -1) -> None:
+        """Esquece a contagem e as leituras até `t_ms` (motorista fora da câmera, sensor mudo)."""
+        self._baixa_desde = None
+        self._alertou = False
+        self._ultima_t = t_ms
+
+    def atualizar(self, leituras, t_ms: int) -> tuple[int | None, list]:
+        """(há quantos ms a pressão está baixa, ou None; eventos) até o instante `t_ms`."""
+        eventos = []
+        for t, valor in leituras:
+            if t <= self._ultima_t:
+                continue   # já contada no quadro anterior
+            self._ultima_t = t
+            if valor < self.limiar:
+                if self._baixa_desde is None:
+                    self._baixa_desde = t
+            elif self._baixa_desde is not None:
+                if self._alertou:
+                    eventos.append(f"volante apertado de novo após {_duracao(t - self._baixa_desde)}")
+                self._baixa_desde = None
+                self._alertou = False
+        if self._baixa_desde is None:
+            return None, eventos
+        duracao = max(0, t_ms - self._baixa_desde)
+        if not self._alertou and duracao >= self.alerta_ms:
+            self._alertou = True
+            eventos.append(f"pressão no volante abaixo de {self.limiar} há mais de "
+                           f"{numero(self.alerta_ms / 1000, 'g')} s")
+        return duracao, eventos
+
+    def prolongada(self, duracao: int | None) -> bool:
+        return duracao is not None and duracao >= self.alerta_ms
+
+
+class Fusao:
+    """Índice de sonolência de 0 a 1 a partir do modelo, do volante e da cabeça, com alerta.
+
+    O índice é a probabilidade média de "sonolento" do modelo, mais `bonus_volante_frouxo`
+    com a pressão baixa por muito tempo e `bonus_cabeca_baixa` com a cabeça baixa por
+    muito tempo; não passa de 1. O alerta começa quando o índice chega a `limiar_alerta` e
+    só termina abaixo de `limiar_fim_alerta`, para não ficar ligando e desligando perto do
+    limiar.
+    """
+
+    def __init__(self, limiar_alerta: float, limiar_fim_alerta: float,
+                 bonus_volante_frouxo: float = 0.0, bonus_cabeca_baixa: float = 0.0):
         self.limiar_alerta = limiar_alerta
         self.limiar_fim_alerta = limiar_fim_alerta
+        self.bonus_volante_frouxo = bonus_volante_frouxo
         self.bonus_cabeca_baixa = bonus_cabeca_baixa
         self.em_alerta = False
         self.indice = None
 
-    def atualizar(self, p_sono_modelo: float, fracao_sensor: float | None,
+    def bonus(self, volante_frouxo: bool = False, cabeca_baixa: bool = False) -> tuple[float, float]:
+        """(bônus do volante, bônus da cabeça) aplicados nesse caso."""
+        return (self.bonus_volante_frouxo if volante_frouxo else 0.0,
+                self.bonus_cabeca_baixa if cabeca_baixa else 0.0)
+
+    def atualizar(self, p_sono_modelo: float, volante_frouxo: bool = False,
                   cabeca_baixa: bool = False):
         """(índice, eventos de alerta) deste quadro."""
-        if fracao_sensor is None:
-            indice = p_sono_modelo
-        else:
-            indice = ((self.peso_modelo * p_sono_modelo + self.peso_sensor * fracao_sensor)
-                      / (self.peso_modelo + self.peso_sensor))
-        bonus = self.bonus_cabeca_baixa if cabeca_baixa else 0.0
-        indice = min(1.0, indice + bonus)
+        volante, cabeca = self.bonus(volante_frouxo, cabeca_baixa)
+        indice = min(1.0, p_sono_modelo + volante + cabeca)
         self.indice = indice
         eventos = []
         if not self.em_alerta and indice >= self.limiar_alerta:
             self.em_alerta = True
-            volante = "" if fracao_sensor is None else f", volante {numero(fracao_sensor, '.2f')}"
-            cabeca = f", cabeça baixa +{numero(bonus, '.2f')}" if bonus else ""
+            motivos = [f"modelo {numero(p_sono_modelo, '.2f')}"]
+            if volante:
+                motivos.append(f"volante frouxo +{numero(volante, '.2f')}")
+            if cabeca:
+                motivos.append(f"cabeça baixa +{numero(cabeca, '.2f')}")
             eventos.append(f"ALERTA de sonolência (índice {numero(indice, '.2f')}: "
-                           f"modelo {numero(p_sono_modelo, '.2f')}{volante}{cabeca})")
+                           f"{', '.join(motivos)})")
         elif self.em_alerta and indice < self.limiar_fim_alerta:
             self.em_alerta = False
             eventos.append(f"fim do alerta de sonolência (índice {numero(indice, '.2f')})")

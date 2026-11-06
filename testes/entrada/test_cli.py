@@ -303,10 +303,11 @@ class SensorFalso:
 
 def analisador_completo(detector, sensor=None):
     from entrada.contexto import carregar_pontos_rosto
-    from entrada.pressao import Fusao
+    from entrada.pressao import Fusao, PressaoBaixa
     from entrada.rosto import LimiaresRosto, MonitorRosto
     return Analisador(ClassificadorFalso(), detector, monitor=MonitorRosto(LimiaresRosto(), carregar_pontos_rosto()),
-                      sensor=sensor, fusao=Fusao(0.6, 0.4, 0.6, 0.4), limiar_pressao=400)
+                      sensor=sensor, fusao=Fusao(0.6, 0.4, 0.3, 0.3),
+                      pressao_baixa=PressaoBaixa(400, 15000))
 
 
 def test_sem_motorista_na_camera_nao_ha_analise_nem_alerta():
@@ -319,28 +320,85 @@ def test_sem_motorista_na_camera_nao_ha_analise_nem_alerta():
     assert eventos == ["motorista não visível: análise pausada"]   # só na transição
 
 
-def test_motorista_volta_e_a_analise_retoma_com_o_sensor():
-    sensor = SensorFalso([100, 100, 100, 900])               # 75% abaixo de 400
+class SensorNoTempo:
+    """Uma leitura a cada 50 ms com `valor(t)`, até o instante `agora` do quadro."""
+
+    def __init__(self, valor):
+        self.valor = valor
+        self.agora = 0
+
+    def leituras_desde(self, t_ms):
+        return [(t, self.valor(t)) for t in range(0, self.agora + 1, 50) if t >= t_ms]
+
+
+class ClassificadorFixo:
+    def __init__(self, p_sono):
+        self.p = p_sono
+
+    def classificar(self, _q):
+        return Resultado("alerta", {"alerta": 1 - self.p, "sonolento": self.p},
+                         saida=[1 - self.p, self.p], ms=5)
+
+
+def rodar(analisador, sensor, instantes, detector_em=None):
+    """Processa um quadro em cada instante, com o sensor andando junto."""
+    analises = {}
+    for t in instantes:
+        sensor.agora = t
+        if detector_em is not None:
+            analisador.detector = detector_em(t)
+        analises[t] = analisador.processar(np.zeros((8, 8, 3), np.uint8), t)
+    return analises
+
+
+def test_volante_frouxo_por_15_s_aumenta_o_indice():
+    sensor = SensorNoTempo(lambda t: 100)                     # mão solta o tempo todo
     analisador = analisador_completo(DetectorComRosto(), sensor)
-    analise = analisador.processar(np.zeros((8, 8, 3), np.uint8), 0)
-    assert analise.visivel and analise.fracao_sensor == pytest.approx(0.75)
-    assert analise.pressao == 900
-    # ClassificadorFalso: 1ª chamada dá sonolento 0,1 → índice 0,6·0,1 + 0,4·0,75 = 0,36
-    assert analise.indice == pytest.approx(0.36)
+    analisador.classificador = ClassificadorFixo(0.2)
+    analises = rodar(analisador, sensor, range(0, 16001, 500))
+    assert analises[14500].indice == pytest.approx(0.2)      # menos de 15 s: só o modelo
+    assert analises[15000].indice == pytest.approx(0.5)      # 15 s: + 0,3
+    assert analises[15000].bonus_volante == pytest.approx(0.3)
+    assert analises[15000].eventos == ["pressão no volante abaixo de 400 há mais de 15 s"]
+    assert not analises[16000].em_alerta                     # 0,5: ainda abaixo de 0,6
+    linhas = _linhas_do_terminal("rgb", 16000, analises[16000], sem_log=False, janela_s="2")
+    assert linhas[0].endswith("| volante 100 (baixo há 16 s)")
+    assert linhas[-1].endswith("índice de sonolência 0,50 (modelo 0,20 · volante frouxo +0,30) → alerta")
 
 
 def test_alerta_de_sonolencia_quando_modelo_e_volante_concordam():
-    class ClassificadorSono:
-        def classificar(self, _q):
-            return Resultado("sonolento", {"alerta": 0.1, "sonolento": 0.9}, saida=[0.1, 0.9], ms=5)
-
-    analisador = analisador_completo(DetectorComRosto(), SensorFalso([100] * 10))
-    analisador.classificador = ClassificadorSono()
-    analise = analisador.processar(np.zeros((8, 8, 3), np.uint8), 0)
-    assert any(e.startswith("ALERTA de sonolência") for e in analise.eventos)
-    linhas = _linhas_do_terminal("rgb", 0, analise, sem_log=True, janela_s="2")
+    sensor = SensorNoTempo(lambda t: 100)
+    analisador = analisador_completo(DetectorComRosto(), sensor)
+    analisador.classificador = ClassificadorFixo(0.4)
+    analises = rodar(analisador, sensor, range(0, 15001, 500))
+    assert not analises[14500].em_alerta and analises[15000].em_alerta
+    assert "ALERTA de sonolência (índice 0,70: modelo 0,40, volante frouxo +0,30)" in analises[15000].eventos
+    linhas = _linhas_do_terminal("rgb", 15000, analises[15000], sem_log=True, janela_s="2")
     assert any("ALERTA de sonolência" in l for l in linhas)   # alerta aparece mesmo com --sem-log
-    assert any("índice de sonolência 0,94" in l and "volante" in l for l in linhas)
+
+
+def test_apertar_o_volante_ou_sair_da_camera_recomeca_a_contagem():
+    # aperta o volante aos 8 s; some da câmera entre 20 e 21 s
+    sensor = SensorNoTempo(lambda t: 900 if 8000 <= t < 8100 else 100)
+    analisador = analisador_completo(DetectorComRosto(), sensor)
+    analisador.classificador = ClassificadorFixo(0.2)
+    analises = rodar(analisador, sensor, range(0, 30001, 500),
+                     lambda t: DetectorSemRosto() if 20000 <= t <= 21000 else DetectorComRosto())
+    assert analises[22500].bonus_volante == 0.0              # 8,1 s → 22,5 s, mas sumiu no meio
+    assert analises[21500].pressao_baixa_ms == 450           # recomeçou na 1ª leitura ao voltar (21,05 s)
+    assert analises[19500].bonus_volante == 0.0 and analises[19500].pressao_baixa_ms == 11400
+    assert analises[29500].bonus_volante == 0.0 and analises[30000].bonus_volante == 0.0
+    assert analises[30000].pressao_baixa_ms == 8950
+
+
+def test_sensor_mudo_nao_conta_como_volante_frouxo():
+    class SensorMudo:
+        def leituras_desde(self, _t):
+            return []
+
+    analisador = analisador_completo(DetectorComRosto(), SensorMudo())
+    analise = analisador.processar(np.zeros((8, 8, 3), np.uint8), 20000)
+    assert analise.pressao is None and analise.pressao_baixa_ms is None and analise.bonus_volante == 0
 
 
 def test_cabeca_baixa_prolongada_aumenta_o_indice():
@@ -352,7 +410,7 @@ def test_cabeca_baixa_prolongada_aumenta_o_indice():
             return EstadoRosto("abertos", 0.3, "fechada", 0.02, "baixo", [], 16000, True)
 
     analisador = Analisador(ClassificadorFalso(), DetectorComRosto(), monitor=MonitorCabecaBaixa(),
-                            fusao=Fusao(0.6, 0.4, 0.6, 0.4, bonus_cabeca_baixa=0.3))
+                            fusao=Fusao(0.6, 0.4, bonus_cabeca_baixa=0.3))
     analise = analisador.processar(np.zeros((8, 8, 3), np.uint8), 0)
     # ClassificadorFalso: sonolento 0,1; sem sensor, índice = 0,1 + 0,3
     assert analise.bonus_cabeca == pytest.approx(0.3) and analise.indice == pytest.approx(0.4)
