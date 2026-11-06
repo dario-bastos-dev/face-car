@@ -53,7 +53,7 @@ function opcoesMediapipe() {
 }
 function criarWorker(modelo) {
   return new Promise((ok, falha) => {
-    const w = new Worker(new URL("./rosto-worker.js?v=0.9.70", import.meta.url));
+    const w = new Worker(new URL("./rosto-worker.js?v=0.9.75", import.meta.url));
     const fim = (erro) => { clearTimeout(limite); w.onmessage = w.onerror = null; if (erro) { w.terminate(); falha(erro); } else ok(w); };
     const limite = setTimeout(() => fim(new Error("o worker não respondeu")), 60000);
     w.onmessage = (e) => {
@@ -163,8 +163,11 @@ function tick() {
   const t = agora();
   try {
     const geometria = estimar(S.historico.filter((r) => r.t_ms <= t), cfgEstimador, t); // só para exibir (PERCLOS)
-    const cnn = V.cnn?.indice() ?? null;
-    const estimativa = { t_ms: t, indice: cnn, confianca: cnn == null ? 0 : 1, perclos: geometria.perclos, indice_geometria: geometria.indice };
+    // índice do modelo + bônus do volante frouxo (pressao.js), como a fusão da Parte 1 (entrada/pressao.py)
+    const modelo = V.cnn?.indice() ?? null, volante = V.pressao?.bonusIndice() ?? 0;
+    // mão frouxa: no mínimo ATENÇÃO (limiar 35 da política), mas nunca ALERTA só por ela (65)
+    const cnn = modelo == null ? null : Math.min(100, volante ? Math.max(modelo + volante, 40) : modelo);
+    const estimativa = { t_ms: t, indice: cnn, indice_modelo: modelo, bonus_volante: volante, confianca: cnn == null ? 0 : 1, perclos: geometria.perclos, indice_geometria: geometria.indice };
     S.fonte = cnn != null ? "cnn" : "sem_cnn";
     S.estado = transicionar(S.estado, estimativa, t, cfgEstimador, S.respondeu);
     S.respondeu = false;

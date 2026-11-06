@@ -438,6 +438,13 @@ V.on('colisao', c => {
   else batidaLeve(clamp(.55 + c.rel / 60, .55, 1), pan);
   if (c.tipo === 'lateral') raspao(forte ? 1 : .7, pan);
 });
+// Mãos frouxas no volante (pressao.js): o nível sobe para ATENÇÃO, e a voz dele já pede firmeza.
+// Se o nível já estava acima do normal (o modelo viu sono), só a voz pedindo firmeza.
+V.on('volanteFrouxo', () => {
+  if (!A.enabled || V.state.level === 'normal' || V.state.degraded) return;
+  tone(740, .22, 'sine', .14); tone(990, .3, 'sine', .13, .26);
+  setTimeout(() => speak('Segure firme no volante.'), 650);
+});
 V.on('buzinaTrafego', t => { if (A.enabled && ctx && ctx.currentTime - ultimaBuzinada > 3) { ultimaBuzinada = ctx.currentTime; buzinar(t); } });
 V.on('blink', on => blink(on));
 // Buzina do motorista (centro do volante, tecla H): um único som, que toca enquanto o botão
@@ -470,7 +477,7 @@ V.on('buzinaInicio', buzinaInicio);
 V.on('buzinaFim', buzinaFim);
 V.on('horn', () => { buzinaInicio(); buzinaFim(); }); // buzinada curta
 V.on('level', l => {
-  if (l === 'attention') { chime(false); speak('Atenção. Sinais de fadiga detectados. Considere fazer uma pausa.'); }
+  if (l === 'attention') { chime(false); speak(V.pressao?.frouxo ? 'Atenção. Segure firme no volante.' : 'Atenção. Sinais de fadiga detectados. Considere fazer uma pausa.'); }
   else if (l === 'critical') { chime(true); speak('Alerta. Confirme que está atento.'); }
   else if (l === 'intervention') { siren(); setTimeout(() => speak('Possível sonolência detectada. Reduzindo a velocidade com segurança.'), 1300); }
   else if (l === 'degraded') tone(440, .4, 'triangle', .08);

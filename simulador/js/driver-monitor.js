@@ -387,7 +387,7 @@ function draw(dt, t) {
   c.beginPath(); c.moveTo(nx, ny); c.lineTo(nx + m.headYaw * 2, ny + m.headPitch * 1.6 + 18); c.stroke();
   c.fillStyle = '#fff'; c.beginPath(); c.arc(nx, ny, 2.5, 0, 7); c.fill();
   // rótulo de estado
-  const labels = { normal: 'MOTORISTA ATENTO', attention: 'SINAIS DE FADIGA', critical: 'OLHOS SEMICERRADOS', intervention: 'OLHOS FECHADOS · CABEÇA BAIXA', degraded: 'SEM SINAL DA IA' };
+  const labels = { normal: 'MOTORISTA ATENTO', attention: V.pressao?.frouxo ? 'MÃOS FROUXAS NO VOLANTE' : 'SINAIS DE FADIGA', critical: 'OLHOS SEMICERRADOS', intervention: 'OLHOS FECHADOS · CABEÇA BAIXA', degraded: 'SEM SINAL DA IA' };
   const lab = labels[lvl];
   c.font = '800 10px Inter, system-ui, sans-serif';
   const tw = c.measureText(lab).width + 16;

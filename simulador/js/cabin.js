@@ -480,6 +480,8 @@ const LEVEL_UI = {
   intervention: { color: '#ff3b3b', title: 'ALERTA INTERVENÇÃO', sub: 'Possível sonolência', icon: 'warn' },
   degraded: { color: '#ffb36b', title: 'SEM SINAL', sub: 'Modo seguro', icon: 'warn' }
 };
+// Mãos frouxas no volante (pressao.js): a ATENÇÃO pede firmeza em vez de falar de fadiga.
+const uiDoNivel = lvl => lvl === 'attention' && V.pressao?.frouxo ? { ...LEVEL_UI.attention, sub: 'Segure firme no volante' } : LEVEL_UI[lvl];
 
 function coffee(c, x, y, s, color) {
   c.save(); c.translate(x, y); c.strokeStyle = color; c.fillStyle = color; c.lineWidth = s * .08; c.lineCap = 'round';
@@ -518,7 +520,7 @@ function warnTri(c, x, y, s, color) {
 }
 
 function drawCluster(L, t) {
-  const c = ctx, k = L.cluster, lvl = V.effectiveLevel(), ui = LEVEL_UI[lvl];
+  const c = ctx, k = L.cluster, lvl = V.effectiveLevel(), ui = uiDoNivel(lvl);
   const alertOn = lvl !== 'normal' && lvl !== 'degraded';
   const flash = alertOn && (lvl === 'attention' || Math.floor(t / 450) % 2 === 0);
   c.save();
@@ -629,7 +631,7 @@ function drawScreen(L) {
   if (mini) { cabin.miniCache = mini; c.save(); rr(c, mx, my, mw, mh, 6); c.clip(); c.drawImage(mini, mx, my, mw, mh); c.restore(); }
   c.strokeStyle = '#21405e'; c.lineWidth = 1; rr(c, mx, my, mw, mh, 6); c.stroke();
   // barra de status
-  const lvl = V.effectiveLevel(), ui = LEVEL_UI[lvl], by = s.y + s.h - 12 * S;
+  const lvl = V.effectiveLevel(), ui = uiDoNivel(lvl), by = s.y + s.h - 12 * S;
   txt(c, Math.round(state.speed) + ' km/h', mx + 2 * S, by + 3 * S, 10 * S, '#ffffff', 800);
   const dist = world.lead ? Math.max(0, Math.round(world.lead.z - world.lead.len / 2)) + ' m à frente' : '';
   if (s.w > 250) txt(c, dist, s.x + s.w / 2, by + 3 * S, 8.5 * S, '#9cc0d8', 600, 'center'); // só se couber
