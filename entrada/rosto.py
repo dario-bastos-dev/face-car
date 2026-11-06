@@ -231,6 +231,7 @@ class LimiaresRosto:
     olhos_fechados_alerta_ms: int = 1000
     abertura_boca_aberta: float = 0.40
     bocejo_min_ms: int = 1500          # aberta por menos que isto: fala, não bocejo
+    cabeca_baixa_alerta_ms: int = 15000  # cabeça baixa por isto: sinal de sonolência
 
 
 @dataclass
@@ -241,6 +242,8 @@ class EstadoRosto:
     abertura: float | None
     cabeca: str | None                 # "frente", "baixo", "esquerda"... ou None
     eventos: list = field(default_factory=list)
+    cabeca_baixa_ms: int | None = None   # há quanto tempo a cabeça está baixa, ou None
+    cabeca_baixa_prolongada: bool = False  # baixa há cabeca_baixa_alerta_ms ou mais
 
 
 def medidas(pontos, indices: dict) -> tuple[float, float]:
@@ -258,7 +261,8 @@ def _duracao(ms: float) -> str:
 
 
 class MonitorRosto:
-    """Acompanha olhos e boca quadro a quadro e anuncia piscadas, olhos fechados e bocejos."""
+    """Acompanha olhos, boca e cabeça quadro a quadro e anuncia piscadas, olhos fechados,
+    bocejos e a cabeça baixa por muito tempo."""
 
     def __init__(self, limiares: LimiaresRosto, indices: dict | None = None):
         self.limiares = limiares
@@ -267,6 +271,8 @@ class MonitorRosto:
         self._alertou_olhos = False
         self._boca_aberta_desde = None
         self._alertou_bocejo = False
+        self._cabeca_baixa_desde = None
+        self._alertou_cabeca = False
 
     def atualizar(self, t_ms: int, rosto) -> EstadoRosto:
         """Estado deste quadro a partir de um Rosto do detector (ou None)."""
@@ -281,14 +287,18 @@ class MonitorRosto:
         if ear is None:
             # Sem rosto não dá para saber o que aconteceu: recomeça do zero.
             self._olhos_fechados_desde = self._boca_aberta_desde = None
-            self._alertou_olhos = self._alertou_bocejo = False
+            self._cabeca_baixa_desde = None
+            self._alertou_olhos = self._alertou_bocejo = self._alertou_cabeca = False
             return EstadoRosto(None, None, None, None, None)
 
         fechados, eventos_olhos = self._acompanhar_olhos(t_ms, ear)
         aberta, eventos_boca = self._acompanhar_boca(t_ms, abertura)
+        baixa_ms, eventos_cabeca = self._acompanhar_cabeca(t_ms, cabeca)
         return EstadoRosto("fechados" if fechados else "abertos", ear,
                            "aberta" if aberta else "fechada", abertura, cabeca,
-                           eventos_olhos + eventos_boca)
+                           eventos_olhos + eventos_boca + eventos_cabeca, baixa_ms,
+                           baixa_ms is not None
+                           and baixa_ms >= self.limiares.cabeca_baixa_alerta_ms)
 
     def _acompanhar_olhos(self, t_ms: int, ear: float) -> tuple[bool, list]:
         """(olhos fechados?, eventos): piscada, olhos fechados por muito tempo e reabertura."""
@@ -330,13 +340,39 @@ class MonitorRosto:
         self._alertou_bocejo = True
         return True, ["bocejo"]
 
+    def _acompanhar_cabeca(self, t_ms: int, cabeca) -> tuple[int | None, list]:
+        """(há quantos ms a cabeça está baixa, ou None; eventos).
+
+        Olhar para baixo por pouco tempo (painel, rádio) é normal e não gera evento; só a
+        cabeça baixa por `cabeca_baixa_alerta_ms` avisa, e de novo quando ela levanta.
+        """
+        lim = self.limiares
+        if cabeca is None or not cabeca.startswith("baixo"):
+            eventos = []
+            if self._alertou_cabeca:
+                eventos.append("cabeça levantada após "
+                               f"{_duracao(t_ms - self._cabeca_baixa_desde)}")
+            self._cabeca_baixa_desde = None
+            self._alertou_cabeca = False
+            return None, eventos
+        if self._cabeca_baixa_desde is None:
+            self._cabeca_baixa_desde = t_ms
+        duracao = t_ms - self._cabeca_baixa_desde
+        if self._alertou_cabeca or duracao < lim.cabeca_baixa_alerta_ms:
+            return duracao, []
+        self._alertou_cabeca = True
+        return duracao, ["cabeça baixa há mais de "
+                         f"{numero(lim.cabeca_baixa_alerta_ms / 1000, 'g')} s"]
+
 
 def formatar_estado(estado: EstadoRosto) -> str:
-    """Ex.: "olhos abertos (EAR 0,31) · boca fechada (0,02) · cabeça baixo"."""
+    """Ex.: "olhos abertos (EAR 0,31) · boca fechada (0,02) · cabeça baixo há 4 s"."""
     if estado.olhos is None:
         return "rosto não detectado"
     partes = [f"olhos {estado.olhos} (EAR {numero(estado.ear, '.2f')})",
               f"boca {estado.boca} ({numero(estado.abertura, '.2f')})"]
     if estado.cabeca is not None:
-        partes.append(f"cabeça {estado.cabeca}")
+        baixa = estado.cabeca_baixa_ms
+        tempo = f" há {baixa // 1000} s" if baixa is not None and baixa >= 1000 else ""
+        partes.append(f"cabeça {estado.cabeca}{tempo}")
     return " · ".join(partes)

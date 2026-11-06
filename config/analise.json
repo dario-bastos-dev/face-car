@@ -1,5 +1,5 @@
 {
-  "versao": 7,
+  "versao": 10,
   "mediapipe": {
     "modelo": "modelos/face_landmarker.task",
     "min_confianca_deteccao": 0.5,
@@ -27,8 +27,8 @@
   "classificador": {
     "modelo": "cnn_sonolencia.keras",
     "classes": [
-      "sonolento",
       "alerta",
+      "sonolento",
       "bocejo"
     ],
     "janela_ms": 2000,
@@ -39,6 +39,19 @@
     "piscada_max_ms": 400,
     "olhos_fechados_alerta_ms": 1000,
     "abertura_boca_aberta": 0.4,
-    "bocejo_min_ms": 1500
+    "bocejo_min_ms": 1500,
+    "cabeca_baixa_alerta_ms": 15000
+  },
+  "sensor": {
+    "porta": "/dev/ttyUSB0",
+    "baud": 115200,
+    "limiar_sonolencia": 400,
+    "pressao_baixa_alerta_ms": 15000
+  },
+  "fusao": {
+    "limiar_alerta": 0.6,
+    "limiar_fim_alerta": 0.4,
+    "bonus_volante_frouxo": 0.3,
+    "bonus_cabeca_baixa": 0.3
   }
 }

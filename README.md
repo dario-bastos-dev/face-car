@@ -103,13 +103,13 @@ previsão; uma vez por segundo, mostra a média das probabilidades dos últimos 
 aparece no painel da janela:
 
 ```
-[rgb    0,790 s] saída [1,0000 0,0000] → alerta (34 ms) | olhos abertos (EAR 0,24) · boca fechada (0,01) · cabeça frente
-[rgb    0,838 s] saída [0,0027 0,9973] → sonolento (17 ms) | olhos fechados (EAR 0,09) · boca fechada (0,01) · cabeça baixo
-[rgb    1,042 s] evento: piscada (0,20 s)
-[rgb    2,6 s] média 2 s: alerta 73,4%  (sonolento 26,6%)  · 20 q/s
+[rgb    3,645 s] saída [0,9965 0,0000 0,0035] → alerta (11 ms) | olhos abertos (EAR 0,27) · boca fechada (0,01) · cabeça frente
+[rgb    3,697 s] saída [0,0351 0,9636 0,0013] → sonolento (21 ms) | olhos fechados (EAR 0,09) · boca fechada (0,01) · cabeça baixo
+[rgb    3,901 s] evento: piscada (0,20 s)
+[rgb    4,6 s] média 2 s: alerta 73,4%  (sonolento 21,3%, bocejo 5,3%)  · 20 q/s
 ```
 
-O vetor segue a ordem de `classificador.classes` (`alerta`, `sonolento`). A saída de um quadro
+O vetor segue a ordem de `classificador.classes` (`alerta`, `sonolento`, `bocejo`) e soma 1. A saída de um quadro
 oscila bastante de um quadro para o seguinte; a média separa uma piscada, que dura uma fração de
 segundo, do olho que fica fechado. `q/s` é quantos quadros por segundo estão sendo analisados, e
 `--sem-log` mostra só os eventos e as médias. Os avisos internos do TensorFlow ficam desligados;
@@ -129,6 +129,7 @@ dividida pela largura da boca. Os eventos aparecem numa linha própria, também 
 | `olhos fechados há mais de 1 s` | enquanto continuam fechados; ao reabrir, `olhos reabertos após …` |
 | `olhos fechados por …` | fechados por mais que uma piscada e menos de 1 s |
 | `bocejo` | boca aberta por mais de 1,5 s (menos que isso é fala) |
+| `cabeça baixa há mais de 15 s` | cabeça apontando para baixo por 15 s seguidos; ao levantar, `cabeça levantada após …`. Olhar para baixo por menos tempo (painel, rádio) não gera evento, e a linha mostra `cabeça baixo há 4 s` enquanto conta |
 
 Os limiares ficam em `rosto`, em `config/analise.json`: EAR abaixo de 0,18 é olho fechado
 (`ear_olho_fechado`) e abertura acima de 0,40 é boca aberta (`abertura_boca_aberta`). São pontos de
@@ -148,16 +149,67 @@ uv run python -m entrada video <seu-video.mp4> [--mostrar]
 | `--segundos` | sem limite | webcam: parar depois deste tempo |
 | `--sem-janela` | — | webcam: analisar sem abrir a janela |
 | `--sem-log` | — | mostrar só os eventos e as médias, sem uma linha por quadro |
+| `--porta-sensor` | `sensor.porta` | webcam: porta serial do sensor de pressão |
+| `--sem-sensor` | — | webcam: analisar sem o sensor, só com o modelo |
 | `--mostrar` | ligado na webcam, desligado no vídeo | janela com o resultado e o mapeamento do rosto |
+
+#### Sensor de pressão no volante (FSR402)
+
+Com o sensor conectado, a análise junta o modelo com a pressão das mãos no volante, lida pela
+serial com o `pyserial`: abaixo de **400** é sinal de sonolência (a mão afrouxa), 400 ou mais é sinal
+de alerta. O sensor chega por um microcontrolador que envia um número por linha; com um Arduino, o
+FSR402 num divisor de tensão (por exemplo, com um resistor de 10 kΩ) ligado ao pino A0:
+
+```cpp
+void setup() { Serial.begin(115200); }
+void loop() { Serial.println(analogRead(A0)); delay(20); }   // 0 a 1023, ~50 leituras por segundo
+```
+
+```bash
+uv run python -m entrada webcam --camera rgb                          # porta de sensor.porta
+uv run python -m entrada webcam --camera rgb --porta-sensor /dev/ttyACM0
+uv run python -m entrada webcam --camera rgb --sem-sensor             # só o modelo
+```
+
+- **Índice de sonolência**, de 0 a 1: a probabilidade média de `sonolento` do modelo nos últimos
+  2 s, mais os bônus abaixo (o índice não passa de 1). Sem bônus, é só o modelo.
+- **Volante frouxo por 15 s:** com a pressão abaixo de 400 por 15 s seguidos, soma 0,3 ao índice
+  enquanto continuar baixa. Soltar a mão por menos tempo (trocar a marcha, ajustar o rádio) não
+  conta, e uma leitura de 400 ou mais recomeça a contagem. A linha de cada quadro mostra
+  `volante 112 (baixo há 4 s)` enquanto conta; aos 15 s aparece o evento
+  `pressão no volante abaixo de 400 há mais de 15 s` e, ao apertar de novo,
+  `volante apertado de novo após …`.
+- **Cabeça baixa por 15 s:** da mesma forma, soma 0,3 enquanto a cabeça continuar baixa. Se ela
+  baixar tanto que o MediaPipe perca o rosto, vale a regra do motorista fora da câmera.
+- A linha do índice mostra o que entrou, por exemplo
+  `índice de sonolência 0,70 (modelo 0,40 · volante frouxo +0,30) → SONOLÊNCIA`.
+- **Alerta:** começa quando o índice chega a 0,6 e só termina abaixo de 0,4, para não ficar ligando e
+  desligando. Um bônus sozinho, com o modelo em alerta, não dispara o alerta (a mão solta pode ser
+  só cansaço do braço; a cabeça baixa, distração com o celular); dispara com o modelo em dúvida
+  (0,3 ou mais) ou com os dois juntos, volante frouxo e cabeça baixa.
+- **Motorista fora da câmera:** o quadro não vai para o modelo, o sensor é ignorado e nenhum alerta
+  é gerado; o terminal mostra `motorista não visível`, e um alerta em andamento é suspenso. As
+  contagens de 15 s do volante e da cabeça recomeçam quando ele volta.
+- **Sensor ausente ou desconectado:** a análise avisa e segue só com o modelo; se o sensor parar de
+  enviar, a contagem do volante recomeça.
+- Ao abrir a porta, o que estava no buffer (enviado antes) e a primeira linha, que pode vir pela
+  metade, são descartados.
+
+Porta, velocidade, limiar e o tempo do volante frouxo (`pressao_baixa_alerta_ms`) ficam em
+`sensor`; o tempo da cabeça baixa em `rosto.cabeca_baixa_alerta_ms`; os bônus e os limiares do
+alerta em `fusao`, em `config/analise.json`; são pontos de partida a ajustar com testes reais. No Linux, o usuário precisa
+estar no grupo da serial (`uucp` no Arch, `dialout` no Debian e no Ubuntu); veja a porta com
+`ls /dev/ttyUSB* /dev/ttyACM*`.
 
 #### O modelo
 
 O modelo atual é o FaceCar_CNN_V2 (MobileNetV2), treinado com o quadro inteiro em RGB,
 redimensionado para 160×160, com os pixels de 0 a 255 (a normalização é uma camada dele); a análise
 lê o tamanho do próprio modelo e prepara a imagem do mesmo jeito, antes de qualquer desenho na
-janela. As saídas são, na ordem, `sonolento` (0), `alerta` (1) e `bocejo` (2), as pastas Drowsy,
-Non Drowsy e Yawn do treino em ordem alfabética (`classificador.classes` em `config/analise.json`;
-o programa confere que o número de classes bate com o de saídas do modelo), que também define a janela da média
+janela. O modelo devolve 3 probabilidades, nesta ordem: `alerta` (0), `sonolento` (1) e
+`bocejo` (2), com valores de 0 a 1 que somam 1 (`classificador.classes` em `config/analise.json`;
+o programa confere que o número de classes bate com o de saídas e que cada previsão soma 1, e
+termina com erro se não for assim), que também define a janela da média
 (`janela_ms`) e o intervalo das linhas no terminal (`intervalo_terminal_ms`). O arquivo fica fora
 do git (cerca de 10 MB) e deve estar na raiz do projeto; sem ele, o comando termina com erro. A câmera
 infravermelha entrega imagens em cinza, diferentes das coloridas do treino, então o resultado dela

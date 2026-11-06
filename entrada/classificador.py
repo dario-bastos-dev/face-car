@@ -61,6 +61,20 @@ def formatar_saida(resultado: Resultado) -> str:
     return f"saída [{vetor}] → {resultado.classe} ({resultado.ms:.0f} ms)"
 
 
+def _conferir_probabilidades(p: np.ndarray) -> None:
+    """A saída tem de ser uma distribuição: valores de 0 a 1 que somam 1 (softmax).
+
+    Sem isso, um modelo sem softmax ou trocado por engano viraria porcentagens sem
+    sentido no terminal; a tolerância cobre só o arredondamento em float32.
+    """
+    if np.any(p < -1e-6) or np.any(p > 1 + 1e-6):
+        raise ValueError(f"a saída do modelo deveria ter valores entre 0 e 1, mas veio "
+                         f"{np.round(p, 4).tolist()} (o modelo termina em softmax?)")
+    if abs(p.sum() - 1) > 1e-3:
+        raise ValueError(f"as {len(p)} saídas do modelo deveriam somar 1, mas somam "
+                         f"{p.sum():.4f}: {np.round(p, 4).tolist()}")
+
+
 class ClassificadorSonolencia:
     """Aplica o modelo a um quadro; `classes` dá o nome de cada saída, na ordem."""
 
@@ -93,6 +107,7 @@ class ClassificadorSonolencia:
         saida = self.modelo.predict_on_batch(entrada)
         ms = (time.perf_counter() - inicio) * 1000
         probabilidades = np.asarray(saida, dtype=float)[0]
+        _conferir_probabilidades(probabilidades)
         return Resultado(self.classes[int(np.argmax(probabilidades))],
                          dict(zip(self.classes, probabilidades.tolist())),
                          probabilidades.tolist(), ms)

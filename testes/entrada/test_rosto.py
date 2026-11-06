@@ -234,3 +234,46 @@ def test_medidas_usam_a_mesma_geometria_das_metricas():
 def test_configuracao_traz_os_limiares():
     from entrada.contexto import carregar_config
     LimiaresRosto(**carregar_config()["rosto"])
+
+
+# ---- cabeça baixa por muito tempo -------------------------------------------
+
+def cabeca(monitor, passos):
+    """Aplica (t_ms, rótulo da cabeça) com olhos abertos e boca fechada."""
+    return [(t, monitor.registrar(t, ABERTO, BOCA_FECHADA, c)) for t, c in passos]
+
+
+def test_olhar_para_baixo_por_pouco_tempo_nao_gera_evento():
+    monitor = MonitorRosto(LimiaresRosto())   # 15 s, como na configuração
+    passos = [(t, "baixo") for t in range(0, 5000, 500)] + [(5000, "frente")]
+    estados = cabeca(monitor, passos)
+    assert [e for _, s in estados for e in s.eventos] == []
+    assert not any(s.cabeca_baixa_prolongada for _, s in estados)
+    assert estados[-2][1].cabeca_baixa_ms == 4500 and estados[-1][1].cabeca_baixa_ms is None
+
+
+def test_cabeca_baixa_por_15_s_avisa_e_ao_levantar():
+    monitor = MonitorRosto(LimiaresRosto())
+    passos = ([(t, "baixo") for t in range(0, 17000, 1000)]
+              + [(17000, "baixo e esquerda"), (17300, "frente")])
+    estados = cabeca(monitor, passos)
+    eventos = [(t, e) for t, s in estados for e in s.eventos]
+    assert eventos == [(15000, "cabeça baixa há mais de 15 s"),
+                       (17300, "cabeça levantada após 17,30 s")]
+    prolongada = [t for t, s in estados if s.cabeca_baixa_prolongada]
+    assert prolongada == [15000, 16000, 17000]
+    assert formatar_estado(estados[16][1]).endswith("cabeça baixo há 16 s")
+
+
+def test_sem_rosto_recomeca_a_contagem_da_cabeca():
+    monitor = MonitorRosto(LimiaresRosto())
+    cabeca(monitor, [(t, "baixo") for t in range(0, 14000, 1000)])
+    monitor.registrar(14000, None, None, None)                # rosto sumiu
+    estados = cabeca(monitor, [(t, "baixo") for t in range(15000, 20000, 1000)])
+    assert not any(s.cabeca_baixa_prolongada or s.eventos for _, s in estados)
+
+
+def test_sem_matriz_de_pose_a_cabeca_nao_conta_como_baixa():
+    monitor = MonitorRosto(LimiaresRosto(cabeca_baixa_alerta_ms=1000))
+    estados = cabeca(monitor, [(0, "baixo"), (500, None), (1500, "baixo")])
+    assert not any(s.cabeca_baixa_prolongada for _, s in estados)
