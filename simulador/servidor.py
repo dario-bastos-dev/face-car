@@ -191,11 +191,14 @@ class ServicoCnn:
         import numpy as np
         from entrada.classificador import Resultado
 
+        from entrada.classificador import _conferir_probabilidades
+
         modelo = self.classificador
         inicio = time.perf_counter()
         saida = modelo.modelo.predict_on_batch(rgb[np.newaxis].astype(np.float32))
         ms = (time.perf_counter() - inicio) * 1000
         p = np.asarray(saida, dtype=float)[0]
+        _conferir_probabilidades(p)   # valores de 0 a 1 que somam 1, como na análise em Python
         return Resultado(modelo.classes[int(np.argmax(p))], dict(zip(modelo.classes, p.tolist())),
                          p.tolist(), ms)
 

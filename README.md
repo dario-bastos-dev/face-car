@@ -33,7 +33,9 @@ webcam (navegador) ─┬─ MediaPipe → olhos, boca, cabeça, olhar e eventos
   time, com as classes e a janela de `config/analise.json` (média de 2 s, como em `entrada/__main__.py`).
   A média vira o índice `100 × (sonolento + 0,45 × bocejo)`, que passa pela política da Parte 2.
   Sem resultado recente do modelo (servidor, TensorFlow ou arquivo ausentes), o simulador fica em
-  DEGRADADO, sem frear. A geometria do rosto (olhos, PERCLOS, boca, cabeça) continua medida e
+  DEGRADADO, sem frear. Sem o motorista na câmera, como na análise em Python, nenhum quadro vai ao
+  modelo e o painel mostra `motorista não visível · sem análise`. O quadro do modelo é capturado à
+  parte do MediaPipe, a até 8 por segundo, para a taxa não cair quando o rastreio estiver lento. A geometria do rosto (olhos, PERCLOS, boca, cabeça) continua medida e
   mostrada, mas não comanda. O modelo atual (`cnn_sonolencia_v2`) marca 75% a 98% de "sonolento"
   num retrato acordado e sorrindo; vale reavaliar o treino com imagens de webcam.
 - **Validação:** **↓ Leituras do CNN (CSV)**, no registro de eventos, exporta cada resultado do
