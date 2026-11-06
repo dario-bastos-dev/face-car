@@ -4,6 +4,7 @@ Ambas entregam tuplas (quadro_bgr, t_ms, indice). Nenhuma grava vídeo.
 """
 
 import math
+import os
 import threading
 import time
 from pathlib import Path
@@ -134,3 +135,64 @@ class FonteWebcam:
 
     def __exit__(self, *_):
         self.fechar()
+
+
+# ---- câmeras do sistema ------------------------------------------------------
+
+def _apelido(descricao: str) -> str:
+    """Nome curto para a linha de comando, a partir do nome "aparelho: câmera" do driver.
+
+    "Insta360 Link 2: Insta360 Link" vira "insta360-link-2"; "HD Webcam: IR Camera",
+    em que a 2ª parte diz qual das câmeras do aparelho é, vira "ir-camera".
+    """
+    aparelho, _, camera = (p.strip().lower() for p in descricao.partition(":"))
+    base = camera if camera and not aparelho.startswith(camera) else aparelho
+    return "-".join("".join(c if c.isalnum() else " " for c in base).split()) or "camera"
+
+
+def detectar_cameras(raiz=Path("/sys/class/video4linux"), largura: int = 640,
+                     altura: int = 480) -> list[dict]:
+    """Câmeras ligadas ao computador (Linux), no formato de `cameras` da configuração.
+
+    Cada câmera USB cria dois ou mais /dev/videoN; só o de índice 0 entrega imagem. O
+    tamanho pedido é só uma preferência: o driver escolhe o mais próximo que a câmera tem.
+    Fora do Linux, ou sem permissão para ler, a lista vem vazia.
+    """
+    def numero(pasta):
+        sufixo = pasta.name[len("video"):]
+        return int(sufixo) if sufixo.isdigit() else 1 << 30
+
+    cameras, usados = [], set()
+    for pasta in sorted(Path(raiz).glob("video*"), key=numero):
+        try:
+            if (pasta / "index").read_text().strip() != "0":
+                continue
+            descricao = (pasta / "name").read_text().strip()
+        except OSError:
+            continue
+        nome, n = _apelido(descricao), 2
+        while nome in usados:
+            nome, n = f"{_apelido(descricao)}-{n}", n + 1
+        usados.add(nome)
+        cameras.append({"nome": nome, "descricao": descricao, "dispositivo": f"/dev/{pasta.name}",
+                        "largura": largura, "altura": altura})
+    return cameras
+
+
+def juntar_cameras(configuradas: list, detectadas: list) -> dict:
+    """As câmeras da configuração e, depois delas, as detectadas que não estão nela.
+
+    A comparação é pelo dispositivo de fato (os caminhos by-path e by-id da configuração
+    apontam para um /dev/videoN).
+    """
+    def real(dispositivo):
+        return os.path.realpath(dispositivo) if isinstance(dispositivo, str) else dispositivo
+
+    cameras = {c["nome"]: c for c in configuradas}
+    ja = {real(c["dispositivo"]) for c in configuradas}
+    for c in detectadas:
+        if real(c["dispositivo"]) in ja:
+            continue
+        nome = c["nome"] if c["nome"] not in cameras else f"{c['nome']}-{len(cameras) + 1}"
+        cameras[nome] = {**c, "nome": nome}
+    return cameras

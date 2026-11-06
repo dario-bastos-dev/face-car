@@ -208,6 +208,32 @@ def test_menu_pergunta_de_novo_se_a_resposta_nao_existe(capsys):
     assert "opção inválida" in capsys.readouterr().out
 
 
+def test_camera_pedida_pelo_dispositivo(tmp_path):
+    from entrada.__main__ import _nome_da_camera
+    cameras = dict(CAMERAS)
+    (tmp_path / "video4").touch()
+    # fora da lista, mas existe: entra com o próprio caminho como nome
+    assert escolher_cameras([str(tmp_path / "video4")], cameras, "rgb", interativo=False) == [
+        str(tmp_path / "video4")]
+    assert cameras[str(tmp_path / "video4")]["dispositivo"] == str(tmp_path / "video4")
+    # um atalho para uma câmera da lista usa o nome dela
+    (tmp_path / "atalho").symlink_to(tmp_path / "video4")
+    cameras = {"insta360-link-2": {"nome": "insta360-link-2", "dispositivo": str(tmp_path / "video4")}}
+    assert _nome_da_camera(str(tmp_path / "atalho"), cameras) == "insta360-link-2"
+    with pytest.raises(ValueError, match="câmera desconhecida"):
+        escolher_cameras([str(tmp_path / "nao_existe")], cameras, "rgb", interativo=False)
+    with pytest.raises(ValueError, match="câmera desconhecida"):
+        escolher_cameras(["webcam-que-nao-existe"], cameras, "rgb", interativo=False)
+
+
+def test_menu_lista_as_cameras_detectadas(capsys):
+    cameras = {**CAMERAS, "insta360-link-2": {"nome": "insta360-link-2", "descricao": "Insta360 Link 2: Insta360 Link",
+                                               "dispositivo": "/dev/video4"}}
+    assert escolher_cameras(None, cameras, "rgb", interativo=True, ler=respostas("3")) == ["insta360-link-2"]
+    assert "3) insta360-link-2 - Insta360 Link 2" in capsys.readouterr().out
+    assert escolher_cameras(["insta360-link-2"], cameras, "rgb", interativo=False) == ["insta360-link-2"]
+
+
 def test_menu_sem_resposta_cancela():
     with pytest.raises(ValueError, match="nenhuma câmera escolhida"):
         escolher_cameras(None, CAMERAS, "rgb", interativo=True, ler=respostas())

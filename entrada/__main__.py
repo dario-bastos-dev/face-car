@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 import cv2
 
 from entrada.classificador import (ClassificadorSonolencia, MediaTemporal, Resultado, formatar,
-                                   formatar_classe, formatar_saida)
+                                   formatar_saida)
 from entrada.contexto import CAMINHO_CONFIG, RAIZ, carregar_config, carregar_pontos_rosto, numero
 from entrada.pressao import Fusao, PressaoBaixa, SensorPressao
 from entrada.rosto import EstadoRosto, LimiaresRosto, MonitorRosto, desenhar_mapa, formatar_estado
@@ -138,8 +138,15 @@ def desenhar(quadro, resumo, rosto=None, pontos_rosto=None, estado=None, analise
     """
     if analise is not None and not analise.visivel:
         linhas = ["motorista nao visivel: sem analise"]
+    elif resumo is None:
+        linhas = ["modelo: ..."]
     else:
-        linhas = [f"modelo: {formatar_classe(resumo)}" if resumo else "modelo: ..."]
+        # As 3 saídas do modelo, na média da janela, com barras; e o vetor do último quadro.
+        linhas = [f"modelo (media): {resumo.classe}"]
+        linhas += [Barra(classe, p, classe == resumo.classe)
+                   for classe, p in resumo.probabilidades.items()]
+        if analise is not None and analise.resultado is not None and analise.resultado.saida:
+            linhas.append("quadro: " + " ".join(numero(v, ".3f") for v in analise.resultado.saida))
     if analise is not None and analise.indice is not None:
         linhas.append(("ALERTA: SONOLENCIA" if analise.em_alerta else "estado: alerta")
                       + f"  (indice {numero(analise.indice, '.2f')})")
@@ -153,11 +160,38 @@ def desenhar(quadro, resumo, rosto=None, pontos_rosto=None, estado=None, analise
         linhas += [f"olhos: {estado.olhos}", f"boca: {estado.boca}"]
     if rosto is not None:
         linhas += desenhar_mapa(quadro, rosto.pontos, rosto.matriz, pontos_rosto)
-    cv2.rectangle(quadro, (0, 0), (280, 10 + 22 * len(linhas)), (0, 0, 0), -1)
-    for n, texto in enumerate(linhas):
-        cv2.putText(quadro, texto, (8, 24 + 22 * n), cv2.FONT_HERSHEY_SIMPLEX, 0.55,
-                    (255, 255, 255), 1, cv2.LINE_AA)
+    cv2.rectangle(quadro, (0, 0), (300, 10 + 22 * len(linhas)), (0, 0, 0), -1)
+    for n, item in enumerate(linhas):
+        y = 24 + 22 * n
+        if isinstance(item, Barra):
+            item.desenhar(quadro, y)
+        else:
+            cv2.putText(quadro, item, (8, y), cv2.FONT_HERSHEY_SIMPLEX, 0.55,
+                        (255, 255, 255), 1, cv2.LINE_AA)
     return quadro
+
+
+COR_CLASSE = {"alerta": (90, 200, 90), "sonolento": (70, 70, 235), "bocejo": (0, 190, 255)}  # BGR
+
+
+@dataclass
+class Barra:
+    """Uma saída do modelo na janela: nome, barra proporcional e porcentagem."""
+
+    classe: str
+    p: float
+    destaque: bool = False
+
+    def desenhar(self, quadro, y: int) -> None:
+        cor = COR_CLASSE.get(self.classe, (200, 200, 200))
+        texto = (255, 255, 255) if self.destaque else (170, 170, 170)
+        fonte = cv2.FONT_HERSHEY_SIMPLEX
+        cv2.putText(quadro, self.classe, (14, y), fonte, 0.5, texto, 1, cv2.LINE_AA)
+        x0, x1 = 110, 225
+        cv2.rectangle(quadro, (x0, y - 11), (x1, y - 1), (60, 60, 60), -1)
+        cv2.rectangle(quadro, (x0, y - 11), (x0 + round((x1 - x0) * self.p), y - 1), cor, -1)
+        cv2.putText(quadro, f"{numero(100 * self.p, '.1f')}%", (232, y), fonte, 0.5, texto, 1,
+                    cv2.LINE_AA)
 
 
 def janela_ativa(args, ambiente=os.environ) -> bool:
@@ -312,17 +346,23 @@ def _quadros_das_webcams(fontes: dict, segundos):
 def escolher_cameras(pedidas, cameras: dict, padrao: str, interativo: bool, ler=input) -> list:
     """Câmeras a usar: as pedidas em --camera, a escolha no menu ou a padrão.
 
-    "todas" seleciona todas. No menu, Enter escolhe a padrão; sem terminal
-    interativo, a padrão é usada sem perguntar.
+    "todas" seleciona todas. Em --camera vale o nome da câmera ou o dispositivo
+    (/dev/video4); um dispositivo fora da lista entra em `cameras` com o próprio caminho
+    como nome. No menu, Enter escolhe a padrão; sem terminal interativo, a padrão é
+    usada sem perguntar.
     """
     nomes = list(cameras)
     if pedidas:
         if "todas" in pedidas:
             return nomes
-        for nome in pedidas:
-            if nome not in cameras:
-                raise ValueError(f"câmera desconhecida: {nome} (configuradas: {', '.join(nomes)})")
-        return list(dict.fromkeys(pedidas))
+        escolhidas = []
+        for pedido in pedidas:
+            nome = _nome_da_camera(pedido, cameras)
+            if nome is None:
+                raise ValueError(f"câmera desconhecida: {pedido} (disponíveis: {', '.join(nomes)};"
+                                 " ou um dispositivo, como /dev/video4)")
+            escolhidas.append(nome)
+        return list(dict.fromkeys(escolhidas))
     if not interativo:
         return [padrao]
 
@@ -348,6 +388,23 @@ def escolher_cameras(pedidas, cameras: dict, padrao: str, interativo: bool, ler=
         print(f"opção inválida: {resposta!r}")
 
 
+def _nome_da_camera(pedido: str, cameras: dict) -> str | None:
+    """Nome em `cameras` para o que veio em --camera: um nome ou um dispositivo."""
+    if pedido in cameras:
+        return pedido
+    if not os.path.isabs(pedido):
+        return None
+    real = os.path.realpath(pedido)
+    for nome, c in cameras.items():
+        if isinstance(c.get("dispositivo"), str) and os.path.realpath(c["dispositivo"]) == real:
+            return nome
+    if not os.path.exists(pedido):
+        return None
+    cameras[pedido] = {"nome": pedido, "descricao": pedido, "dispositivo": pedido,
+                       "largura": 640, "altura": 480}
+    return pedido
+
+
 def cmd_video(args) -> int:
     from entrada.fontes import FonteArquivo
 
@@ -362,10 +419,10 @@ def cmd_video(args) -> int:
 
 
 def cmd_webcam(args) -> int:
-    from entrada.fontes import FonteWebcam
+    from entrada.fontes import FonteWebcam, detectar_cameras, juntar_cameras
 
     config = carregar_config(args.config)
-    cameras = {c["nome"]: c for c in config["cameras"]}
+    cameras = juntar_cameras(config["cameras"], detectar_cameras())
     escolhidas = escolher_cameras(args.camera, cameras, config["camera_padrao"],
                                   interativo=sys.stdin.isatty())
     # O modelo carrega antes das câmeras: elas não ficam ligadas à toa enquanto ele carrega.
@@ -437,8 +494,9 @@ def main(argv=None) -> int:
 
     p = sub.add_parser("webcam", help="analisar as webcams da configuração em tempo real")
     p.add_argument("--camera", action="append",
-                   help="câmera da configuração (repetível) ou 'todas'; sem esta opção, "
-                        "pergunta no terminal")
+                   help="câmera (repetível): nome do menu, dispositivo como /dev/video4, ou "
+                        "'todas'; sem esta opção, pergunta no terminal, listando também as "
+                        "câmeras ligadas que não estão na configuração")
     p.add_argument("--segundos", type=float, help="parar depois deste tempo")
     p.add_argument("--sem-janela", action="store_true", help="analisar sem abrir a janela")
     p.add_argument("--mostrar", action="store_true", help="(a janela já abre por padrão)")

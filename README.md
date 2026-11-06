@@ -101,8 +101,9 @@ uv sync                      # Python 3.12, mediapipe, opencv-contrib-python, nu
 
 Cada quadro da câmera vai, na memória, para o modelo `cnn_sonolencia.keras`; **nada é gravado**.
 O terminal mostra, para cada quadro, o vetor que o modelo devolveu, a classe escolhida e o tempo da
-previsão; uma vez por segundo, mostra a média das probabilidades dos últimos 2 s, que é também o que
-aparece no painel da janela:
+previsão; uma vez por segundo, mostra a média das probabilidades dos últimos 2 s. O painel da janela
+mostra essa média para as 3 saídas (alerta, sonolento e bocejo), cada uma com uma barra e a
+porcentagem, e, logo abaixo, o vetor do último quadro (`quadro: 0,998 0,001 0,001`):
 
 ```
 [rgb    3,645 s] saída [0,9965 0,0000 0,0035] → alerta (11 ms) | olhos abertos (EAR 0,27) · boca fechada (0,01) · cabeça frente
@@ -147,7 +148,7 @@ uv run python -m entrada video <seu-video.mp4> [--mostrar]
 
 | Opção | Padrão | Efeito |
 | --- | --- | --- |
-| `--camera` | menu (webcam), `rgb` (vídeo) | webcam: `rgb`, `ir` ou `todas` (repetível); vídeo: nome mostrado no terminal |
+| `--camera` | menu (webcam), `rgb` (vídeo) | webcam: nome do menu (`rgb`, `ir`, uma câmera detectada como `insta360-link-2`), dispositivo (`/dev/video4`) ou `todas` (repetível); vídeo: nome mostrado no terminal |
 | `--segundos` | sem limite | webcam: parar depois deste tempo |
 | `--sem-janela` | — | webcam: analisar sem abrir a janela |
 | `--sem-log` | — | mostrar só os eventos e as médias, sem uma linha por quadro |
@@ -219,8 +220,12 @@ tende a valer pouco.
 
 #### Câmeras
 
-Sem `--camera`, o comando `webcam` mostra um menu com as câmeras configuradas e a opção `todas`;
-responda com o número ou o nome, ou Enter para a padrão (`camera_padrao`, hoje `rgb`). Fora de um
+Sem `--camera`, o comando `webcam` mostra um menu com as câmeras configuradas, depois as outras
+câmeras ligadas ao computador (detectadas em `/sys/class/video4linux`, como uma webcam USB externa),
+e a opção `todas`; responda com o número ou o nome, ou Enter para a padrão (`camera_padrao`, hoje
+`rgb`). Uma câmera detectada ganha um nome tirado do driver (a Insta360 Link 2 vira
+`insta360-link-2`) e pede 640×480, ou o tamanho mais próximo que ela tiver; também dá para passar o
+dispositivo direto, como `--camera /dev/video4`. Fora de um
 terminal interativo, ele usa a padrão sem perguntar. As câmeras ficam em `config/analise.json` pelo
 caminho fixo em `/dev/v4l/by-path/`, e não pelo número (`/dev/video0`), que pode mudar ao reiniciar
 ou reconectar; em outro computador, veja os caminhos com `ls -l /dev/v4l/by-path/`.
