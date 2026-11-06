@@ -42,5 +42,11 @@ jobs:
         with:
           node-version: "22"  # o extrator pelo navegador usa o WebSocket global (Node 22+)
 
+      # O extrator pelo navegador carrega o modelo antes de abrir o vídeo (o mesmo de scripts/preparar.sh)
+      - name: Baixar o modelo do Face Landmarker
+        run: |
+          mkdir -p modelos
+          curl -sSfL -o modelos/face_landmarker.task             https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task
+
       - name: Executar testes JavaScript
         run: npm test
