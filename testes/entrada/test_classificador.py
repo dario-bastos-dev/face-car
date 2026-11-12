@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from entrada.classificador import (ClassificadorSonolencia, MediaTemporal, Resultado, formatar,
-                                   formatar_saida, preparar)
+from entrada.classificador import (ClassificadorSonolencia, MediaTemporal, Resultado,
+                                   conferir_classes, formatar, formatar_saida, preparar)
 from entrada.contexto import RAIZ
 
 CLASSES = ["sonolento", "alerta"]
@@ -77,6 +77,44 @@ def test_configuracao_segue_a_ordem_de_saida_do_modelo():
     from entrada.contexto import carregar_config
 
     assert carregar_config()["classificador"]["classes"] == ["alerta", "sonolento", "bocejo"]
+
+
+def escrever_classes_do_treino(pasta, classes):
+    """Cria o par que o notebook de treino salva: o .keras e o .classes.json ao lado."""
+    import json
+
+    modelo = pasta / "cnn_sonolencia.keras"
+    modelo.write_bytes(b"")
+    (pasta / "cnn_sonolencia.classes.json").write_text(
+        json.dumps({"classes": classes}), encoding="utf-8")
+    return modelo
+
+
+def test_conferir_classes_aceita_a_mesma_ordem_do_treino(tmp_path):
+    modelo = escrever_classes_do_treino(tmp_path, ["alerta", "sonolento", "bocejo"])
+    conferir_classes(modelo, ["alerta", "sonolento", "bocejo"])
+
+
+def test_conferir_classes_recusa_ordem_diferente_da_do_treino(tmp_path):
+    # Foi o que aconteceu com o modelo de 2 classes: a configuração ficou invertida e o
+    # rosto acordado saía como "sonolento 100%".
+    modelo = escrever_classes_do_treino(tmp_path, ["alerta", "sonolento", "bocejo"])
+    with pytest.raises(ValueError, match=r"alerta, sonolento, bocejo.*sonolento, alerta, bocejo"):
+        conferir_classes(modelo, ["sonolento", "alerta", "bocejo"])
+
+
+def test_conferir_classes_sem_o_arquivo_do_treino_segue_a_configuracao(tmp_path):
+    # Modelos antigos (como o FaceCar_CNN_V2) não têm o .classes.json.
+    modelo = tmp_path / "cnn_sonolencia.keras"
+    modelo.write_bytes(b"")
+    conferir_classes(modelo, ["alerta", "sonolento", "bocejo"])
+
+
+def test_carregar_confere_as_classes_antes_de_abrir_o_modelo(tmp_path):
+    # Falha rápido, sem gastar os segundos de importar o Keras.
+    modelo = escrever_classes_do_treino(tmp_path, ["alerta", "sonolento", "bocejo"])
+    with pytest.raises(ValueError, match="ordem das classes"):
+        ClassificadorSonolencia.carregar(modelo, ["bocejo", "sonolento", "alerta"])
 
 
 class ModeloTresSaidas(ModeloFalso):

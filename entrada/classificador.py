@@ -5,6 +5,7 @@ tamanho de entrada dele (160x160 no FaceCar_CNN_V2), com os pixels de 0 a 255: a
 normalização é uma camada dentro dele. O tamanho é lido do próprio modelo.
 """
 
+import json
 import time
 from collections import deque
 from dataclasses import dataclass
@@ -28,6 +29,23 @@ class Resultado:
     probabilidades: dict
     saida: list | None = None
     ms: float | None = None
+
+
+def conferir_classes(caminho_modelo, classes: list) -> None:
+    """Confere `classes` com a ordem salva pelo treino em <modelo>.classes.json.
+
+    O notebook de treino (treinamento/modelo.ipynb) grava esse arquivo ao lado do .keras.
+    Sem ele (modelos antigos), vale a configuração.
+    """
+    caminho = Path(caminho_modelo)
+    arquivo = caminho.with_name(f"{caminho.stem}.classes.json")
+    if not arquivo.is_file():
+        return
+    do_treino = json.loads(arquivo.read_text(encoding="utf-8"))["classes"]
+    if list(classes) != list(do_treino):
+        raise ValueError(f"a ordem das classes não bate com a do treino: o modelo devolve "
+                         f"[{', '.join(do_treino)}] ({arquivo.name}), mas a configuração diz "
+                         f"[{', '.join(classes)}]")
 
 
 def preparar(quadro_bgr, tamanho: int) -> np.ndarray:
@@ -92,6 +110,7 @@ class ClassificadorSonolencia:
         caminho = Path(caminho)
         if not caminho.is_file():
             raise FileNotFoundError(f"Modelo não encontrado: {caminho}")
+        conferir_classes(caminho, classes)
         import keras  # carregado só quando o modelo é usado: leva alguns segundos
 
         classificador = cls(classes, keras.models.load_model(caminho, compile=False))

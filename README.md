@@ -212,7 +212,9 @@ lê o tamanho do próprio modelo e prepara a imagem do mesmo jeito, antes de qua
 janela. O modelo devolve 3 probabilidades, nesta ordem: `alerta` (0), `sonolento` (1) e
 `bocejo` (2), com valores de 0 a 1 que somam 1 (`classificador.classes` em `config/analise.json`;
 o programa confere que o número de classes bate com o de saídas e que cada previsão soma 1, e
-termina com erro se não for assim), que também define a janela da média
+termina com erro se não for assim; se houver um `cnn_sonolencia.classes.json` ao lado do modelo,
+salvo pelo notebook de treino em `treinamento/modelo.ipynb`, a ordem de `classificador.classes`
+também precisa ser a dele), que também define a janela da média
 (`janela_ms`) e o intervalo das linhas no terminal (`intervalo_terminal_ms`). O arquivo fica fora
 do git (cerca de 10 MB) e deve estar na raiz do projeto; sem ele, o comando termina com erro. A câmera
 infravermelha entrega imagens em cinza, diferentes das coloridas do treino, então o resultado dela
