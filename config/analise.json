@@ -25,7 +25,7 @@
     }
   ],
   "classificador": {
-    "modelo": "cnn_sonolencia.keras",
+    "modelo": "modelo/cnn_sonolencia.keras",
     "classes": [
       "alerta",
       "sonolento",

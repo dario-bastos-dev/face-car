@@ -15,11 +15,11 @@ from test_fontes import CameraFalsa
 
 VIDEO = RAIZ / "testes" / "dados" / "retrato.mp4"
 MODELO = RAIZ / "modelos" / "face_landmarker.task"
-MODELO_IA = RAIZ / "cnn_sonolencia.keras"
+MODELO_IA = RAIZ / "modelo" / "cnn_sonolencia.keras"
 tem_dados = pytest.mark.skipif(not (VIDEO.exists() and MODELO.exists()),
                                reason="rode scripts/preparar.sh")
 tem_modelo_ia = pytest.mark.skipif(not (MODELO_IA.exists() and VIDEO.exists() and MODELO.exists()),
-                                   reason="precisa de cnn_sonolencia.keras e de scripts/preparar.sh")
+                                   reason="precisa de modelo/cnn_sonolencia.keras e de scripts/preparar.sh")
 
 
 class ClassificadorFalso:

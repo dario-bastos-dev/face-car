@@ -213,7 +213,7 @@ def _carregar_classificador(config: dict) -> ClassificadorSonolencia:
     caminho = RAIZ / cfg["modelo"]
     if not caminho.is_file():
         raise FileNotFoundError(f"modelo não encontrado: {caminho} (o .keras fica fora do git; "
-                                f"coloque-o na raiz do projeto)")
+                                f"coloque-o em modelo/ ou treine com treinamento/modelo.ipynb)")
     print(f"Carregando o modelo {caminho.name}...")
     return ClassificadorSonolencia.carregar(caminho, cfg["classes"])
 

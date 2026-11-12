@@ -174,7 +174,7 @@ class ServicoCnn:
             if carregar is None:
                 if not self.caminho.is_file():
                     raise FileNotFoundError(f"modelo não encontrado: {self.caminho.name} (o .keras "
-                                            "fica fora do git; coloque-o na raiz do projeto)")
+                                            "fica fora do git; coloque-o em modelo/)")
                 print(f"[CNN] Carregando {self.caminho.name}...")
                 carregar = ClassificadorSonolencia.carregar
             self.classificador = carregar(self.caminho, self.config["classificador"]["classes"])

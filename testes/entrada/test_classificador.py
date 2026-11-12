@@ -57,10 +57,21 @@ def test_formatar_em_portugues():
     assert formatar(r) == "sonolento 91,3%  (alerta 8,7%)"
 
 
-MODELO_REAL = RAIZ / "cnn_sonolencia.keras"
+def caminho_do_modelo():
+    from entrada.contexto import carregar_config
+
+    return RAIZ / carregar_config()["classificador"]["modelo"]
 
 
-@pytest.mark.skipif(not MODELO_REAL.exists(), reason="cnn_sonolencia.keras não está na raiz")
+MODELO_REAL = caminho_do_modelo()
+
+
+def test_modelo_fica_na_pasta_modelo_onde_o_treino_salva():
+    # treinamento/modelo.ipynb grava o .keras e o .classes.json em modelo/.
+    assert MODELO_REAL == RAIZ / "modelo" / "cnn_sonolencia.keras"
+
+
+@pytest.mark.skipif(not MODELO_REAL.exists(), reason="modelo/cnn_sonolencia.keras não existe")
 def test_modelo_real_carrega_com_as_classes_da_configuracao_e_preve():
     from entrada.contexto import carregar_config
 

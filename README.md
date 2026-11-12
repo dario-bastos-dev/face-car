@@ -8,7 +8,7 @@ da Parte 1 (`cnn_sonolencia.keras`), e o estimador e a política da Parte 2 tran
 resultado em mensagens `sinal.v1`, que comandam o veículo simulado.
 
 ```bash
-pip install websockets           # o servidor também precisa do TensorFlow (uv sync) e do modelo na raiz
+pip install websockets           # o servidor também precisa do TensorFlow (uv sync) e do modelo em modelo/
 python simulador/servidor.py     # http://localhost:8000/simulador/  (ou simulador\INICIAR_SIMULADOR_WINDOWS.bat)
 ```
 
@@ -206,13 +206,14 @@ estar no grupo da serial (`uucp` no Arch, `dialout` no Debian e no Ubuntu); veja
 
 #### O modelo
 
-O modelo atual é o FaceCar_CNN_V2 (MobileNetV2), treinado com o quadro inteiro em RGB,
+O modelo atual (em `modelo/`) é o FaceCar_CNN_V2 (MobileNetV2), treinado com o quadro inteiro em RGB,
 redimensionado para 160×160, com os pixels de 0 a 255 (a normalização é uma camada dele); a análise
 lê o tamanho do próprio modelo e prepara a imagem do mesmo jeito, antes de qualquer desenho na
 janela. O modelo devolve 3 probabilidades, nesta ordem: `alerta` (0), `sonolento` (1) e
 `bocejo` (2), com valores de 0 a 1 que somam 1 (`classificador.classes` em `config/analise.json`;
 o programa confere que o número de classes bate com o de saídas e que cada previsão soma 1, e
-termina com erro se não for assim; se houver um `cnn_sonolencia.classes.json` ao lado do modelo,
+termina com erro se não for assim; se houver um `cnn_sonolencia.classes.json` ao lado do modelo
+(em `modelo/`),
 salvo pelo notebook de treino em `treinamento/modelo.ipynb`, a ordem de `classificador.classes`
 também precisa ser a dele), que também define a janela da média
 (`janela_ms`) e o intervalo das linhas no terminal (`intervalo_terminal_ms`). O arquivo fica fora
@@ -324,17 +325,20 @@ Sem o `preparar.sh`, os testes que usam o MediaPipe são pulados. Os casos de
 
 ## Treinamento
 
-O modelo de imagens usado na análise, `cnn_sonolencia.keras`, fica fora do git por ser grande
-(cerca de 10 MB) e deve ser colocado na raiz do projeto. O simulador usa o mesmo arquivo pelo
-servidor (`simulador/servidor.py`).
+O modelo de imagens usado na análise, `modelo/cnn_sonolencia.keras` (`classificador.modelo` em
+`config/analise.json`), fica fora do git por ser grande (cerca de 10 MB). O simulador usa o mesmo
+arquivo pelo servidor (`simulador/servidor.py`).
 
 O notebook `treinamento/modelo.ipynb` treina esse modelo com as fotos e os vídeos de
 `treinamento/dataset/`, uma subpasta por classe (`alerta/`, `sonolento/`, `bocejo/`). Dos vídeos
 ele tira alguns quadros por segundo, guardados em `treinamento/quadros/`, e todos os quadros de um
 vídeo ficam no mesmo conjunto (treino, validação ou teste). Roda no computador, no VS Code com o
 kernel do `.venv` (`uv sync` instala o `ipykernel`), ou no Colab, com a pasta `dataset` no Drive.
-O resultado vai para `treinamento/resultados/`: copie `cnn_sonolencia.keras` e
-`cnn_sonolencia.classes.json` para a raiz. Dataset, quadros e resultados ficam fora do git.
+No fim, grava `cnn_sonolencia.keras` e `cnn_sonolencia.classes.json` direto em `modelo/`, e o
+modelo anterior vai para `modelo/anteriores/<data e hora>/`. Os gráficos ficam em
+`treinamento/resultados/`. A rede base é a MobileNetV3Large a 224×224 (~29 ms por quadro na
+análise, sem GPU), com aumento de dados, suavização de rótulos, escolha da melhor época pela F1
+macro e ajuste fino. Dataset, quadros, resultados e `modelo/` ficam fora do git.
 
 ## Estrutura
 
