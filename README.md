@@ -330,9 +330,19 @@ O modelo de imagens usado na análise, `modelo/cnn_sonolencia.keras` (`classific
 arquivo pelo servidor (`simulador/servidor.py`).
 
 O notebook `treinamento/modelo.ipynb` treina esse modelo com as fotos e os vídeos de
-`treinamento/dataset/`, uma subpasta por classe (`alerta/`, `sonolento/`, `bocejo/`). Dos vídeos
-ele tira alguns quadros por segundo, guardados em `treinamento/quadros/`, e todos os quadros de um
-vídeo ficam no mesmo conjunto (treino, validação ou teste). Roda no computador, no VS Code com o
+`treinamento/dataset/`, uma subpasta por classe (`alerta/`, `sonolento/`, `bocejo/`). O nome de
+cada arquivo começa pela pessoa (`rldd07_10.mp4`, `proprio1_bocejo_0004.jpg`), e a divisão em
+treino, validação e teste é por pessoa: quem está no teste nunca aparece no treino. Dos vídeos ele
+tira alguns quadros por segundo, guardados em `treinamento/quadros/`.
+
+Os dados de hoje são os vídeos do UTA-RLDD (54 pessoas; o vídeo `0` vira alerta e o `10`,
+sonolento) e as fotos próprias de 2 pessoas. `treinamento/organizar_dataset.py` os pôs nas pastas
+de classe a partir das pastas originais (`Fold*_part*/` e `data_set_propio/`). Ele só move e
+renomeia, anota tudo em `dataset/organizacao.csv` e desfaz com `--desfazer`. Ficam em
+`dataset/_fora_do_treino/` os vídeos `5` (pouco alerta) do RLDD e 34 fotos cujo rosto contradiz a
+pasta, achadas pela abertura dos olhos e da boca.
+
+Roda no computador, no VS Code com o
 kernel do `.venv` (`uv sync` instala o `ipykernel`), ou no Colab, com a pasta `dataset` no Drive.
 No fim, grava `cnn_sonolencia.keras` e `cnn_sonolencia.classes.json` direto em `modelo/`, e o
 modelo anterior vai para `modelo/anteriores/<data e hora>/`. Os gráficos ficam em
@@ -353,5 +363,5 @@ exemplos/        dados sintéticos da Parte 2
 docs/            guias das Partes 2 e 3
 scripts/         preparação, servidor local e extração pelo navegador
 testes/          casos compartilhados, testes Python (entrada/, estimador/) e JS (js/)
-treinamento/     notebook do modelo de imagens (modelo.ipynb)
+treinamento/     notebook do modelo de imagens (modelo.ipynb) e organização do dataset
 ```
