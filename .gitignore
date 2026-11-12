@@ -11,4 +11,6 @@ detalhes/
 /treinamento/resultados/*
 /treinamento/resultados_cnn/*
 /treinamento/dados/reais/
+/treinamento/dataset
+/treinamento/quadros
 *.keras

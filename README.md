@@ -324,9 +324,17 @@ Sem o `preparar.sh`, os testes que usam o MediaPipe são pulados. Os casos de
 
 ## Treinamento
 
-O treinamento que ficava em `treinamento/` saiu do repositório. O modelo de imagens usado na
-análise, `cnn_sonolencia.keras`, fica fora do git por ser grande (cerca de 10 MB) e deve ser colocado na
-raiz do projeto. O simulador usa o mesmo arquivo pelo servidor (`simulador/servidor.py`).
+O modelo de imagens usado na análise, `cnn_sonolencia.keras`, fica fora do git por ser grande
+(cerca de 10 MB) e deve ser colocado na raiz do projeto. O simulador usa o mesmo arquivo pelo
+servidor (`simulador/servidor.py`).
+
+O notebook `treinamento/modelo.ipynb` treina esse modelo com as fotos e os vídeos de
+`treinamento/dataset/`, uma subpasta por classe (`alerta/`, `sonolento/`, `bocejo/`). Dos vídeos
+ele tira alguns quadros por segundo, guardados em `treinamento/quadros/`, e todos os quadros de um
+vídeo ficam no mesmo conjunto (treino, validação ou teste). Roda no computador, no VS Code com o
+kernel do `.venv` (`uv sync` instala o `ipykernel`), ou no Colab, com a pasta `dataset` no Drive.
+O resultado vai para `treinamento/resultados/`: copie `cnn_sonolencia.keras` e
+`cnn_sonolencia.classes.json` para a raiz. Dataset, quadros e resultados ficam fora do git.
 
 ## Estrutura
 
