@@ -21,9 +21,12 @@ import { estimar, validarConfig } from "../../demo-navegador/estimador.js";
 import { estadoInicial, transicionar } from "../../demo-navegador/politica.js";
 import { estadoEmissorInicial, emitir } from "../../demo-navegador/mensagens.js";
 import { MonitorRosto, direcaoDaCabeca, olharDaIris, olhos, rotuloDaCabeca, rotuloDoOlhar } from "./rosto.js";
+import { MonitorHibrido } from "./monitor-hibrido.js";
+import { conectarAvisoHibrido } from "./aviso-hibrido.js";
 
 const V = window.VIGIA;
 const $ = (id) => document.getElementById(id);
+conectarAvisoHibrido(V, $("camWarning"));
 const WASM = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.0/wasm";
 const BUNDLE_CJS = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.0/vision_bundle.cjs"; // para o worker
 const LARGURA_MAX = 480;   // quadro mandado ao worker: o MediaPipe (256 px) reduz bem mais que isso
@@ -56,7 +59,7 @@ function opcoesMediapipe() {
 }
 function criarWorker(modelo) {
   return new Promise((ok, falha) => {
-    const w = new Worker(new URL("./rosto-worker.js?v=0.9.122", import.meta.url));
+    const w = new Worker(new URL("./rosto-worker.js?v=0.9.123", import.meta.url));
     const fim = (erro) => { clearTimeout(limite); w.onmessage = w.onerror = null; if (erro) { w.terminate(); falha(erro); } else ok(w); };
     const limite = setTimeout(() => fim(new Error("o worker não respondeu")), 60000);
     w.onmessage = (e) => {
@@ -88,7 +91,8 @@ async function prepararLandmarker() {
 
 // Estado da sessão do scanner
 const S = { ativo: false, visivel: true, t0: 0, ultimoT: -1, quadro: 0, calc: null, historico: [], linhas: [],
-  estado: null, emissor: null, respondeu: false, timer: null, sessao: "", ultimo: null, monitor: null, piscadas: 0 };
+  estado: null, emissor: null, respondeu: false, timer: null, sessao: "", ultimo: null, monitor: null,
+  monitorHibrido: null, piscadas: 0 };
 const RETENCAO = cfgEstimador.janela_s * 1000 + cfgEstimador.min_fechamento_ms + cfgEstimador.max_intervalo_ms;
 const agora = () => Math.round(performance.now() - S.t0); // relógio monotônico da sessão (ms)
 
@@ -150,11 +154,14 @@ function analisar(faceLandmarks, matrizes, vw, vh, t, captura) {
   // olhos, boca e cabeça pela geometria, com os limiares de config/analise.json
   const ear = registro.ear_esq != null && registro.ear_dir != null ? (registro.ear_esq + registro.ear_dir) / 2 : null;
   const rosto = S.monitor.registrar(t, pts ? ear : null, pts ? registro.abertura_boca : null, matriz ? rotuloDaCabeca(matriz) : null);
+  const hibrido = S.monitorHibrido.registrar(t, Boolean(pts), ear);
+  for (const evento of hibrido.eventos) V.log("Monitor híbrido: " + evento, "alert");
+  V.emit("monitorHibrido", { t_ms: t, ...hibrido });
   for (const evento of rosto.eventos) {
     if (evento.startsWith("piscada")) S.piscadas++; // piscadas são normais: só contadas
     else V.log("Rosto: " + evento, "monitor");
   }
-  S.ultimo = { ...S.ultimo, registro, pontos: normalizados, matriz, abertura: abertura(registro), rosto,
+  S.ultimo = { ...S.ultimo, registro, pontos: normalizados, matriz, abertura: abertura(registro), rosto, hibrido,
     olhar: pts ? rotuloDoOlhar(pts, indices) : null, piscadas: S.piscadas,
     evento: rosto.eventos.length ? { texto: rosto.eventos.at(-1), t } : S.ultimo?.evento };
 }
@@ -212,7 +219,7 @@ async function iniciar(visivel = true) {
   Object.assign(S, { ativo: true, t0: performance.now(), ultimoT: -1, quadro: 0, historico: [], linhas: [],
     calc: new CalculadoraMetricas(cfgExtrator.confianca, indices), estado: estadoInicial(),
     sessao: "pagina-" + Date.now().toString(36), respondeu: false, ultimo: null,
-    monitor: new MonitorRosto(cfgAnalise.rosto), piscadas: 0 });
+    monitor: new MonitorRosto(cfgAnalise.rosto), monitorHibrido: new MonitorHibrido(cfgAnalise.rosto), piscadas: 0 });
   S.emissor = estadoEmissorInicial(S.sessao);
   V.sinal.abrirCanal("ia", S.sessao);
   laco();
@@ -272,6 +279,7 @@ V.ia = {
   get ultimo() { return S.ultimo; }, get sessao() { return S.sessao; }, indices, limiares: cfgAnalise.rosto,
   get rostoVisivel() { return !!S.ultimo?.registro?.rosto_visivel; }, // cnn.js só analisa com o motorista
   geo: { direcaoDaCabeca, olharDaIris, olhos }, // para o desenho em driver-monitor.js (script clássico)
+  get monitoramentoHibrido() { return S.ultimo?.hibrido ?? null; },
   iniciar, parar, mostrar: () => alternarVisivel(true), ocultar: () => alternarVisivel(false),
   responder: () => { S.respondeu = true; },
   csv: () => [cabecalhoCsv(contrato), ...S.linhas].join("\n") + "\n",

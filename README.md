@@ -218,6 +218,20 @@ do git (cerca de 10 MB) e deve estar na raiz do projeto; sem ele, o comando term
 infravermelha entrega imagens em cinza, diferentes das coloridas do treino, então o resultado dela
 tende a valer pouco.
 
+#### CNN auxiliar de olhos V3 (experimental)
+
+Com `cnn_olhos_v3.keras` na raiz, o servidor carrega a V3 à parte e registra, em modo diagnóstico,
+a probabilidade de olhos fechados, a decisão binária (limiar 0,5) e o EAR do MediaPipe junto das
+probabilidades instantâneas e médias da V2. Para a V3, o servidor usa a cascata
+`simulador/haarcascade_frontalface_default.xml` e a margem de 8% do treinamento; o recorte é RGB
+160×160 em pixels 0–255 e a normalização permanece interna. O recorte da V2 e o MediaPipe não são
+alterados. Se o Haar não encontrar rosto, a V3 não produz leitura naquele quadro. Ela é apenas
+observacional e não participa dos alertas.
+
+Para observar as três leituras, inicie `python simulador/servidor.py --diagnostico-cnn` e abra
+`http://localhost:8000/simulador/?cnnModo=rosto`. Os registros `[CNN_DIAG]` aparecem no terminal
+do servidor. Se a V3 falhar ao carregar, a V2 continua funcionando normalmente.
+
 #### Câmeras
 
 Sem `--camera`, o comando `webcam` mostra um menu com as câmeras configuradas, depois as outras
