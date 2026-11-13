@@ -7,7 +7,7 @@ const V = window.VIGIA;
 const { state, world, env, clamp } = V;
 
 const A = V.audio = { enabled: false };
-let ctx, master, bus = {}, engine, road, wind, ambience, noiseBuf;
+let ctx, master, bus = {}, engine, road, wind, ambience, noiseBuf, pneu;
 
 /* Buzinas gravadas (assets/sons). Trechos em segundos, medidos pelo envelope de cada arquivo:
  *  classica   buzina comum de carro (~1,7 kHz): toque curto 0,05-0,22, médio 0,7-1,2, longo 1,8-2,9
@@ -83,6 +83,19 @@ function buildGraph() {
   // rolagem dos pneus no asfalto
   road = { src: loopNoise(), lp: filter('lowpass', 500), g: gainNode(0) };
   road.src.connect(road.lp).connect(road.g).connect(bus.drive);
+  // pneus cantando (frenagem brusca): duas camadas da mesma amostra procedural (veja
+  // guinchoPneu), defasadas e em tons um pouco diferentes, como dois pneus arrastando juntos
+  const buf = guinchoPneu();
+  pneu = { g: gainNode(0), hp: filter('highpass', 700, .7), pico: ctx.createBiquadFilter(), camadas: [] };
+  pneu.pico.type = 'peaking'; pneu.pico.frequency.value = 2400; pneu.pico.Q.value = 1.2; pneu.pico.gain.value = 5;
+  [[1, .6, 0, -.25], [1.19, .45, 1.37, .25]].forEach(([tom, vol, ini, pan]) => {
+    const src = ctx.createBufferSource(), g = gainNode(vol), pn = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    src.buffer = buf; src.loop = true; src.start(0, ini);
+    if (pn) pn.pan.value = pan;
+    src.connect(g); (pn ? g.connect(pn) : g).connect(pneu.hp);
+    pneu.camadas.push({ src, tom });
+  });
+  pneu.hp.connect(pneu.pico).connect(pneu.g).connect(bus.drive);
   // vento na carroceria
   wind = { src: loopNoise(), bp: filter('bandpass', 900, .4), g: gainNode(0) };
   wind.src.connect(wind.bp).connect(wind.g).connect(bus.drive);
@@ -172,7 +185,8 @@ function siren() {
 const buzinadas = [];
 let ultimaBuzinada = -1e9;
 function buzinar(t) {
-  const pesado = !!V.VEHICLE_TYPES[t.kind]?.heavy, nome = pesado ? 'grave' : Math.random() < .5 ? 'dois' : 'classica';
+  // t.toques = 2: exatamente duas buzinadas curtas (quem espera atrás do ego parado)
+  const pesado = !!V.VEHICLE_TYPES[t.kind]?.heavy, nome = pesado ? 'grave' : t.toques === 2 ? 'classica' : Math.random() < .5 ? 'dois' : 'classica';
   const toques = nome === 'dois' ? [{ inicio: 0, dur: .9 }]
     : nome === 'grave' ? [{ inicio: .05, dur: .22 }, { inicio: .05, dur: .22, delay: .32 }]
     : [{ inicio: .05, dur: .18 }, { inicio: .05, dur: .18, delay: .28 }];
@@ -255,7 +269,9 @@ function update(dt) {
     ramp(engine.diesel.g.gain, 0, .1);
   }
   ramp(engine.rumbleGain.gain, truck ? .55 : .2, .3);
+  cantarPneus(paused, sp, truck);
   limitador(paused);
+  buzinaLaco('contra', world.contraAlerta, paused);
   desacelAoAcelerar();
   // rolagem dos pneus: desligada (era um som contínuo de movimento o tempo todo)
   ramp(road.g.gain, 0, .25);
@@ -273,6 +289,54 @@ function update(dt) {
   if (!paused && city) { cityTimer -= dt; if (cityTimer < 0) { cityTimer = 6 + Math.random() * 10; distantHorn(); } }
   ramp(master.gain, state.volume, .1);
   atualizarBuzinadas();
+}
+
+/* Guincho de pneu (borracha travada arrastando no asfalto), gerado uma vez em 3 s de laço:
+ *  - um tom agudo (~1,25 kHz) com harmônicos, que nunca fica parado: a afinação desvia devagar e
+ *    de forma irregular (ruído suave, não um vibrato regular) e treme rápido por cima;
+ *  - aspereza do "agarra e solta" da borracha: o volume pulsa irregularmente a ~70-140 Hz;
+ *  - um chiado de arrasto (ruído) por baixo, mais forte quando o tom enfraquece.
+ * O fim do laço é misturado ao começo (sem estalo na emenda). */
+function guinchoPneu() {
+  const sr = ctx.sampleRate, dur = 3, X = Math.round(sr * .25), N = Math.round(sr * dur);
+  const tot = N + X, d = new Float32Array(tot);
+  // ruído suave: valores aleatórios em pontos espaçados, interpolados (cosseno)
+  const suave = (taxa, seed) => {
+    const n = Math.ceil((dur + .3) * taxa) + 2, v = new Float32Array(n);
+    let s = seed; for (let i = 0; i < n; i++) { s = (s * 1664525 + 1013904223) >>> 0; v[i] = s / 2147483648 - 1; }
+    return t => { const x = t * taxa, i = Math.floor(x), f = x - i, w = (1 - Math.cos(f * Math.PI)) / 2; return v[i] * (1 - w) + v[i + 1] * w; };
+  };
+  const deriva = suave(3.5, 11), treme = suave(28, 23), aspero = suave(110, 37), corpo = suave(1.6, 41);
+  const harm = [1, .55, .38, .22, .12, .07];
+  let fase = 0, ruido = 0, max = 0;
+  for (let i = 0; i < tot; i++) {
+    const t = i / sr;
+    const f = 1250 * (1 + .055 * deriva(t) + .018 * treme(t));
+    fase += 2 * Math.PI * f / sr;
+    let tom = 0;
+    for (let h = 0; h < harm.length; h++) tom += harm[h] * Math.sin(fase * (h + 1) + h * .7);
+    const rugo = .62 + .38 * aspero(t), forca = .8 + .2 * corpo(t);
+    ruido = ruido * .6 + (Math.random() * 2 - 1) * .4; // chiado, um pouco abafado
+    d[i] = (tom * rugo + ruido * (.35 + .25 * (1 - rugo))) * forca;
+    max = Math.max(max, Math.abs(d[i]));
+  }
+  const b = ctx.createBuffer(1, N, sr), o = b.getChannelData(0);
+  for (let i = 0; i < N; i++) {
+    let v = d[i];
+    if (i < X) { const w = i / X; v = d[i] * w + d[N + i] * (1 - w); } // emenda do laço
+    o[i] = v / max;
+  }
+  return b;
+}
+/* Pneus cantando (world.cantando 0..1, calculado em core.js na frenagem brusca): entra rápido e
+ * some em ~0,1 s ao soltar o freio. O tom cai junto com a velocidade (no fim, um guincho mais
+ * grave antes de parar); o caminhão, pneus maiores, é mais grave. */
+function cantarPneus(paused, sp, truck) {
+  const k = paused ? 0 : world.cantando || 0;
+  const rate = (truck ? .66 : .84) + clamp(sp / 130, 0, 1) * (truck ? .16 : .26);
+  for (const { src, tom } of pneu.camadas) ramp(src.playbackRate, rate * tom, .12);
+  ramp(pneu.g.gain, k * (truck ? .2 : .24), k > (A.pneu || 0) ? .025 : .07);
+  A.pneu = k;
 }
 
 /* ---------- ligações com o núcleo ---------- */
@@ -445,7 +509,7 @@ V.on('volanteFrouxo', () => {
   tone(740, .22, 'sine', .14); tone(990, .3, 'sine', .13, .26);
   setTimeout(() => speak('Segure firme no volante.'), 650);
 });
-V.on('buzinaTrafego', t => { if (A.enabled && ctx && ctx.currentTime - ultimaBuzinada > 3) { ultimaBuzinada = ctx.currentTime; buzinar(t); } });
+V.on('buzinaTrafego', t => { if (A.enabled && ctx && (t.toques === 2 || ctx.currentTime - ultimaBuzinada > 3)) { ultimaBuzinada = ctx.currentTime; buzinar(t); } });
 V.on('blink', on => blink(on));
 // Buzina do motorista (centro do volante, tecla H): um único som, que toca enquanto o botão
 // estiver apertado. O toque longo de cada gravação (o mais estável) é repetido em laço:
@@ -473,6 +537,30 @@ function buzinaFim() {
   b.g.gain.setValueAtTime(1, t); b.g.gain.linearRampToValueAtTime(0, t + .06);
   b.src.stop(t + .08);
 }
+/* Buzina contínua do tráfego, em laço enquanto durar o motivo: quem vem de frente na contramão
+ * com o ego na faixa dele (world.contraAlerta). Mais alta quanto mais perto, vinda do lado dele. */
+const lacos = {};
+function buzinaLaco(chave, T, paused) {
+  if (paused) T = null;
+  let L = lacos[chave];
+  if (L && (!T || L.id !== T.id)) {
+    const t = ctx.currentTime; lacos[chave] = L = null;
+    const b = lacos['_' + chave]; delete lacos['_' + chave];
+    if (b) { b.g.gain.cancelScheduledValues(t); b.g.gain.setTargetAtTime(0, t, .03); b.src.stop(t + .2); }
+  }
+  if (!T) return;
+  if (!L) {
+    const b = BUZINA[V.VEHICLE_TYPES[T.kind]?.heavy ? 'truck' : 'car'], buf = buffers[b.nome];
+    if (!buf) return; // arquivo ainda não carregado
+    const t = ctx.currentTime, src = ctx.createBufferSource(), g = gainNode(0), p = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+    src.buffer = buf; src.loop = true; src.loopStart = b.laco[0]; src.loopEnd = b.laco[1];
+    src.connect(g); (p ? g.connect(p) : g).connect(bus.drive); src.start(t, b.inicio);
+    lacos[chave] = L = { id: T.id }; lacos['_' + chave] = { src, g, p };
+  }
+  const n = lacos['_' + chave], perto = clamp(1.15 - Math.abs(T.z) / 80, .4, 1);
+  ramp(n.g.gain, .85 * perto, .04);
+  if (n.p) ramp(n.p.pan, clamp((T.x - (V.ROAD.egoLaneX + world.egoOffset)) / 8, -.8, .8), .1);
+}
 V.on('buzinaInicio', buzinaInicio);
 V.on('buzinaFim', buzinaFim);
 V.on('horn', () => { buzinaInicio(); buzinaFim(); }); // buzinada curta
@@ -483,6 +571,6 @@ V.on('level', l => {
   else if (l === 'degraded') tone(440, .4, 'triangle', .08);
 });
 V.on('alarm', l => { if (l === 'attention') chime(false); else if (l === 'critical') chime(true); else siren(); });
-V.addRenderer(dt => update(dt));
+V.addRenderer(dt => update(dt), 'audio');
 A.enable = enable; A.disable = disable; A.speak = speak;
 })();

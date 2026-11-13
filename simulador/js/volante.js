@@ -71,7 +71,7 @@ function ler(dt) {
     C.fonte = teclas.size ? 'teclado' : 'nenhum';
     // teclado: o volante volta ao centro sozinho, como um volante com mola
     const alvo = (teclas.has('arrowright') ? 1 : 0) - (teclas.has('arrowleft') ? 1 : 0);
-    C.direcao += clamp(alvo - C.direcao, -2.2 * dt, 2.2 * dt);
+    C.direcao += clamp(alvo - C.direcao, -5 * dt, 5 * dt);
     if (!alvo && Math.abs(C.direcao) < .02) C.direcao = 0;
     C.pedal = (teclas.has('arrowup') ? 1 : 0) - (teclas.has('arrowdown') ? 1 : 0);
     C.buzina = teclas.has('b');

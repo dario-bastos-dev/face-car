@@ -42,6 +42,8 @@ svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-l
 
 .scene{position:relative;aspect-ratio:16/9;min-height:360px;max-height:calc(100vh - 230px);width:100%;overflow:hidden;background:#0b1a12}
 .view2d,.view3d,#glCanvas,.cabin-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+/* a tremida da tela (core.js) mexe no transform a cada quadro: camada própria, só composição */
+.view2d,.view3d{will-change:transform}
 .view3d{display:none}
 .scene.cockpit-view .view3d{display:block}
 .scene.cockpit-view .view2d{display:none}
@@ -434,3 +436,7 @@ kbd{font-family:inherit;font-size:9.5px;border:1px solid #33557e;border-bottom-w
 .aviso-volante{position:absolute;z-index:6;left:50%;top:22%;transform:translateX(-50%);padding:8px 16px;border-radius:12px;font:900 14px Inter,"Segoe UI",system-ui,sans-serif;letter-spacing:.06em;color:#fff;background:rgba(200,30,30,.82);border:1px solid #ff8a80;box-shadow:0 0 22px rgba(255,60,50,.55);pointer-events:none;animation:avisoVolante 1.6s ease-in-out infinite}
 @keyframes avisoVolante{50%{box-shadow:0 0 6px rgba(255,60,50,.3);opacity:.85}}
 @media (prefers-reduced-motion:reduce){.aviso-volante{animation:none}}
+/* troca de câmera animada (core.js, setViewMode): as duas vistas ficam montadas; a 2D por cima */
+.scene.trocando .view2d,.scene.trocando .view3d{display:block}
+.scene.trocando .view2d{z-index:1}
+.scene.trocando .ov2d,.scene.trocando .hud,.scene.trocando .hud-vehicle,.scene.trocando .cockpit-tag{visibility:hidden}

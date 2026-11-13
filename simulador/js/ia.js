@@ -26,7 +26,10 @@ const V = window.VIGIA;
 const $ = (id) => document.getElementById(id);
 const WASM = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.0/wasm";
 const BUNDLE_CJS = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.0/vision_bundle.cjs"; // para o worker
-const LARGURA_MAX = 640;   // quadro mandado ao worker: o MediaPipe reduz bem mais que isso
+const LARGURA_MAX = 480;   // quadro mandado ao worker: o MediaPipe (256 px) reduz bem mais que isso
+// Ritmo da detecção: 15 quadros/s (o estimador aceita até max_intervalo_ms = 250 ms entre quadros).
+// O MediaPipe usa a mesma placa de vídeo que a 3D; a 22/s ele roubava tempo da animação.
+const DETECCAO_MS = 66;
 // Baixado por scripts/preparar.sh; sem ele, usa a mesma versão publicada pelo Google.
 const MODELO_LOCAL = "../modelos/face_landmarker.task";
 const MODELO_REMOTO = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
@@ -53,7 +56,7 @@ function opcoesMediapipe() {
 }
 function criarWorker(modelo) {
   return new Promise((ok, falha) => {
-    const w = new Worker(new URL("./rosto-worker.js?v=0.9.75", import.meta.url));
+    const w = new Worker(new URL("./rosto-worker.js?v=0.9.122", import.meta.url));
     const fim = (erro) => { clearTimeout(limite); w.onmessage = w.onerror = null; if (erro) { w.terminate(); falha(erro); } else ok(w); };
     const limite = setTimeout(() => fim(new Error("o worker não respondeu")), 60000);
     w.onmessage = (e) => {
@@ -188,9 +191,8 @@ function laco() {
   if (worker) worker.onmessage = aoResultado;
   const passo = (now, meta) => {
     if (!S.ativo) return;
-    // até ~22 quadros/s (o estimador aceita intervalos de até max_intervalo_ms); com o worker,
-    // só manda outro quadro quando o anterior voltou
-    if (!(worker && pendente) && video.readyState >= 2 && video.videoWidth && now - processado >= 45) {
+    // até ~15 quadros/s (DETECCAO_MS); com o worker, só manda outro quadro quando o anterior voltou
+    if (!(worker && pendente) && video.readyState >= 2 && video.videoWidth && now - processado >= DETECCAO_MS) {
       processado = now;
       if (worker) mandarAoWorker(video, meta?.captureTime ?? now); else aoQuadro(video, meta?.captureTime ?? now);
     }
