@@ -365,6 +365,21 @@ mediana no vídeo alerta dela) e alerta sem piscada. Para compensar o descarte, 
 sonolentos rendem 300 quadros, e os alertas, 60. Foi o que faltou ao V4, que reconhecia o alerta
 mas pegava só 18% dos sonolentos de gente nova.
 
+O modelo tem de funcionar com gente que nunca viu. Contra a decoreba das pessoas do treino, cada
+pessoa entra com no máximo 60 imagens de cada classe (antes, quem tinha 250 quadros sonolentos
+pesava 4 vezes mais), o ajuste fino libera só 20% da base, há Dropout 0,5, decaimento dos pesos
+(AdamW) e mais aumento de dados (cor, desfoque, pedaços apagados e qualidade de JPEG). Para medir
+com gente nova sem depender de sorte, a validação cruzada treina 3 vezes, cada vez com um terço das
+pessoas no teste (18 pessoas novas por vez, contra 8), e dá a média:
+
+```bash
+uv run python -m treinamento.validacao_cruzada --perfil generico   # configuração atual (V7)
+uv run python -m treinamento.validacao_cruzada --perfil v6         # como o V6, para comparar
+```
+
+Cada dobra treina o modelo inteiro (~30 a 40 min sem GPU) e não mexe em `modelo/`; os resultados
+ficam em `treinamento/resultados/validacao_cruzada/`, e uma dobra já feita não roda de novo.
+
 Para aproximar o treino do uso, grave vídeos guiados nesta webcam, com e sem óculos:
 
 ```bash

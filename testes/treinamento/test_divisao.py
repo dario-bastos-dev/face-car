@@ -7,7 +7,8 @@ alerta e sonolenta no teste; o modelo aprendeu "camiseta amarela = bocejo".
 import numpy as np
 import pytest
 
-from treinamento.divisao import agrupar, pessoas_com_classe_que_o_treino_nao_viu
+from treinamento.divisao import (agrupar, limitar_por_pessoa, mover_para_o_treino,
+                                 pessoas_com_classe_que_o_treino_nao_viu)
 
 NOMES = ["alerta", "sonolento", "bocejo"]
 
@@ -79,3 +80,25 @@ def test_divisao_dos_blocos_nao_deixa_classe_sem_treino():
                        .split(todos, rotulos, grupos))
     assert pessoas_com_classe_que_o_treino_nao_viu(
         {"treino": todos[fica], "teste": todos[teste]}, pessoas, rotulos, NOMES) == []
+
+
+def test_limitar_por_pessoa_deixa_no_maximo_n_espalhadas_pelo_video():
+    # quem tem 250 quadros sonolentos não pode pesar 4x mais que quem tem 60: a rede decora a pessoa
+    caminhos, rotulos, pessoas = dataset([("a", "sonolento", 250), ("b", "sonolento", 20),
+                                          ("a", "bocejo", 100)])
+    indices = np.arange(len(caminhos))
+    ficam = limitar_por_pessoa(indices, pessoas, rotulos, caminhos, NOMES, {"sonolento": 60})
+    da_a = sorted(c for c in caminhos[ficam] if c.startswith("sonolento/a_"))
+    assert len(da_a) == 60 and da_a[0].endswith("_0000.jpg") and da_a[-1].endswith("_0249.jpg")
+    assert sum(c.startswith("sonolento/b_") for c in caminhos[ficam]) == 20
+    assert sum(c.startswith("bocejo/") for c in caminhos[ficam]) == 100   # classe sem teto
+
+
+def test_mover_para_o_treino_conserta_a_pessoa_sem_a_classe_no_treino():
+    caminhos, rotulos, pessoas = dataset([("p", "bocejo", 3), ("p", "alerta", 3), ("q", "alerta", 2)])
+    conjuntos = {"treino": np.array([0, 1, 2, 6]), "validação": np.array([7]), "teste": np.array([3, 4, 5])}
+    novos, movidos = mover_para_o_treino(conjuntos, pessoas, rotulos, NOMES)
+    assert sorted(novos["treino"].tolist()) == [0, 1, 2, 3, 4, 5, 6]
+    assert novos["teste"].tolist() == [] and novos["validação"].tolist() == [7]
+    assert movidos == ["p/alerta: 3 imagens do teste foram para o treino"]
+    assert pessoas_com_classe_que_o_treino_nao_viu(novos, pessoas, rotulos, NOMES) == []

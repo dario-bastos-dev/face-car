@@ -63,3 +63,54 @@ def pessoas_com_classe_que_o_treino_nao_viu(conjuntos: dict, pessoas, rotulos, n
                 problemas.append(f"{p}: '{nomes[r]}' {onde}, mas no treino só "
                                  f"{[nomes[c] for c in sorted(no_treino[p])]}")
     return problemas
+
+
+def mover_para_o_treino(conjuntos: dict, pessoas, rotulos, nomes):
+    """(conjuntos, movidos): as imagens que fariam `pessoas_com_classe_que_o_treino_nao_viu`
+    reclamar voltam para o treino.
+
+    Só acontece com quem está em blocos (fotos próprias e gravações), quando todos os blocos de
+    uma classe dela caem fora do treino. Mover é melhor do que recusar a divisão: na validação
+    cruzada, cada dobra sorteia blocos diferentes.
+    """
+    pessoas, rotulos = np.asarray(pessoas, dtype=object), np.asarray(rotulos)
+    treino = conjuntos["treino"]
+    no_treino = {(p, r) for p, r in zip(pessoas[treino], rotulos[treino])}
+    com_treino = set(pessoas[treino])
+    novos, movidos, extra = {}, [], []
+    for nome, idx in conjuntos.items():
+        if nome == "treino":
+            continue
+        sai = np.array([pessoas[i] in com_treino and (pessoas[i], rotulos[i]) not in no_treino
+                        for i in idx], dtype=bool)
+        for p, r in sorted({(pessoas[i], rotulos[i]) for i in idx[sai]}):
+            n = int(np.sum((pessoas[idx[sai]] == p) & (rotulos[idx[sai]] == r)))
+            onde = "da validação" if nome == "validação" else f"do {nome}"
+            movidos.append(f"{p}/{nomes[r]}: {n} imagens {onde} foram para o treino")
+        novos[nome] = idx[~sai]
+        extra.append(idx[sai])
+    novos["treino"] = np.concatenate([treino, *extra]).astype(treino.dtype)
+    return {nome: novos[nome] for nome in conjuntos}, movidos
+
+
+def limitar_por_pessoa(indices, pessoas, rotulos, caminhos, nomes, maximo: dict | None):
+    """Os `indices` com no máximo `maximo[classe]` imagens de cada pessoa em cada classe.
+
+    Ficam imagens espaçadas por igual, em ordem de nome (ao longo do vídeo), e não um trecho só.
+    Classe fora de `maximo` não tem teto. Sem isso, uma pessoa com 250 quadros sonolentos pesa
+    4 vezes mais que outra com 60, e a rede aprende a reconhecê-la.
+    """
+    indices = np.asarray(indices)
+    if not maximo:
+        return indices
+    pessoas, rotulos = np.asarray(pessoas, dtype=object), np.asarray(rotulos)
+    caminhos = np.asarray(caminhos)
+    ficam = []
+    for p, r in sorted({(pessoas[i], rotulos[i]) for i in indices}):
+        dela = indices[(pessoas[indices] == p) & (rotulos[indices] == r)]
+        dela = dela[np.argsort(caminhos[dela], kind="stable")]
+        teto = maximo.get(nomes[r])
+        if teto and len(dela) > teto:
+            dela = dela[np.linspace(0, len(dela) - 1, teto).round().astype(int)]
+        ficam.append(dela)
+    return np.sort(np.concatenate(ficam)) if ficam else indices[:0]
