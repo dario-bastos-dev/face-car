@@ -342,8 +342,19 @@ renomeia, anota tudo em `dataset/organizacao.csv` e desfaz com `--desfazer`. Fic
 `dataset/_fora_do_treino/` os vídeos `5` (pouco alerta) do RLDD e 34 fotos cujo rosto contradiz a
 pasta, achadas pela abertura dos olhos e da boca.
 
-Roda no computador, no VS Code com o
-kernel do `.venv` (`uv sync` instala o `ipykernel`), ou no Colab, com a pasta `dataset` no Drive.
+O bocejo só tem fotos de 2 pessoas, poucas para dividir por pessoa. Por
+isso, as fotos dele são repartidas em blocos de 15 fotos seguidas, e a nota do bocejo no teste fica
+otimista até haver bocejos de pelo menos 7 pessoas.
+
+Roda no computador, no VS Code com o kernel do `.venv` (`uv sync` instala o `ipykernel`), ou de
+uma vez, fora do editor, sem GPU em 1 a 2 horas:
+
+```bash
+nohup treinamento/treinar.sh > treinamento/resultados/treinar.log 2>&1 &
+tail -f treinamento/resultados/treino_fase1.csv   # uma linha por época (depois, treino_fase2.csv)
+```
+
+No Colab, a pasta `dataset` precisaria ir para o Drive, mas com os vídeos do RLDD são 101 GB.
 No fim, grava `cnn_sonolencia.keras` e `cnn_sonolencia.classes.json` direto em `modelo/`, e o
 modelo anterior vai para `modelo/anteriores/<data e hora>/`. Os gráficos ficam em
 `treinamento/resultados/`. A rede base é a MobileNetV3Large a 224×224 (~29 ms por quadro na
