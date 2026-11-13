@@ -143,21 +143,27 @@ class PressaoBaixa:
 
 
 class Fusao:
-    """Índice de sonolência de 0 a 1 a partir do modelo, do volante e da cabeça, com alerta.
+    """Índice de sonolência de 0 a 1 a partir do modelo, do volante e do rosto, com alerta.
 
     O índice é a probabilidade média de "sonolento" do modelo, mais `bonus_volante_frouxo`
-    com a pressão baixa por muito tempo e `bonus_cabeca_baixa` com a cabeça baixa por
-    muito tempo; não passa de 1. O alerta começa quando o índice chega a `limiar_alerta` e
+    com a pressão baixa por muito tempo, `bonus_cabeca_baixa` com a cabeça baixa por muito
+    tempo, `bonus_olhos_fechados` com os olhos fechados há mais de
+    rosto.olhos_fechados_alerta_ms e `bonus_bocejo` durante um bocejo; não passa de 1. Os
+    três últimos vêm da geometria do MediaPipe, que vê o olho fechado mesmo quando o modelo
+    não vê (com óculos, por exemplo). O alerta começa quando o índice chega a `limiar_alerta` e
     só termina abaixo de `limiar_fim_alerta`, para não ficar ligando e desligando perto do
     limiar.
     """
 
     def __init__(self, limiar_alerta: float, limiar_fim_alerta: float,
-                 bonus_volante_frouxo: float = 0.0, bonus_cabeca_baixa: float = 0.0):
+                 bonus_volante_frouxo: float = 0.0, bonus_cabeca_baixa: float = 0.0,
+                 bonus_olhos_fechados: float = 0.0, bonus_bocejo: float = 0.0):
         self.limiar_alerta = limiar_alerta
         self.limiar_fim_alerta = limiar_fim_alerta
         self.bonus_volante_frouxo = bonus_volante_frouxo
         self.bonus_cabeca_baixa = bonus_cabeca_baixa
+        self.bonus_olhos_fechados = bonus_olhos_fechados
+        self.bonus_bocejo = bonus_bocejo
         self.em_alerta = False
         self.indice = None
 
@@ -166,11 +172,17 @@ class Fusao:
         return (self.bonus_volante_frouxo if volante_frouxo else 0.0,
                 self.bonus_cabeca_baixa if cabeca_baixa else 0.0)
 
+    def bonus_rosto(self, olhos_fechados: bool = False, bocejo: bool = False) -> tuple[float, float]:
+        """(bônus dos olhos fechados, bônus do bocejo) aplicados nesse caso."""
+        return (self.bonus_olhos_fechados if olhos_fechados else 0.0,
+                self.bonus_bocejo if bocejo else 0.0)
+
     def atualizar(self, p_sono_modelo: float, volante_frouxo: bool = False,
-                  cabeca_baixa: bool = False):
+                  cabeca_baixa: bool = False, olhos_fechados: bool = False, bocejo: bool = False):
         """(índice, eventos de alerta) deste quadro."""
         volante, cabeca = self.bonus(volante_frouxo, cabeca_baixa)
-        indice = min(1.0, p_sono_modelo + volante + cabeca)
+        olhos, boca = self.bonus_rosto(olhos_fechados, bocejo)
+        indice = min(1.0, p_sono_modelo + volante + cabeca + olhos + boca)
         self.indice = indice
         eventos = []
         if not self.em_alerta and indice >= self.limiar_alerta:
@@ -180,6 +192,10 @@ class Fusao:
                 motivos.append(f"volante frouxo +{numero(volante, '.2f')}")
             if cabeca:
                 motivos.append(f"cabeça baixa +{numero(cabeca, '.2f')}")
+            if olhos:
+                motivos.append(f"olhos fechados +{numero(olhos, '.2f')}")
+            if boca:
+                motivos.append(f"bocejo +{numero(boca, '.2f')}")
             eventos.append(f"ALERTA de sonolência (índice {numero(indice, '.2f')}: "
                            f"{', '.join(motivos)})")
         elif self.em_alerta and indice < self.limiar_fim_alerta:

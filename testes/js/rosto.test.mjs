@@ -3,7 +3,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { MonitorRosto, angulosDaDirecao, descrever, direcaoDaCabeca, olharDaIris } from "../../simulador/js/rosto.js";
+import { MonitorRosto, angulosDaDirecao, bonusDoRosto, descrever, direcaoDaCabeca, olharDaIris } from "../../simulador/js/rosto.js";
 
 const INDICES = JSON.parse(readFileSync(new URL("../../entrada/pontos_rosto.json", import.meta.url), "utf8"));
 const perto = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} ≠ ${b}`);
@@ -60,4 +60,28 @@ test("bocejo só com a boca aberta por tempo suficiente; sem rosto recomeça", (
   m.registrar(4000, FECHADO, BOCA_FECHADA);
   assert.equal(m.registrar(4100, null, null).olhos, null);
   assert.deepEqual(m.registrar(4200, ABERTO, BOCA_FECHADA).eventos, []);
+});
+
+// Como entrada/rosto.py e a fusão de entrada/pressao.py: a geometria vê o olho fechado mesmo
+// quando o modelo não vê (com óculos), e o índice do simulador recebe os bônus.
+const FUSAO = JSON.parse(readFileSync(new URL("../../config/analise.json", import.meta.url), "utf8")).fusao;
+
+test("olhos fechados há muito tempo e bocejo no estado do rosto", () => {
+  const m = new MonitorRosto(LIMIARES);
+  const estados = Object.fromEntries(faixa(0, 1300, 100).map((t) => [t, m.registrar(t, FECHADO, BOCA_FECHADA, "frente")]));
+  assert.equal(estados[900].olhosFechadosProlongados, false);   // 0,9 s: ainda pode ser piscada longa
+  assert.equal(estados[1000].olhosFechadosProlongados, true);
+  assert.equal(m.registrar(1300, ABERTO, BOCA_FECHADA, "frente").olhosFechadosProlongados, false);
+  const boca = Object.fromEntries(faixa(2000, 4000, 100).map((t) => [t, m.registrar(t, ABERTO, BOCA_ABERTA, "frente")]));
+  assert.equal(boca[3400].bocejando, false);
+  assert.equal(boca[3500].bocejando, true);
+});
+
+test("bônus do rosto no índice do simulador (0 a 100), com os valores de config/analise.json", () => {
+  assert.deepEqual(bonusDoRosto({ olhosFechadosProlongados: true, bocejando: false }, FUSAO),
+    [Math.round(FUSAO.bonus_olhos_fechados * 100), 0]);
+  assert.deepEqual(bonusDoRosto({ olhosFechadosProlongados: false, bocejando: true }, FUSAO),
+    [0, Math.round(FUSAO.bonus_bocejo * 100)]);
+  assert.deepEqual(bonusDoRosto(null, FUSAO), [0, 0]);   // sem rosto, sem bônus
+  assert.ok(FUSAO.bonus_olhos_fechados * 100 >= 65);    // sozinho leva a ALERTA (limiar 65 da política)
 });

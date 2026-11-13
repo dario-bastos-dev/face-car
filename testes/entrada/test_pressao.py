@@ -76,6 +76,21 @@ def test_fusao_sem_bonus_usa_so_o_modelo_e_nao_passa_de_1():
     assert Fusao(**PARAMS).atualizar(0.95, True, True)[0] == pytest.approx(1.0)
 
 
+def test_fusao_olhos_fechados_prolongados_alertam_mesmo_com_o_modelo_em_duvida():
+    # Com óculos, o modelo viu "alerta" com os olhos fechados; o EAR do MediaPipe viu 0,04.
+    fusao = Fusao(**PARAMS, bonus_olhos_fechados=0.7, bonus_bocejo=0.35)
+    indice, eventos = fusao.atualizar(0.1, olhos_fechados=True)
+    assert indice == pytest.approx(0.8)
+    assert eventos == ["ALERTA de sonolência (índice 0,80: modelo 0,10, olhos fechados +0,70)"]
+
+
+def test_fusao_bocejo_soma_mas_sozinho_nao_alerta():
+    fusao = Fusao(**PARAMS, bonus_olhos_fechados=0.7, bonus_bocejo=0.35)
+    assert fusao.atualizar(0.1, bocejo=True) == (pytest.approx(0.45), [])
+    assert fusao.bonus_rosto(olhos_fechados=True, bocejo=True) == (0.7, 0.35)
+    assert fusao.bonus_rosto() == (0.0, 0.0)
+
+
 def test_fusao_tem_histerese():
     fusao = Fusao(**PARAMS)
     sequencia = [0.9, 0.5, 0.43, 0.12, 0.5]
@@ -100,7 +115,10 @@ def test_configuracao_do_sensor_e_da_fusao():
     config = carregar_config()
     assert config["sensor"]["limiar_sonolencia"] == 400
     assert config["sensor"]["pressao_baixa_alerta_ms"] == 15000
-    Fusao(**config["fusao"])
+    fusao = Fusao(**config["fusao"])
+    # olhos fechados por mais de 1 s alertam sozinhos, aqui e no simulador (ALERTA a partir de 65)
+    assert fusao.bonus_olhos_fechados >= max(fusao.limiar_alerta, 0.65)
+    assert fusao.bonus_bocejo < fusao.limiar_alerta   # bocejo sozinho não alerta
 
 
 # ---- pressão baixa por muito tempo -----------------------------------------

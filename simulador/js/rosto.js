@@ -89,9 +89,11 @@ export class MonitorRosto {
       return { olhos: null, ear: null, boca: null, abertura: null, cabeca: null, eventos: [] };
     }
     const [fechados, eo] = this.#olhos(tMs, ear), [aberta, eb] = this.#boca(tMs, abertura);
-    // bocejando: a boca segue aberta depois do evento "bocejo" (para o selo na tela)
+    // bocejando: a boca segue aberta depois do evento "bocejo"; os dois últimos campos somam
+    // bônus ao índice (bonusDoRosto), como olhos_fechados_prolongados e bocejando em entrada/rosto.py
+    const olhosFechadosProlongados = fechados && tMs - this.olhosDesde >= this.lim.olhos_fechados_alerta_ms;
     return { olhos: fechados ? "fechados" : "abertos", ear, boca: aberta ? "aberta" : "fechada",
-      abertura, cabeca, eventos: [...eo, ...eb], bocejando: aberta && this.alertouBocejo };
+      abertura, cabeca, eventos: [...eo, ...eb], bocejando: aberta && this.alertouBocejo, olhosFechadosProlongados };
   }
 
   #olhos(tMs, ear) {
@@ -118,4 +120,12 @@ export class MonitorRosto {
     this.alertouBocejo = true;
     return [true, ["bocejo"]];
   }
+}
+
+// [bônus dos olhos fechados, bônus do bocejo] no índice do simulador (0 a 100), com
+// fusao.bonus_olhos_fechados e fusao.bonus_bocejo de config/analise.json, como a fusão da análise
+// em Python (entrada/pressao.py). O MediaPipe vê o olho fechado mesmo quando o modelo não vê.
+export function bonusDoRosto(rosto, fusao) {
+  return [rosto?.olhosFechadosProlongados ? Math.round((fusao.bonus_olhos_fechados ?? 0) * 100) : 0,
+    rosto?.bocejando ? Math.round((fusao.bonus_bocejo ?? 0) * 100) : 0];
 }

@@ -8,8 +8,10 @@
 //
 // O estado do motorista vem só do modelo de imagens treinado pelo time (cnn.js): o índice do
 // modelo entra na política da Parte 2. Sem resultado recente do modelo, a evidência é inválida e
-// o simulador fica em DEGRADADO (sem frear). A geometria (olhos, PERCLOS, boca, cabeça) segue
-// sendo medida e mostrada, mas não comanda.
+// o simulador fica em DEGRADADO (sem frear). A geometria (olhos, PERCLOS, boca, cabeça) é medida e
+// mostrada; dela, só os olhos fechados há mais de 1 s e o bocejo somam bônus ao índice do modelo
+// (bonusDoRosto, como a fusão da análise em Python), porque o MediaPipe vê o olho fechado mesmo
+// quando o modelo não vê (com óculos, por exemplo).
 //
 // Os ticks rodam a cada 100 ms mesmo sem quadros novos, como pede docs/parte2.md:
 // sem rosto ou sem câmera, o estimador degrada e o simulador não freia.
@@ -20,7 +22,7 @@ import { CalculadoraMetricas, pontosEmPixels, indiceDoMaiorRosto, matrizEmLinhas
 import { estimar, validarConfig } from "../../demo-navegador/estimador.js";
 import { estadoInicial, transicionar } from "../../demo-navegador/politica.js";
 import { estadoEmissorInicial, emitir } from "../../demo-navegador/mensagens.js";
-import { MonitorRosto, direcaoDaCabeca, olharDaIris, olhos, rotuloDaCabeca, rotuloDoOlhar } from "./rosto.js";
+import { MonitorRosto, bonusDoRosto, direcaoDaCabeca, olharDaIris, olhos, rotuloDaCabeca, rotuloDoOlhar } from "./rosto.js";
 
 const V = window.VIGIA;
 const $ = (id) => document.getElementById(id);
@@ -163,9 +165,13 @@ function tick() {
     const geometria = estimar(S.historico.filter((r) => r.t_ms <= t), cfgEstimador, t); // só para exibir (PERCLOS)
     // índice do modelo + bônus do volante frouxo (pressao.js), como a fusão da Parte 1 (entrada/pressao.py)
     const modelo = V.cnn?.indice() ?? null, volante = V.pressao?.bonusIndice() ?? 0;
+    // olhos fechados há mais de 1 s (sozinhos levam a ALERTA) e bocejo, pela geometria do rosto
+    const [olhosFechados, bocejo] = bonusDoRosto(S.ultimo?.rosto, cfgAnalise.fusao ?? {});
     // mão frouxa: no mínimo ATENÇÃO (limiar 35 da política), mas nunca ALERTA só por ela (65)
-    const cnn = modelo == null ? null : Math.min(100, volante ? Math.max(modelo + volante, 40) : modelo);
-    const estimativa = { t_ms: t, indice: cnn, indice_modelo: modelo, bonus_volante: volante, confianca: cnn == null ? 0 : 1, perclos: geometria.perclos, indice_geometria: geometria.indice };
+    const comVolante = volante ? Math.max(modelo + volante, 40) : modelo;
+    const cnn = modelo == null ? null : Math.min(100, comVolante + olhosFechados + bocejo);
+    const estimativa = { t_ms: t, indice: cnn, indice_modelo: modelo, bonus_volante: volante,
+      bonus_olhos_fechados: olhosFechados, bonus_bocejo: bocejo, confianca: cnn == null ? 0 : 1, perclos: geometria.perclos, indice_geometria: geometria.indice };
     S.fonte = cnn != null ? "cnn" : "sem_cnn";
     S.estado = transicionar(S.estado, estimativa, t, cfgEstimador, S.respondeu);
     S.respondeu = false;

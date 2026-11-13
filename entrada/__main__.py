@@ -50,6 +50,8 @@ class Analise:
     eventos: list = field(default_factory=list)  # visibilidade, volante e alertas
     bonus_cabeca: float = 0.0            # somado ao índice pela cabeça baixa prolongada
     bonus_volante: float = 0.0           # somado ao índice pela pressão baixa prolongada
+    bonus_olhos: float = 0.0             # somado pelos olhos fechados há mais de 1 s (geometria)
+    bonus_bocejo: float = 0.0            # somado durante um bocejo (geometria)
 
 
 class Analisador:
@@ -108,17 +110,22 @@ class Analisador:
                     eventos += eventos_volante
                 else:
                     self.pressao_baixa.reiniciar(t_ms)   # sensor mudo: não dá para saber
-        indice, em_alerta, bonus_volante, bonus_cabeca = None, False, 0.0, 0.0
+        indice, em_alerta = None, False
+        bonus_volante = bonus_cabeca = bonus_olhos = bonus_bocejo = 0.0
         if self.fusao is not None:
             frouxo = self.pressao_baixa is not None and self.pressao_baixa.prolongada(baixa_ms)
             cabeca_baixa = estado is not None and estado.cabeca_baixa_prolongada
+            olhos_fechados = estado is not None and estado.olhos_fechados_prolongados
+            bocejo = estado is not None and estado.bocejando
             indice, alertas = self.fusao.atualizar(resumo.probabilidades.get("sonolento", 0.0),
-                                                   frouxo, cabeca_baixa)
+                                                   frouxo, cabeca_baixa, olhos_fechados, bocejo)
             eventos += alertas
             em_alerta = self.fusao.em_alerta
             bonus_volante, bonus_cabeca = self.fusao.bonus(frouxo, cabeca_baixa)
+            bonus_olhos, bonus_bocejo = self.fusao.bonus_rosto(olhos_fechados, bocejo)
         return Analise(resultado, resumo, qps, rosto, estado, mostrar_resumo, True, indice,
-                       baixa_ms, pressao, em_alerta, eventos, bonus_cabeca, bonus_volante)
+                       baixa_ms, pressao, em_alerta, eventos, bonus_cabeca, bonus_volante,
+                       bonus_olhos, bonus_bocejo)
 
     def _mudanca_de_visibilidade(self, visivel: bool) -> list:
         """Eventos quando o motorista sai ou volta; ao sair, o alerta é suspenso."""
@@ -157,6 +164,10 @@ def desenhar(quadro, resumo, rosto=None, pontos_rosto=None, estado=None, analise
         linhas.append(f"volante frouxo: +{numero(analise.bonus_volante, '.2f')}")
     if analise is not None and analise.bonus_cabeca:
         linhas.append(f"cabeca baixa: +{numero(analise.bonus_cabeca, '.2f')}")
+    if analise is not None and analise.bonus_olhos:
+        linhas.append(f"olhos fechados: +{numero(analise.bonus_olhos, '.2f')}")
+    if analise is not None and analise.bonus_bocejo:
+        linhas.append(f"bocejo: +{numero(analise.bonus_bocejo, '.2f')}")
     if estado is not None and estado.olhos is not None:
         linhas += [f"olhos: {estado.olhos}", f"boca: {estado.boca}"]
     if rosto is not None:
@@ -256,6 +267,9 @@ def _linhas_do_terminal(camera: str, t_ms: int, analise: Analise, sem_log: bool,
                        if analise.bonus_volante else "")
             cabeca = (f" · cabeça baixa +{numero(analise.bonus_cabeca, '.2f')}"
                       if analise.bonus_cabeca else "")
+            cabeca += (f" · olhos fechados +{numero(analise.bonus_olhos, '.2f')}"
+                       if analise.bonus_olhos else "")
+            cabeca += f" · bocejo +{numero(analise.bonus_bocejo, '.2f')}" if analise.bonus_bocejo else ""
             estado = "SONOLÊNCIA" if analise.em_alerta else "alerta"
             linhas.append(f"{segundo} índice de sonolência {numero(analise.indice, '.2f')} "
                           f"(modelo {numero(p_sono, '.2f')}{volante}{cabeca}) → {estado}")

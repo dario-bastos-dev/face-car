@@ -20,7 +20,7 @@ webcam (navegador) ─┬─ MediaPipe → olhos, boca, cabeça, olhar e eventos
                        (simulador/js/recorte.js), reduzido ao tamanho do modelo, RGB, sem desenho
                          → WebSocket /cnn → simulador/servidor.py → cnn_sonolencia.keras
                          → sonolento / alerta / bocejo e a média dos últimos 2 s
-índice = 100 × (sonolento + 0,45 × bocejo)  →  política da Parte 2  →  sinal.v1  →  simulador
+índice = 100 × (sonolento + 0,45 × bocejo) + bônus de olhos fechados e bocejo  →  política da Parte 2  →  sinal.v1  →  simulador
 ```
 
 - **Cartão da câmera:** **◉ Demonstrar** liga o scanner com o mapeamento (contornos, íris,
@@ -33,11 +33,13 @@ webcam (navegador) ─┬─ MediaPipe → olhos, boca, cabeça, olhar e eventos
 - **Leitura só pelo modelo (Parte 4):** o estado do motorista vem apenas do modelo treinado pelo
   time, com as classes e a janela de `config/analise.json` (média de 2 s, como em `entrada/__main__.py`).
   A média vira o índice `100 × (sonolento + 0,45 × bocejo)`, que passa pela política da Parte 2.
+  A geometria soma dois bônus, como na análise em Python: +70 com os olhos fechados há mais de 1 s
+  (sozinho leva a ALERTA) e +35 durante um bocejo (`fusao` em `config/analise.json`).
   Sem resultado recente do modelo (servidor, TensorFlow ou arquivo ausentes), o simulador fica em
   DEGRADADO, sem frear. Sem o motorista na câmera, como na análise em Python, nenhum quadro vai ao
   modelo e o painel mostra `motorista não visível · sem análise`. O quadro do modelo é capturado à
   parte do MediaPipe, a até 8 por segundo, para a taxa não cair quando o rastreio estiver lento. A geometria do rosto (olhos, PERCLOS, boca, cabeça) continua medida e
-  mostrada, mas não comanda. O modelo atual (`cnn_sonolencia_v2`) marca 75% a 98% de "sonolento"
+  mostrada; dela, só os olhos fechados e o bocejo entram no índice, pelos bônus acima. O modelo atual (`cnn_sonolencia_v2`) marca 75% a 98% de "sonolento"
   num retrato acordado e sorrindo; vale reavaliar o treino com imagens de webcam.
 - **Validação:** **↓ Leituras do CNN (CSV)**, no registro de eventos, exporta cada resultado do
   modelo (classe e probabilidades do quadro, média da janela, índice, estado do sinal e nível do
@@ -185,10 +187,16 @@ uv run python -m entrada webcam --camera rgb --sem-sensor             # só o mo
   `volante apertado de novo após …`.
 - **Cabeça baixa por 15 s:** da mesma forma, soma 0,3 enquanto a cabeça continuar baixa. Se ela
   baixar tanto que o MediaPipe perca o rosto, vale a regra do motorista fora da câmera.
+- **Olhos fechados por mais de 1 s:** pela abertura dos olhos (EAR abaixo de 0,18), soma 0,7
+  enquanto continuarem fechados, o bastante para alertar sozinho. Piscadas não contam. Existe
+  porque o modelo pode não ver o olho fechado (atrás de óculos, ele dizia "alerta" com o EAR em
+  0,04), e o MediaPipe vê.
+- **Bocejo:** com a boca aberta por 1,5 s (abertura acima de 0,4), soma 0,35 enquanto durar. Sozinho
+  não alerta. A média de 2 s do modelo demora a virar "bocejo" num bocejo curto; a geometria não.
 - A linha do índice mostra o que entrou, por exemplo
   `índice de sonolência 0,70 (modelo 0,40 · volante frouxo +0,30) → SONOLÊNCIA`.
 - **Alerta:** começa quando o índice chega a 0,6 e só termina abaixo de 0,4, para não ficar ligando e
-  desligando. Um bônus sozinho, com o modelo em alerta, não dispara o alerta (a mão solta pode ser
+  desligando. Fora os olhos fechados, um bônus sozinho, com o modelo em alerta, não dispara o alerta (a mão solta pode ser
   só cansaço do braço; a cabeça baixa, distração com o celular); dispara com o modelo em dúvida
   (0,3 ou mais) ou com os dois juntos, volante frouxo e cabeça baixa.
 - **Motorista fora da câmera:** o quadro não vai para o modelo, o sensor é ignorado e nenhum alerta

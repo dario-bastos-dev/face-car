@@ -461,6 +461,34 @@ def test_cabeca_baixa_prolongada_aumenta_o_indice():
                           "cabeça baixa +0,30) → alerta")
 
 
+def test_olhos_fechados_e_bocejo_da_geometria_aumentam_o_indice():
+    from entrada.pressao import Fusao
+    from entrada.rosto import EstadoRosto
+
+    class MonitorFixo:
+        def __init__(self, **flags):
+            self.flags = flags
+
+        def atualizar(self, _t_ms, _rosto):
+            return EstadoRosto("fechados", 0.04, "fechada", 0.02, "frente", **self.flags)
+
+    def analisar(**flags):
+        analisador = Analisador(ClassificadorFalso(), DetectorComRosto(), monitor=MonitorFixo(**flags),
+                                fusao=Fusao(0.6, 0.4, bonus_olhos_fechados=0.7, bonus_bocejo=0.35))
+        return analisador.processar(np.zeros((8, 8, 3), np.uint8), 0)
+
+    analise = analisar(olhos_fechados_prolongados=True)
+    # ClassificadorFalso: sonolento 0,1; com os olhos fechados há mais de 1 s, 0,1 + 0,7 → alerta
+    assert analise.bonus_olhos == pytest.approx(0.7) and analise.indice == pytest.approx(0.8)
+    assert analise.em_alerta
+    linhas = _linhas_do_terminal("rgb", 0, analise, sem_log=True, janela_s="2")
+    assert "olhos fechados +0,70" in linhas[-1]
+    analise = analisar(bocejando=True)
+    assert analise.bonus_bocejo == pytest.approx(0.35) and analise.indice == pytest.approx(0.45)
+    assert not analise.em_alerta
+    assert "bocejo +0,35" in _linhas_do_terminal("rgb", 0, analise, sem_log=True, janela_s="2")[-1]
+
+
 def test_linhas_sem_motorista():
     analisador = analisador_completo(DetectorSemRosto())
     analise = analisador.processar(np.zeros((8, 8, 3), np.uint8), 0)

@@ -205,6 +205,18 @@ def test_bocejo_so_com_a_boca_aberta_por_tempo_suficiente():
     assert sequencia(monitor, bocejo) == [(2500, "bocejo")]   # avisa uma vez, ao passar de 1,5 s
 
 
+def test_estado_diz_quando_os_olhos_estao_fechados_ha_muito_tempo_e_quando_ha_bocejo():
+    # a fusão soma bônus nesses dois casos: a geometria vê o olho fechado mesmo com óculos
+    monitor = MonitorRosto(LIMIARES)
+    estados = {t: monitor.registrar(t, FECHADO, BOCA_FECHADA, "frente") for t in range(0, 1300, 100)}
+    assert not estados[900].olhos_fechados_prolongados        # 0,9 s: ainda pode ser piscada longa
+    assert estados[1000].olhos_fechados_prolongados and estados[1200].olhos_fechados_prolongados
+    assert not monitor.registrar(1300, ABERTO, BOCA_FECHADA, "frente").olhos_fechados_prolongados
+    estados = {t: monitor.registrar(t, ABERTO, BOCA_ABERTA, "frente") for t in range(2000, 4000, 100)}
+    assert not estados[3400].bocejando and estados[3500].bocejando   # boca aberta há 1,5 s
+    assert not monitor.registrar(4000, ABERTO, BOCA_FECHADA, "frente").bocejando
+
+
 def test_sem_rosto_zera_o_acompanhamento():
     monitor = MonitorRosto(LIMIARES)
     monitor.registrar(0, FECHADO, BOCA_FECHADA, "frente")

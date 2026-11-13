@@ -244,6 +244,8 @@ class EstadoRosto:
     eventos: list = field(default_factory=list)
     cabeca_baixa_ms: int | None = None   # há quanto tempo a cabeça está baixa, ou None
     cabeca_baixa_prolongada: bool = False  # baixa há cabeca_baixa_alerta_ms ou mais
+    olhos_fechados_prolongados: bool = False  # fechados há olhos_fechados_alerta_ms ou mais
+    bocejando: bool = False              # boca aberta há bocejo_min_ms ou mais
 
 
 def medidas(pontos, indices: dict) -> tuple[float, float]:
@@ -294,11 +296,13 @@ class MonitorRosto:
         fechados, eventos_olhos = self._acompanhar_olhos(t_ms, ear)
         aberta, eventos_boca = self._acompanhar_boca(t_ms, abertura)
         baixa_ms, eventos_cabeca = self._acompanhar_cabeca(t_ms, cabeca)
+        lim = self.limiares
         return EstadoRosto("fechados" if fechados else "abertos", ear,
                            "aberta" if aberta else "fechada", abertura, cabeca,
                            eventos_olhos + eventos_boca + eventos_cabeca, baixa_ms,
-                           baixa_ms is not None
-                           and baixa_ms >= self.limiares.cabeca_baixa_alerta_ms)
+                           baixa_ms is not None and baixa_ms >= lim.cabeca_baixa_alerta_ms,
+                           fechados and t_ms - self._olhos_fechados_desde >= lim.olhos_fechados_alerta_ms,
+                           aberta and self._alertou_bocejo)
 
     def _acompanhar_olhos(self, t_ms: int, ear: float) -> tuple[bool, list]:
         """(olhos fechados?, eventos): piscada, olhos fechados por muito tempo e reabertura."""

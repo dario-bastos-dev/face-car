@@ -1,5 +1,5 @@
 {
-  "versao": 10,
+  "versao": 11,
   "mediapipe": {
     "modelo": "modelos/face_landmarker.task",
     "min_confianca_deteccao": 0.5,
@@ -52,6 +52,8 @@
     "limiar_alerta": 0.6,
     "limiar_fim_alerta": 0.4,
     "bonus_volante_frouxo": 0.3,
-    "bonus_cabeca_baixa": 0.3
+    "bonus_cabeca_baixa": 0.3,
+    "bonus_olhos_fechados": 0.7,
+    "bonus_bocejo": 0.35
   }
 }
