@@ -41,3 +41,34 @@ def test_nao_sobrescreve_sem_pedir(tmp_path, capsys):
     assert gravar.main(["--pessoa", "voce1", "--variante", "oculos", "--dataset", str(tmp_path)]) == 2
     assert "--substituir" in capsys.readouterr().err
     assert arquivo.read_bytes() == b"x"
+
+
+CAMERAS = {
+    "rgb": {"nome": "rgb", "descricao": "colorida", "dispositivo": "/dev/video0", "largura": 640, "altura": 480},
+    "insta360-link-2": {"nome": "insta360-link-2", "descricao": "Insta360 Link 2",
+                        "dispositivo": "/dev/video4", "largura": 640, "altura": 480},
+}
+
+
+def test_camera_pedida_pelo_nome():
+    assert gravar.escolher_camera("insta360-link-2", dict(CAMERAS), "rgb", interativo=False)["dispositivo"] == "/dev/video4"
+
+
+def test_sem_pedido_e_sem_terminal_usa_a_padrao():
+    assert gravar.escolher_camera(None, dict(CAMERAS), "rgb", interativo=False)["nome"] == "rgb"
+
+
+def test_menu_escolhe_pelo_numero(capsys):
+    camera = gravar.escolher_camera(None, dict(CAMERAS), "rgb", interativo=True, ler=lambda _: "2")
+    assert camera["nome"] == "insta360-link-2"
+    assert "Insta360 Link 2" in capsys.readouterr().out   # o menu lista as câmeras detectadas
+
+
+def test_gravacao_usa_uma_camera_so():
+    with pytest.raises(ValueError, match="uma câmera"):
+        gravar.escolher_camera("todas", dict(CAMERAS), "rgb", interativo=False)
+
+
+def test_camera_desconhecida_da_erro_claro():
+    with pytest.raises(ValueError, match="câmera desconhecida"):
+        gravar.escolher_camera("nao-existe", dict(CAMERAS), "rgb", interativo=False)

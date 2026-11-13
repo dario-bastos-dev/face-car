@@ -1,7 +1,11 @@
 """Grava vídeos de treino guiados na webcam: alerta, sonolento e bocejo de uma pessoa.
 
     uv run python -m treinamento.gravar --pessoa voce1 --variante oculos
-    uv run python -m treinamento.gravar --pessoa voce1 --variante sem_oculos
+    uv run python -m treinamento.gravar --pessoa voce1 --variante sem_oculos --camera insta360-link-2
+
+Sem --camera, mostra o mesmo menu da análise (python -m entrada webcam): as câmeras de
+config/analise.json e as detectadas no computador, como uma webcam USB. --camera aceita o nome
+ou o dispositivo (/dev/video4).
 
 Uma janela mostra a câmera e o que fazer em cada momento ("FECHE OS OLHOS", "BOCEJE"...). São
 três tomadas seguidas, cada uma com 5 s para se preparar, e cada uma vira um vídeo em
@@ -36,6 +40,16 @@ def validar_nome(nome: str, campo: str) -> str:
     if not re.fullmatch(r"[a-z0-9]+", nome or ""):
         raise ValueError(f"{campo} '{nome}': use só letras minúsculas sem acento e números, sem '_'")
     return nome
+
+
+def escolher_camera(pedida, cameras: dict, padrao: str, interativo: bool, ler=input) -> dict:
+    """A câmera da gravação: a de --camera (nome ou dispositivo), a do menu ou a padrão."""
+    from entrada.__main__ import escolher_cameras
+
+    escolhidas = escolher_cameras([pedida] if pedida else None, cameras, padrao, interativo, ler)
+    if len(escolhidas) != 1:
+        raise ValueError("a gravação usa uma câmera só; escolha uma pelo número ou pelo nome")
+    return cameras[escolhidas[0]]
 
 
 def destino(dataset: Path, pessoa: str, variante: str, classe: str) -> Path:
@@ -100,7 +114,8 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--pessoa", required=True, help="nome da pessoa, igual em todas as gravações dela")
     parser.add_argument("--variante", default="normal", help="ex.: oculos, sem_oculos → oculos, semoculos")
-    parser.add_argument("--camera", help="nome em config/analise.json (padrão: camera_padrao)")
+    parser.add_argument("--camera", help="nome (rgb, ir ou uma detectada) ou dispositivo, como "
+                        "/dev/video4; sem ele, mostra o menu de câmeras")
     parser.add_argument("--substituir", action="store_true", help="regrava vídeos que já existem")
     parser.add_argument("--dataset", type=Path, default=DATASET)
     args = parser.parse_args(argv)
@@ -120,10 +135,17 @@ def main(argv=None) -> int:
     import cv2
 
     from entrada.contexto import carregar_config
+    from entrada.fontes import detectar_cameras, juntar_cameras
 
     config = carregar_config()
-    nome = args.camera or config["camera_padrao"]
-    cam = next(c for c in config["cameras"] if c["nome"] == nome)
+    cameras = juntar_cameras(config["cameras"], detectar_cameras())
+    try:
+        cam = escolher_camera(args.camera, cameras, config["camera_padrao"], sys.stdin.isatty())
+    except ValueError as erro:
+        print(erro, file=sys.stderr)
+        return 2
+    nome = cam["nome"]
+    print(f"Gravando com a câmera {nome} ({cam.get('descricao', cam['dispositivo'])})")
     camera = cv2.VideoCapture(cam["dispositivo"])
     if cam.get("largura"):
         camera.set(cv2.CAP_PROP_FRAME_WIDTH, cam["largura"])

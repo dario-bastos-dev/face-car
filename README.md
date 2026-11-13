@@ -372,6 +372,8 @@ uv run python -m treinamento.gravar --pessoa voce1 --variante oculos
 uv run python -m treinamento.gravar --pessoa voce1 --variante sem_oculos
 ```
 
+Sem `--camera`, ele mostra o mesmo menu de câmeras da análise (as de `config/analise.json` e as
+detectadas, como a Insta360 Link 2); `--camera` aceita o nome ou o dispositivo (`/dev/video4`).
 Uma janela mostra o que fazer (normal, "FECHE OS OLHOS", "BOCEJE") em três tomadas de 45 s, salvas
 em `dataset/<classe>/gravacoes/`. A limpeza aproveita só os quadros com o olho fechando e, nos
 bocejos, com a boca aberta.
