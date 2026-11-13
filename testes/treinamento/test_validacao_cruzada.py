@@ -21,10 +21,17 @@ def test_valores_entram_no_fim_da_celula_de_configuracao():
 
 
 def test_perfis_comparaveis():
-    # o perfil do V6 desliga exatamente o que o V7 acrescentou
-    assert vc.PERFIS["generico"] == {}
-    assert set(vc.PERFIS["v6"]) == {"MAX_POR_PESSOA_CLASSE", "FRACAO_LIBERADA", "DROPOUT",
+    # o notebook é a receita do V6; o perfil do V7 liga exatamente as opções contra a decoreba
+    assert vc.PERFIS["v6"] == {}
+    assert set(vc.PERFIS["v7"]) == {"MAX_POR_PESSOA_CLASSE", "FRACAO_LIBERADA", "DROPOUT",
                                     "DECAIMENTO_PESOS", "AUMENTO_FORTE"}
+
+
+def test_treino_final_usa_todas_as_pessoas_salva_e_leva_o_resumo(tmp_path):
+    valores = vc.valores_final("v6", tmp_path / "resumo.json", tmp_path / "final")
+    assert valores["TESTE_SEPARADO"] is False and valores["SALVAR_MODELO"] is True
+    assert valores["RESUMO_VALIDACAO_CRUZADA"] == str(tmp_path / "resumo.json")
+    assert "DOBRA" not in valores
 
 
 def dobra(acuracia, recall_alarme, falso):
@@ -43,12 +50,12 @@ def test_resumo_da_media_e_o_desvio_das_dobras():
 
 
 def test_dobra_ja_feita_nao_roda_de_novo(tmp_path, monkeypatch):
-    feita = tmp_path / "generico" / "dobra1"
+    feita = tmp_path / "v6" / "dobra1"
     feita.mkdir(parents=True)
     (feita / "metricas_teste.json").write_text(json.dumps(dobra(0.8, 0.9, 0.1)))
     rodadas = []
     monkeypatch.setattr(vc, "_executar", lambda notebook, pasta: rodadas.append(pasta.name) or
                         (pasta / "metricas_teste.json").write_text(json.dumps(dobra(0.7, 0.8, 0.1))))
-    resumo = vc.rodar("generico", dobras=3, saida=tmp_path, notebook={"cells": [{"cell_type": "code", "source": [""]}]})
+    resumo = vc.rodar("v6", dobras=3, saida=tmp_path, notebook={"cells": [{"cell_type": "code", "source": [""]}]})
     assert rodadas == ["dobra0", "dobra2"]
     assert resumo["acuracia_pessoas_novas"]["dobras"] == [0.7, 0.8, 0.7]

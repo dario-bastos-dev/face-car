@@ -1,7 +1,8 @@
 """Validação cruzada por pessoa do notebook de treino: uma nota com gente nova que não depende de sorte.
 
-    uv run python -m treinamento.validacao_cruzada --perfil generico   # configuração do notebook
-    uv run python -m treinamento.validacao_cruzada --perfil v6         # como o V6, para comparar
+    uv run python -m treinamento.validacao_cruzada --perfil v6         # configuração do notebook
+    uv run python -m treinamento.validacao_cruzada --perfil v7         # com as opções do V7, para comparar
+    uv run python -m treinamento.validacao_cruzada --perfil v6 --final # treino final, todas as pessoas
 
 Com um teste de 8 pessoas, a nota com gente nova variava 5 a 10 pontos de um treino para outro.
 Aqui o notebook roda DOBRAS vezes (3, por padrão). Em cada uma, um terço das pessoas fica no teste,
@@ -9,6 +10,10 @@ de modo que cada pessoa cai no teste uma vez, e a média das dobras é a nota. C
 modelo inteiro (~40 min sem GPU) e não mexe em modelo/. Os resultados ficam em
 treinamento/resultados/validacao_cruzada/<perfil>/dobra<k>/; uma dobra já feita não roda de novo,
 então dá para interromper e continuar depois.
+
+Com --final, depois das dobras, o notebook roda uma vez com todas as pessoas no treino e na
+validação (sem teste separado) e salva o modelo em modelo/, como treinar.sh; o .classes.json leva
+o resumo da validação cruzada, que é a nota com gente nova.
 """
 
 import argparse
@@ -24,10 +29,11 @@ NOTEBOOK = RAIZ / "treinamento" / "modelo.ipynb"
 SAIDA = RAIZ / "treinamento" / "resultados" / "validacao_cruzada"
 
 # Valores da célula de configuração que mudam em cada perfil (o resto é o do notebook).
+# Na validação cruzada de 13/11/2026: v6 80,9% ± 6,5 com gente nova; v7 75,3% ± 10,3.
 PERFIS = {
-    "generico": {},   # o notebook como está: contra a decoreba das pessoas (FaceCar_CNN_V7)
-    "v6": {"MAX_POR_PESSOA_CLASSE": None, "FRACAO_LIBERADA": 0.4, "DROPOUT": 0.3,
-           "DECAIMENTO_PESOS": 0.0, "AUMENTO_FORTE": False},
+    "v6": {},   # o notebook como está (receita do V6)
+    "v7": {"MAX_POR_PESSOA_CLASSE": {"alerta": 60, "sonolento": 60}, "FRACAO_LIBERADA": 0.2,
+           "DROPOUT": 0.5, "DECAIMENTO_PESOS": 1e-4, "AUMENTO_FORTE": True},
 }
 
 
@@ -89,16 +95,31 @@ def rodar(perfil: str, dobras: int = 3, saida: Path = SAIDA, notebook: dict | No
     return resumo
 
 
+def valores_final(perfil: str, resumo: Path, pasta_saida: Path) -> dict:
+    """Configuração do treino final: todas as pessoas, modelo salvo, resumo no .classes.json."""
+    return {**PERFIS[perfil], "TESTE_SEPARADO": False, "SALVAR_MODELO": True,
+            "RESUMO_VALIDACAO_CRUZADA": str(resumo), "PASTA_SAIDA": str(pasta_saida)}
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    parser.add_argument("--perfil", choices=sorted(PERFIS), default="generico")
+    parser.add_argument("--perfil", choices=sorted(PERFIS), default="v6")
     parser.add_argument("--dobras", type=int, default=3)
+    parser.add_argument("--final", action="store_true",
+                        help="depois das dobras, treina com todas as pessoas e salva em modelo/")
     args = parser.parse_args(argv)
     resumo = rodar(args.perfil, args.dobras)
     print(f"\n{args.perfil}: pessoas que a rede nunca viu, média (desvio) de {args.dobras} dobras")
     for nome, valor in resumo.items():
         if isinstance(valor, dict) and "media" in valor:
             print(f"  {nome:<28} {valor['media']:.1%} (± {valor['desvio']:.1%})  {valor['dobras']}")
+    if args.final:
+        pasta = SAIDA.parent / f"final_{args.perfil}"
+        pasta.mkdir(parents=True, exist_ok=True)
+        print(f"\nTreino final ({args.perfil}, todas as pessoas): {pasta}", flush=True)
+        notebook = json.loads(NOTEBOOK.read_text(encoding="utf-8"))
+        _executar(sobrescrever_config(notebook, valores_final(args.perfil, SAIDA / args.perfil / "resumo.json",
+                                                              pasta)), pasta)
     return 0
 
 

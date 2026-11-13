@@ -365,16 +365,18 @@ mediana no vídeo alerta dela) e alerta sem piscada. Para compensar o descarte, 
 sonolentos rendem 300 quadros, e os alertas, 60. Foi o que faltou ao V4, que reconhecia o alerta
 mas pegava só 18% dos sonolentos de gente nova.
 
-O modelo tem de funcionar com gente que nunca viu. Contra a decoreba das pessoas do treino, cada
-pessoa entra com no máximo 60 imagens de cada classe (antes, quem tinha 250 quadros sonolentos
-pesava 4 vezes mais), o ajuste fino libera só 20% da base, há Dropout 0,5, decaimento dos pesos
-(AdamW) e mais aumento de dados (cor, desfoque, pedaços apagados e qualidade de JPEG). Para medir
-com gente nova sem depender de sorte, a validação cruzada treina 3 vezes, cada vez com um terço das
-pessoas no teste (18 pessoas novas por vez, contra 8), e dá a média:
+O modelo tem de funcionar com gente que nunca viu. Para medir isso sem depender de sorte, a
+validação cruzada treina 3 vezes, cada vez com um terço das pessoas no teste (18 pessoas novas por
+vez, contra 8 de um teste só), e dá a média. Com ela, a receita atual (a do V6) acertou
+**80,9% ± 6,5** com gente nova; a do V7 (teto de 60 imagens por pessoa, ajuste fino em 20%,
+Dropout 0,5, AdamW e mais aumento de dados), só 75,3% ± 10,3, e ficou desligada no notebook.
+O modelo em uso sai do treino final, com todas as pessoas e sem teste separado: a nota dele com
+gente nova é a da validação cruzada, gravada no `.classes.json`.
 
 ```bash
-uv run python -m treinamento.validacao_cruzada --perfil generico   # configuração atual (V7)
-uv run python -m treinamento.validacao_cruzada --perfil v6         # como o V6, para comparar
+uv run python -m treinamento.validacao_cruzada --perfil v6           # nota da receita atual
+uv run python -m treinamento.validacao_cruzada --perfil v7           # com as opções do V7
+uv run python -m treinamento.validacao_cruzada --perfil v6 --final   # e treina o modelo final
 ```
 
 Cada dobra treina o modelo inteiro (~30 a 40 min sem GPU) e não mexe em `modelo/`; os resultados
