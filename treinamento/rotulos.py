@@ -8,7 +8,9 @@ sono é o olho fechando, e é isso que fica:
 - quadro de vídeo **sonolento**: só se o olho estiver mais fechado que `fracao` da abertura
   normal da pessoa (a mediana do EAR nos quadros do vídeo alerta dela);
 - quadro de vídeo **alerta**: sai se o olho estiver abaixo desse mesmo corte (piscadas);
-- fotos e outras classes não mudam: as fotos próprias já foram conferidas uma a uma.
+- quadro de vídeo **bocejo** (gravações guiadas, treinamento/gravar.py): só com a boca aberta,
+  porque entre um bocejo e outro a boca fica fechada;
+- fotos não mudam: as fotos próprias já foram conferidas uma a uma.
 
 A referência é de cada pessoa porque o tamanho do olho varia muito: 0,22 é olho aberto para
 uns e meio fechado para outros. A inclinação da cabeça não entra: a câmera muda de lugar entre
@@ -18,11 +20,14 @@ os dois vídeos da mesma pessoa, e o ângulo não se compara.
 import numpy as np
 
 
-def limpar(rotulos, pessoas, de_video, ear, nomes, fracao: float = 0.75):
+def limpar(rotulos, pessoas, de_video, ear, nomes, fracao: float = 0.75, boca=None,
+           boca_aberta: float = 0.4):
     """(manter, referência por pessoa): que quadros ficam no treino.
 
-    `ear` é a abertura média dos olhos de cada imagem (NaN sem medida). Quadro de vídeo sem
-    medida sai; pessoa sem vídeo alerta fica sem referência, e os quadros dela não mudam.
+    `ear` é a abertura média dos olhos de cada imagem e `boca` a abertura da boca (NaN sem
+    medida). Quadro de vídeo sem medida sai; pessoa sem vídeo alerta fica sem referência, e os
+    quadros alerta e sonolento dela não mudam. Quadro de vídeo de bocejo fica só com a boca
+    acima de `boca_aberta` (rosto.abertura_boca_aberta em config/analise.json).
     """
     rotulos, ear = np.asarray(rotulos), np.asarray(ear, dtype=float)
     pessoas, de_video = np.asarray(pessoas, dtype=object), np.asarray(de_video, dtype=bool)
@@ -37,4 +42,8 @@ def limpar(rotulos, pessoas, de_video, ear, nomes, fracao: float = 0.75):
         elif pessoas[i] in referencia:
             fechando = ear[i] < fracao * referencia[pessoas[i]]
             manter[i] = fechando if rotulos[i] == sonolento else not fechando
+    if boca is not None and "bocejo" in nomes:
+        boca = np.asarray(boca, dtype=float)
+        for i in np.flatnonzero(de_video & (rotulos == nomes.index("bocejo"))):
+            manter[i] = not np.isnan(boca[i]) and boca[i] > boca_aberta
     return manter, referencia

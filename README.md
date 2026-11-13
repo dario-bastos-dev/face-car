@@ -365,6 +365,17 @@ mediana no vídeo alerta dela) e alerta sem piscada. Para compensar o descarte, 
 sonolentos rendem 300 quadros, e os alertas, 60. Foi o que faltou ao V4, que reconhecia o alerta
 mas pegava só 18% dos sonolentos de gente nova.
 
+Para aproximar o treino do uso, grave vídeos guiados nesta webcam, com e sem óculos:
+
+```bash
+uv run python -m treinamento.gravar --pessoa voce1 --variante oculos
+uv run python -m treinamento.gravar --pessoa voce1 --variante sem_oculos
+```
+
+Uma janela mostra o que fazer (normal, "FECHE OS OLHOS", "BOCEJE") em três tomadas de 45 s, salvas
+em `dataset/<classe>/gravacoes/`. A limpeza aproveita só os quadros com o olho fechando e, nos
+bocejos, com a boca aberta.
+
 O bocejo só tem fotos de 2 pessoas, poucas para dividir por pessoa. Por isso, as fotos dessas
 2 pessoas, em todas as classes delas, são repartidas em blocos de 15 fotos seguidas
 (`treinamento/divisao.py`). A nota dessas fotos no teste fica otimista, e o notebook mostra à parte

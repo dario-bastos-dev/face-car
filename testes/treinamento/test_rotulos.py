@@ -64,3 +64,12 @@ def test_quadro_sem_medida_sai():
         [("a", "alerta", True, 0.30), ("a", "sonolento", True, float("nan"))])
     manter, _ = limpar(rotulos, pessoas, de_video, ear, NOMES, fracao=0.75)
     assert manter.tolist() == [True, False]
+
+
+def test_video_de_bocejo_fica_so_com_a_boca_aberta():
+    # gravações guiadas: entre um bocejo e outro a boca está fechada
+    pessoas, rotulos, de_video, ear = exemplo(
+        [("w", "bocejo", True, 0.3)] * 3 + [("w", "bocejo", False, 0.3)])
+    boca = np.array([0.6, 0.1, np.nan, 0.05])
+    manter, _ = limpar(rotulos, pessoas, de_video, ear, NOMES, fracao=0.75, boca=boca, boca_aberta=0.4)
+    assert manter.tolist() == [True, False, False, True]   # a foto fica como está
