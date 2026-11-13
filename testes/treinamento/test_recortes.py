@@ -60,3 +60,22 @@ def test_segunda_vez_usa_os_recortes_salvos(tmp_path):
     recortes.recortar([copia], [destino], processos=1)
     copia.unlink()   # sem a origem, só o recorte salvo responde
     assert recortes.recortar([copia], [destino], processos=1) == [True]
+
+
+@tem_dados
+def test_guarda_as_medidas_do_rosto_ao_lado_do_recorte(tmp_path):
+    destino = tmp_path / "retrato.jpg"
+    recortes.recortar([RETRATO], [destino], processos=1)
+    medidas = recortes.ler_medidas(destino)
+    assert set(medidas) == {"ear", "boca", "cabeca_vertical"}
+    assert medidas["ear"] > 0.18                  # o retrato está de olhos abertos
+    assert abs(medidas["cabeca_vertical"]) < 30   # e olhando para a câmera
+
+
+@tem_dados
+def test_recorte_antigo_sem_medidas_e_refeito(tmp_path):
+    destino = tmp_path / "retrato.jpg"
+    recortes.recortar([RETRATO], [destino], processos=1)
+    recortes.arquivo_de_medidas(destino).unlink()
+    assert recortes.recortar([RETRATO], [destino], processos=1) == [True]
+    assert recortes.ler_medidas(destino) is not None

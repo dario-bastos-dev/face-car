@@ -349,6 +349,14 @@ A rede vê só o rosto: cada foto e cada quadro passa pelo MediaPipe, com a mesm
 da análise e do simulador (`treinamento/recortes.py`), e os recortes ficam em `treinamento/rostos/`.
 Imagens sem rosto ficam fora do treino.
 
+O RLDD rotula o vídeo inteiro, mas a pessoa "sonolenta" passa a maior parte dele de olhos abertos
+(só ~24% dos quadros têm o olho mais fechado que o normal dela). Por isso, cada quadro de vídeo
+só fica se a abertura dos olhos (EAR, medida no recorte) confirmar o rótulo
+(`treinamento/rotulos.py`): sonolento com o olho abaixo de 75% da abertura normal da pessoa (a
+mediana no vídeo alerta dela) e alerta sem piscada. Para compensar o descarte, os vídeos
+sonolentos rendem 300 quadros, e os alertas, 60. Foi o que faltou ao V4, que reconhecia o alerta
+mas pegava só 18% dos sonolentos de gente nova.
+
 O bocejo só tem fotos de 2 pessoas, poucas para dividir por pessoa. Por isso, as fotos dessas
 2 pessoas, em todas as classes delas, são repartidas em blocos de 15 fotos seguidas
 (`treinamento/divisao.py`). A nota dessas fotos no teste fica otimista, e o notebook mostra à parte
