@@ -8,6 +8,10 @@
 // como na análise em tempo real em Python (entrada/__main__.py). A média vira o índice que entra na
 // política da Parte 2 (ia.js); sem resultado recente do modelo, o simulador fica em DEGRADADO.
 // Cada leitura fica guardada para validação e pode ser exportada em CSV.
+//
+// O quadro do modelo é capturado aqui, a até 8 por segundo, sem depender do MediaPipe: antes ele
+// ia junto com o quadro do worker e ficava limitado à velocidade do rastreio (3 q/s num notebook).
+// Como na análise em Python, sem o motorista na câmera nenhum quadro vai ao modelo e o índice some.
 const V = window.VIGIA;
 const $ = (id) => document.getElementById(id);
 const INTERVALO_MS = 125;     // até ~8 quadros por segundo: a média de 2 s não precisa de mais, e a animação fica livre
@@ -70,26 +74,17 @@ async function conectar() {
 // Pode mandar outro quadro agora? (Também reconecta sozinho; com o modelo indisponível, tenta de
 // novo com menos frequência.)
 function podeEnviar(agora) {
-  if (!V.ia?.ativo) return false;
+  if (!V.ia?.ativo || !V.ia.rostoVisivel) return false;   // sem o motorista na câmera, sem análise
   if (!ws) { if (agora - tentativaEm > (C.estado === "indisponivel" ? 15000 : 5000)) conectar(); return false; }
   if (ws.readyState !== WebSocket.OPEN || C.estado !== "pronto") return false;
   if (emTransito && agora - enviadoEm < 2000) return false; // resposta perdida: segue depois de 2 s
   return agora - enviadoEm >= INTERVALO_MS;
 }
-// Com o MediaPipe no worker (ia.js), o worker já reduz o quadro: ia.js pergunta o tamanho que
-// o modelo quer (0 = agora não) e entrega o buffer com 8 bytes livres para a marca de tempo.
-function querQuadro() { return podeEnviar(performance.now()) ? C.tamanho : 0; }
-function enviar(buf, agora) {
-  if (!ws || ws.readyState !== WebSocket.OPEN || C.estado !== "pronto") return;
-  new DataView(buf).setFloat64(0, agora, true);
-  ws.send(buf);
-  emTransito = true; enviadoEm = agora;
-}
-
-// Sem worker: quadro inteiro da câmera (sem o espelhamento da tela) em tamanho x tamanho, RGB.
+// Quadro inteiro da câmera (sem o espelhamento da tela) em tamanho x tamanho, RGB: reduzir a
+// 160x160 e copiar os pixels custa 3 a 4 ms na página, bem menos que o MediaPipe.
 function enviarQuadro() {
   const agora = performance.now();
-  if (!podeEnviar(agora) || V.ia?.emWorker) return;
+  if (!podeEnviar(agora)) return;
   const video = $("cameraFeed");
   if (video.readyState < 2 || !video.videoWidth) return;
   const S = C.tamanho;
@@ -102,7 +97,10 @@ function enviarQuadro() {
   emTransito = true; enviadoEm = agora;
 }
 
-function fresco() { return !!C.ultimo && performance.now() - C.recebidoEm < VALIDADE_MS; }
+// Resultado recente e com o motorista na câmera: só então o modelo comanda.
+function fresco() {
+  return !!C.ultimo && performance.now() - C.recebidoEm < VALIDADE_MS && !!V.ia?.rostoVisivel;
+}
 
 // Média da janela, como o modelo devolveu (classe com a maior probabilidade média).
 function media() { return fresco() ? C.ultimo.media : null; }
@@ -140,11 +138,13 @@ function painel(forcar = false) {
   if (!el || (!forcar && performance.now() - pintadoEm < 200)) return;
   pintadoEm = performance.now();
   const status = el.querySelector("[data-cnn-status]"), barras = el.querySelector("[data-cnn-barras]");
-  const situacao = !fresco() ? "aguardando quadros" : "comanda os níveis";
+  const situacao = V.ia?.ativo && !V.ia.rostoVisivel ? "motorista não visível · sem análise"
+    : !fresco() ? "aguardando quadros" : "comanda os níveis";
   const texto = {
     desligado: "liga com o scanner", sem_servidor: "abra pelo simulador/servidor.py",
     conectando: "conectando…", desconectado: "servidor desconectado · tentando de novo",
-    indisponivel: "modelo indisponível no servidor", pronto: C.ultimo ? `${C.ultimo.qps} q/s · ${situacao}` : "pronto · aguardando quadros",
+    indisponivel: "modelo indisponível no servidor",
+    pronto: C.ultimo && fresco() ? `${C.ultimo.qps} q/s · ${situacao}` : `pronto · ${situacao}`,
   }[C.estado];
   status.textContent = texto; status.title = C.motivo;
   el.dataset.estado = C.estado;
@@ -170,6 +170,6 @@ V.addRenderer(() => { enviarQuadro(); painel(); }, 'cnn');
 document.getElementById("cnnCsvBtn").onclick = baixarCsv;
 V.cnn = {
   get estado() { return C.estado; }, get ultimo() { return C.ultimo; }, get leituras() { return leituras.length; },
-  fresco, media, indice, conectar, querQuadro, enviar,
+  fresco, media, indice, conectar,
 };
 conectar();

@@ -143,3 +143,48 @@ def test_webcams_podem_compartilhar_o_relogio():
     with FonteWebcam(abrir=CameraFalsa, t0=t0) as fonte:
         _, t_ms, _ = fonte.ler()
     assert 5000 <= t_ms < 6500
+
+
+# ---- câmeras do sistema ------------------------------------------------------
+
+def sysfs(tmp_path, dispositivos):
+    """Imita /sys/class/video4linux: {"video4": ("Insta360 Link 2: Insta360 Link", 0)}."""
+    for nome, (descricao, indice) in dispositivos.items():
+        (tmp_path / nome).mkdir()
+        (tmp_path / nome / "name").write_text(descricao + "\n")
+        (tmp_path / nome / "index").write_text(f"{indice}\n")
+    return tmp_path
+
+
+def test_detecta_so_o_dispositivo_de_imagem_de_cada_camera(tmp_path):
+    from entrada.fontes import detectar_cameras
+    raiz = sysfs(tmp_path, {
+        "video0": ("HD Webcam: HD Webcam", 0), "video1": ("HD Webcam: HD Webcam", 1),
+        "video2": ("HD Webcam: IR Camera", 0), "video3": ("HD Webcam: IR Camera", 1),
+        "video10": ("Insta360 Link 2: Insta360 Link", 0), "video11": ("Insta360 Link 2: Insta360 Link", 1),
+    })
+    cameras = detectar_cameras(raiz)
+    assert [(c["nome"], c["dispositivo"]) for c in cameras] == [
+        ("hd-webcam", "/dev/video0"), ("ir-camera", "/dev/video2"), ("insta360-link-2", "/dev/video10")]
+    assert cameras[2]["descricao"] == "Insta360 Link 2: Insta360 Link"
+
+
+def test_duas_cameras_iguais_ganham_nomes_diferentes(tmp_path):
+    from entrada.fontes import detectar_cameras
+    raiz = sysfs(tmp_path, {"video0": ("USB Camera: USB Camera", 0), "video2": ("USB Camera: USB Camera", 0)})
+    assert [c["nome"] for c in detectar_cameras(raiz)] == ["usb-camera", "usb-camera-2"]
+
+
+def test_sem_sysfs_nao_detecta_nada(tmp_path):
+    from entrada.fontes import detectar_cameras
+    assert detectar_cameras(tmp_path / "nao_existe") == []
+
+
+def test_juntar_nao_repete_as_cameras_da_configuracao(tmp_path):
+    from entrada.fontes import juntar_cameras
+    (tmp_path / "video0").touch()
+    (tmp_path / "by-path").symlink_to(tmp_path / "video0")
+    configuradas = [{"nome": "rgb", "dispositivo": str(tmp_path / "by-path")}]
+    detectadas = [{"nome": "hd-webcam", "dispositivo": str(tmp_path / "video0")},
+                  {"nome": "insta360-link-2", "dispositivo": "/dev/video4"}]
+    assert list(juntar_cameras(configuradas, detectadas)) == ["rgb", "insta360-link-2"]

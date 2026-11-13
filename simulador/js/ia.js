@@ -26,7 +26,7 @@ const V = window.VIGIA;
 const $ = (id) => document.getElementById(id);
 const WASM = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.0/wasm";
 const BUNDLE_CJS = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.0/vision_bundle.cjs"; // para o worker
-const LARGURA_MAX = 480;   // quadro mandado ao worker: o MediaPipe (256 px) e o CNN (160 px) reduzem bem mais que isso
+const LARGURA_MAX = 480;   // quadro mandado ao worker: o MediaPipe (256 px) reduz bem mais que isso
 // Ritmo da detecção: 15 quadros/s (o estimador aceita até max_intervalo_ms = 250 ms entre quadros).
 // O MediaPipe usa a mesma placa de vídeo que a 3D; a 22/s ele roubava tempo da animação.
 const DETECCAO_MS = 66;
@@ -56,7 +56,7 @@ function opcoesMediapipe() {
 }
 function criarWorker(modelo) {
   return new Promise((ok, falha) => {
-    const w = new Worker(new URL("./rosto-worker.js?v=0.9.121", import.meta.url));
+    const w = new Worker(new URL("./rosto-worker.js?v=0.9.122", import.meta.url));
     const fim = (erro) => { clearTimeout(limite); w.onmessage = w.onerror = null; if (erro) { w.terminate(); falha(erro); } else ok(w); };
     const limite = setTimeout(() => fim(new Error("o worker não respondeu")), 60000);
     w.onmessage = (e) => {
@@ -119,10 +119,9 @@ function mandarAoWorker(video, captura) {
   const t = marcar(captura);
   if (t == null) return;
   const vw = video.videoWidth, vh = video.videoHeight, escala = Math.min(1, LARGURA_MAX / vw);
-  const cnn = V.cnn?.querQuadro?.() || 0; // aproveita o mesmo quadro para o modelo CNN
-  const q = (pendente = { sessao: S.sessao, t, captura, vw, vh, cnnEm: cnn ? performance.now() : 0 });
+  const q = (pendente = { sessao: S.sessao, t, captura, vw, vh });
   createImageBitmap(video, escala < 1 ? { resizeWidth: Math.round(vw * escala), resizeHeight: Math.round(vh * escala), resizeQuality: "medium" } : {})
-    .then((bmp) => worker.postMessage({ tipo: "quadro", id: t, bmp, cnn }, [bmp]))
+    .then((bmp) => worker.postMessage({ tipo: "quadro", id: t, bmp }, [bmp]))
     .catch(() => { if (pendente === q) pendente = null; });
 }
 function aoResultado(e) {
@@ -131,7 +130,6 @@ function aoResultado(e) {
   pendente = null;
   if (!S.ativo || q.sessao !== S.sessao) return;
   if (d.tipo === "erro") { V.log("Scanner: erro no MediaPipe — " + d.erro, "error"); return; }
-  if (d.cnn) V.cnn?.enviar?.(d.cnn, q.cnnEm);
   analisar(d.faceLandmarks, d.matrizes, q.vw, q.vh, q.t, q.captura);
 }
 function analisar(faceLandmarks, matrizes, vw, vh, t, captura) {
@@ -272,7 +270,7 @@ V.on("cameraOff", parar);
 V.ia = {
   get ativo() { return S.ativo; }, get visivel() { return S.visivel; }, get carregando() { return !!S.carregando; },
   get ultimo() { return S.ultimo; }, get sessao() { return S.sessao; }, indices, limiares: cfgAnalise.rosto,
-  get emWorker() { return !!worker; }, // com o worker, o quadro do CNN vem junto (cnn.js não captura)
+  get rostoVisivel() { return !!S.ultimo?.registro?.rosto_visivel; }, // cnn.js só analisa com o motorista
   geo: { direcaoDaCabeca, olharDaIris, olhos }, // para o desenho em driver-monitor.js (script clássico)
   iniciar, parar, mostrar: () => alternarVisivel(true), ocultar: () => alternarVisivel(false),
   responder: () => { S.respondeu = true; },
