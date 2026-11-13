@@ -166,7 +166,7 @@ function painel(forcar = false) {
   }
 }
 
-V.addRenderer(() => { enviarQuadro(); painel(); });
+V.addRenderer(() => { enviarQuadro(); painel(); }, 'cnn');
 document.getElementById("cnnCsvBtn").onclick = baixarCsv;
 V.cnn = {
   get estado() { return C.estado; }, get ultimo() { return C.ultimo; }, get leituras() { return leituras.length; },
