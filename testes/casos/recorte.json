@@ -1,0 +1,110 @@
+{
+ "descricao": "Caixa quadrada do rosto [x, y, lado] em pixels, a partir dos pontos do MediaPipe. Lado = maior lado da caixa dos pontos x fator, limitado ao menor lado da imagem; centrado nos pontos e empurrado para dentro da imagem. Valores calculados à mão; usados por testes/entrada/test_classificador.py e testes/js/recorte.test.mjs.",
+ "fator": 1.4,
+ "casos": [
+  {
+   "nome": "no meio",
+   "pontos": [
+    [
+     100,
+     100
+    ],
+    [
+     200,
+     240
+    ],
+    [
+     150,
+     170
+    ]
+   ],
+   "largura": 640,
+   "altura": 480,
+   "esperado": [
+    52,
+    72,
+    196
+   ]
+  },
+  {
+   "nome": "encostado à esquerda",
+   "pontos": [
+    [
+     0,
+     100
+    ],
+    [
+     50,
+     150
+    ]
+   ],
+   "largura": 640,
+   "altura": 480,
+   "esperado": [
+    0,
+    90,
+    70
+   ]
+  },
+  {
+   "nome": "no canto de baixo à direita",
+   "pontos": [
+    [
+     600,
+     440
+    ],
+    [
+     640,
+     480
+    ]
+   ],
+   "largura": 640,
+   "altura": 480,
+   "esperado": [
+    584,
+    424,
+    56
+   ]
+  },
+  {
+   "nome": "maior que a imagem",
+   "pontos": [
+    [
+     0,
+     0
+    ],
+    [
+     640,
+     480
+    ]
+   ],
+   "largura": 640,
+   "altura": 480,
+   "esperado": [
+    80,
+    0,
+    480
+   ]
+  },
+  {
+   "nome": "arredonda meio para cima",
+   "pontos": [
+    [
+     9,
+     10
+    ],
+    [
+     14,
+     20
+    ]
+   ],
+   "largura": 100,
+   "altura": 100,
+   "esperado": [
+    5,
+    8,
+    14
+   ]
+  }
+ ]
+}

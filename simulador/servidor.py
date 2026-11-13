@@ -8,8 +8,8 @@
   informa à página a porta do WebSocket.
 - WebSocket (porta 8765, requer `pip install websockets`):
   - `/cnn`: o modelo de imagens da Parte 1 (cnn_sonolencia.keras, config/analise.json). A
-    página manda cada quadro da câmera já reduzido ao tamanho de entrada do modelo (RGB,
-    sem desenho) e recebe a classe, as probabilidades e a média da janela. Os quadros só
+    página manda cada quadro da câmera (ou só o rosto, se o modelo foi treinado assim) já
+    reduzido ao tamanho de entrada do modelo (RGB, sem desenho) e recebe a classe, as probabilidades e a média da janela. Os quadros só
     existem na memória: nada é gravado.
   - qualquer outro caminho: roda o estimador da Parte 2 em tempo real sobre um CSV de
     métricas (contrato metricas.v1), com ticks de 100 ms, e envia ações e heartbeats no
@@ -146,9 +146,10 @@ class ServicoCnn:
     """Carrega o modelo da Parte 1 em segundo plano e classifica os quadros da página.
 
     Usa o classificador e a média temporal da análise em tempo real (entrada/classificador.py),
-    com classes e janela de config/analise.json. A página manda o quadro inteiro já
-    redimensionado para o tamanho de entrada do modelo, em RGB: é o que `preparar` produz a
-    partir de um quadro BGR, então o modelo recebe a mesma imagem que na análise.
+    com classes e janela de config/analise.json. A página manda a imagem já redimensionada
+    para o tamanho de entrada do modelo, em RGB: o quadro inteiro ou, se o modelo foi treinado
+    com o rosto (`recorte`, avisado em cnn_pronto), o quadrado do rosto com a regra de
+    entrada/classificador.py. É o que `preparar` produz na análise em Python.
     """
 
     def __init__(self, config: dict, caminho: Path, carregar=None):
@@ -226,7 +227,8 @@ async def sessao_cnn(conexao, servico: ServicoCnn) -> None:
         return
     modelo, cfg = servico.classificador, servico.config["classificador"]
     await conexao.send(json.dumps({"tipo": "cnn_pronto", "tamanho": modelo.tamanho, "classes": modelo.classes,
-                                   "janela_ms": cfg["janela_ms"]}))
+                                   "janela_ms": cfg["janela_ms"],
+                                   "recorte": getattr(modelo, "recorte", "quadro")}))
     print("[CNN] Página conectada")
     media = MediaTemporal(cfg["janela_ms"])
     try:

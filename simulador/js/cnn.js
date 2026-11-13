@@ -1,7 +1,7 @@
 // Modelo de imagens da Parte 1 (cnn_sonolencia.keras) rodando no servidor Python.
 //
-//   câmera da página → quadro inteiro reduzido ao tamanho de entrada do modelo (RGB, sem desenho)
-//   → WebSocket /cnn do simulador/servidor.py → sonolento / alerta / bocejo + média da janela
+//   câmera da página → quadro inteiro (ou só o rosto, se o modelo foi treinado assim) reduzido ao
+//   tamanho de entrada do modelo (RGB, sem desenho) → WebSocket /cnn do simulador/servidor.py → sonolento / alerta / bocejo + média da janela
 //
 // A leitura do motorista vem só do modelo treinado pelo time (Parte 4), com os parâmetros de
 // config/analise.json: as classes, na ordem do modelo, e a janela da média (classificador.janela_ms),
@@ -12,6 +12,11 @@
 // O quadro do modelo é capturado aqui, a até 8 por segundo, sem depender do MediaPipe: antes ele
 // ia junto com o quadro do worker e ficava limitado à velocidade do rastreio (3 q/s num notebook).
 // Como na análise em Python, sem o motorista na câmera nenhum quadro vai ao modelo e o índice some.
+// Modelos treinados com o rosto ("recorte": "rosto", avisado pelo servidor) recebem só o quadrado do
+// rosto, com a regra de entrada/classificador.py (recorte.js), em volta dos pontos do último quadro
+// que o MediaPipe analisou (ia.js).
+import { caixaDoRosto } from "./recorte.js";
+
 const V = window.VIGIA;
 const $ = (id) => document.getElementById(id);
 const INTERVALO_MS = 125;     // até ~8 quadros por segundo: a média de 2 s não precisa de mais, e a animação fica livre
@@ -19,7 +24,7 @@ const VALIDADE_MS = 800;      // resultado mais velho que isto não comanda os n
 const PESO_BOCEJO = 0.45;     // bocejo sozinho leva a ATENÇÃO (limiar 35), não a ALERTA
 const MAX_LEITURAS = 36000;    // ~1 h de leituras guardadas para a validação
 
-const C = { estado: "desligado", motivo: "", url: null, tamanho: 0, classes: [], ultimo: null, recebidoEm: 0 };
+const C = { estado: "desligado", motivo: "", url: null, tamanho: 0, classes: [], recorte: "quadro", ultimo: null, recebidoEm: 0 };
 const leituras = [];          // uma linha por resultado do modelo (exportável em CSV)
 let ws = null, canvas = null, ctx = null, emTransito = false, enviadoEm = 0, tentativaEm = -1e9;
 
@@ -54,11 +59,12 @@ async function conectar() {
       registrar(m);
       painel();
     } else if (m.tipo === "cnn_pronto") {
-      C.tamanho = m.tamanho; C.classes = m.classes;
+      C.tamanho = m.tamanho; C.classes = m.classes; C.recorte = m.recorte || "quadro";
       canvas = Object.assign(document.createElement("canvas"), { width: m.tamanho, height: m.tamanho });
       ctx = canvas.getContext("2d", { willReadFrequently: true });
       definir("pronto");
-      V.log(`Modelo CNN conectado (${m.classes.join(", ")}; entrada ${m.tamanho}×${m.tamanho})`, "camera");
+      V.log(`Modelo CNN conectado (${m.classes.join(", ")}; entrada ${m.tamanho}×${m.tamanho}` +
+        `${C.recorte === "rosto" ? ", só o rosto" : ""})`, "camera");
     } else if (m.tipo === "cnn_indisponivel") {
       definir("indisponivel", m.motivo || "");
       V.log("Modelo CNN indisponível no servidor: " + (m.motivo || "motivo não informado"), "error");
@@ -80,15 +86,23 @@ function podeEnviar(agora) {
   if (emTransito && agora - enviadoEm < 2000) return false; // resposta perdida: segue depois de 2 s
   return agora - enviadoEm >= INTERVALO_MS;
 }
-// Quadro inteiro da câmera (sem o espelhamento da tela) em tamanho x tamanho, RGB: reduzir a
-// 160x160 e copiar os pixels custa 3 a 4 ms na página, bem menos que o MediaPipe.
+// Quadro da câmera (sem o espelhamento da tela) em tamanho x tamanho, RGB: inteiro ou o quadrado do
+// rosto. Reduzir e copiar os pixels custa 3 a 4 ms na página, bem menos que o MediaPipe.
 function enviarQuadro() {
   const agora = performance.now();
   if (!podeEnviar(agora)) return;
   const video = $("cameraFeed");
   if (video.readyState < 2 || !video.videoWidth) return;
   const S = C.tamanho;
-  ctx.drawImage(video, 0, 0, S, S);
+  if (C.recorte === "rosto") {
+    const pontos = V.ia?.ultimo?.pontos; // normalizados, do maior rosto
+    if (!pontos) return;
+    const vw = video.videoWidth, vh = video.videoHeight;
+    const [x, y, lado] = caixaDoRosto(pontos.map(([px, py]) => [px * vw, py * vh]), vw, vh);
+    ctx.drawImage(video, x, y, lado, lado, 0, 0, S, S);
+  } else {
+    ctx.drawImage(video, 0, 0, S, S);
+  }
   const rgba = ctx.getImageData(0, 0, S, S).data, buf = new ArrayBuffer(8 + S * S * 3);
   new DataView(buf).setFloat64(0, agora, true);
   const rgb = new Uint8Array(buf, 8);

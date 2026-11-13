@@ -57,7 +57,8 @@ class Analisador:
 
     O detector de rosto decide se o motorista está na câmera; sem ele no quadro, o
     modelo não é chamado, o sensor é ignorado e nenhum alerta é gerado. Com ele, o
-    modelo recebe o quadro inteiro, e a fusão parte da média do modelo e soma um bônus se
+    modelo recebe o quadro e os pontos do rosto (o modelo treinado com o rosto recorta em
+    volta deles), e a fusão parte da média do modelo e soma um bônus se
     a pressão no volante estiver baixa há muito tempo e outro se a cabeça estiver. Sem
     detector (testes), todo quadro conta como visível.
     """
@@ -94,7 +95,7 @@ class Analisador:
             return Analise(None, None, 0.0, None, estado, mostrar_resumo, visivel=False,
                            eventos=eventos)
 
-        resultado = self.classificador.classificar(quadro)
+        resultado = self.classificador.classificar(quadro, rosto.pontos if rosto else None)
         self.media.adicionar(t_ms, resultado)
         resumo, qps = self.media.resumo()
         pressao = baixa_ms = None

@@ -1,8 +1,11 @@
+import json
+
 import numpy as np
 import pytest
 
-from entrada.classificador import (ClassificadorSonolencia, MediaTemporal, Resultado,
-                                   conferir_classes, formatar, formatar_saida, preparar)
+from entrada.classificador import (FATOR_RECORTE, ClassificadorSonolencia, MediaTemporal,
+                                   Resultado, caixa_do_rosto, conferir_classes, formatar,
+                                   formatar_saida, ler_recorte, preparar, recortar_rosto)
 from entrada.contexto import RAIZ
 
 CLASSES = ["sonolento", "alerta"]
@@ -193,3 +196,71 @@ def test_resultado_guarda_a_saida_bruta_do_modelo_e_o_tempo():
 def test_formatar_saida_mostra_o_vetor_a_classe_e_o_tempo():
     r = Resultado("alerta", {"alerta": 0.98134, "sonolento": 0.01866}, saida=[0.98134, 0.01866], ms=21.6)
     assert formatar_saida(r) == "saída [0,9813 0,0187] → alerta (22 ms)"
+
+
+# ---- recorte do rosto (modelos treinados com o rosto, a partir do FaceCar_CNN_V4) ----
+
+CASOS_RECORTE = json.loads((RAIZ / "testes" / "casos" / "recorte.json").read_text(encoding="utf-8"))
+
+
+def test_fator_do_recorte_e_o_dos_casos_compartilhados_com_o_simulador():
+    assert FATOR_RECORTE == CASOS_RECORTE["fator"]
+
+
+@pytest.mark.parametrize("caso", CASOS_RECORTE["casos"], ids=lambda c: c["nome"])
+def test_caixa_do_rosto(caso):
+    caixa = caixa_do_rosto(np.array(caso["pontos"], float), caso["largura"], caso["altura"])
+    assert list(caixa) == caso["esperado"]
+
+
+def test_recortar_rosto_devolve_o_quadrado_em_volta_dos_pontos():
+    quadro = np.zeros((480, 640, 3), np.uint8)
+    quadro[72:268, 52:248] = 200   # a caixa do caso "no meio": x 52, y 72, lado 196
+    recorte = recortar_rosto(quadro, np.array([[100, 100], [200, 240]], float))
+    assert recorte.shape == (196, 196, 3) and (recorte == 200).all()
+
+
+class ModeloQueGuarda(ModeloFalso):
+    input_shape = (None, 4, 4, 3)
+
+
+def quadro_com_rosto_branco():
+    quadro = np.zeros((480, 640, 3), np.uint8)
+    quadro[72:268, 52:248] = 255
+    return quadro, np.array([[100, 100], [200, 240]], float)
+
+
+def test_modelo_de_rosto_recebe_so_o_rosto():
+    quadro, pontos = quadro_com_rosto_branco()
+    modelo = ModeloQueGuarda()
+    ClassificadorSonolencia(CLASSES, modelo, recorte="rosto").classificar(quadro, pontos)
+    assert (modelo.recebido == 255).all()
+
+
+def test_modelo_de_quadro_inteiro_ignora_os_pontos():
+    quadro, pontos = quadro_com_rosto_branco()
+    modelo = ModeloQueGuarda()
+    ClassificadorSonolencia(CLASSES, modelo).classificar(quadro, pontos)
+    assert (modelo.recebido < 255).any()
+
+
+def test_modelo_de_rosto_sem_pontos_usa_o_quadro_inteiro():
+    # Sem detector (testes e vídeos sem rosto) não há como recortar.
+    quadro, _ = quadro_com_rosto_branco()
+    modelo = ModeloQueGuarda()
+    ClassificadorSonolencia(CLASSES, modelo, recorte="rosto").classificar(quadro)
+    assert (modelo.recebido < 255).any()
+
+
+def test_recorte_desconhecido_da_erro_claro():
+    with pytest.raises(ValueError, match="recorte"):
+        ClassificadorSonolencia(CLASSES, ModeloFalso(), recorte="olhos")
+
+
+def test_ler_recorte_do_arquivo_do_treino(tmp_path):
+    modelo = escrever_classes_do_treino(tmp_path, ["alerta", "sonolento", "bocejo"])
+    assert ler_recorte(modelo) == "quadro"   # sem a chave: modelos até o V3
+    dados = json.loads(modelo.with_name("cnn_sonolencia.classes.json").read_text())
+    modelo.with_name("cnn_sonolencia.classes.json").write_text(json.dumps({**dados, "recorte": "rosto"}))
+    assert ler_recorte(modelo) == "rosto"
+    assert ler_recorte(tmp_path / "sem_arquivo.keras") == "quadro"

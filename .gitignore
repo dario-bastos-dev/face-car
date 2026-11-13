@@ -13,5 +13,6 @@ detalhes/
 /treinamento/dados/reais/
 /treinamento/dataset
 /treinamento/quadros
+/treinamento/rostos
 /modelo
 *.keras

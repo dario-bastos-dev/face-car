@@ -34,8 +34,8 @@ class ModeloFalso:
         return np.array([self.saida])
 
 
-def servico_com(modelo, tamanho=4):
-    classificador = SimpleNamespace(modelo=modelo, classes=CLASSES, tamanho=tamanho)
+def servico_com(modelo, tamanho=4, recorte="quadro"):
+    classificador = SimpleNamespace(modelo=modelo, classes=CLASSES, tamanho=tamanho, recorte=recorte)
     servico = servidor.ServicoCnn(CONFIG, Path("falso.keras"), carregar=lambda *_: classificador)
     servico.pronto.wait(5)
     return servico
@@ -77,7 +77,8 @@ def test_classifica_os_quadros_da_pagina_e_faz_a_media():
     modelo = ModeloFalso([0.1, 0.7, 0.2])
     rgb = np.full((4, 4, 3), 200, np.uint8)
     respostas = asyncio.run(_conversa(servico_com(modelo), [quadro(0, rgb), quadro(500, rgb)]))
-    assert respostas[0] == {"tipo": "cnn_pronto", "tamanho": 4, "classes": CLASSES, "janela_ms": 2000}
+    assert respostas[0] == {"tipo": "cnn_pronto", "tamanho": 4, "classes": CLASSES, "janela_ms": 2000,
+                            "recorte": "quadro"}
     r = respostas[-1]
     assert r["tipo"] == "cnn" and r["classe"] == "alerta" and r["t_ms"] == 500
     assert r["media"]["classe"] == "alerta"
@@ -86,3 +87,9 @@ def test_classifica_os_quadros_da_pagina_e_faz_a_media():
     # o modelo recebe o quadro como no treino: (1, tamanho, tamanho, 3), float32 de 0 a 255
     entrada = modelo.entradas[0]
     assert entrada.shape == (1, 4, 4, 3) and entrada.dtype == np.float32 and entrada.max() == 200
+
+
+def test_avisa_a_pagina_que_o_modelo_quer_so_o_rosto():
+    # Com "rosto", a página recorta o rosto (simulador/js/recorte.js) antes de reduzir o quadro.
+    respostas = asyncio.run(_conversa(servico_com(ModeloFalso([0.1, 0.7, 0.2]), recorte="rosto"), []))
+    assert respostas[0]["recorte"] == "rosto"

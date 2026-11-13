@@ -28,8 +28,9 @@ class ClassificadorFalso:
     def __init__(self):
         self.chamadas = 0
 
-    def classificar(self, _quadro):
+    def classificar(self, _quadro, pontos=None):
         self.chamadas += 1
+        self.pontos = pontos
         p = 0.9 if self.chamadas % 2 else 0.3
         return Resultado("alerta" if p > 0.5 else "sonolento", {"alerta": p, "sonolento": 1 - p})
 
@@ -48,6 +49,21 @@ def test_analisador_classifica_todo_quadro_e_resume_uma_vez_por_segundo():
 class DetectorSemRosto:
     def detectar(self, _quadro, _t_ms):
         return None
+
+
+def test_analisador_passa_os_pontos_do_rosto_ao_modelo():
+    # O modelo treinado com o rosto recorta o quadro em volta destes pontos.
+    from entrada.rosto import Rosto
+
+    pontos = np.array([[1.0, 2.0], [5.0, 6.0]])
+
+    class DetectorComRosto:
+        def detectar(self, _quadro, _t_ms):
+            return Rosto(pontos, np.eye(4))
+
+    classificador = ClassificadorFalso()
+    Analisador(classificador, DetectorComRosto()).processar(np.zeros((8, 8, 3), np.uint8), 0)
+    assert classificador.pontos is pontos
 
 
 def test_analisador_guarda_o_estado_do_rosto_do_quadro():
@@ -361,7 +377,7 @@ class ClassificadorFixo:
     def __init__(self, p_sono):
         self.p = p_sono
 
-    def classificar(self, _q):
+    def classificar(self, _q, pontos=None):
         return Resultado("alerta", {"alerta": 1 - self.p, "sonolento": self.p},
                          saida=[1 - self.p, self.p], ms=5)
 

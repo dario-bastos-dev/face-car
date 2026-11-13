@@ -1,11 +1,17 @@
 """Classifica o estado do motorista com o modelo Keras treinado (cnn_sonolencia.keras).
 
-O modelo foi treinado com o quadro inteiro da câmera, em RGB, redimensionado para o
-tamanho de entrada dele (160x160 no FaceCar_CNN_V2), com os pixels de 0 a 255: a
-normalização é uma camada dentro dele. O tamanho é lido do próprio modelo.
+O modelo recebe uma imagem RGB quadrada, do tamanho de entrada dele (lido do próprio
+modelo), com os pixels de 0 a 255: a normalização é uma camada dentro dele. Qual imagem
+depende de como ele foi treinado, e o treino anota isso em <modelo>.classes.json:
+
+- "recorte": "rosto" (a partir do FaceCar_CNN_V4): só o rosto, num quadrado em volta dos
+  pontos do MediaPipe (caixa_do_rosto). O simulador recorta com a mesma regra
+  (simulador/js/recorte.js), e testes/casos/recorte.json confere que as duas batem.
+- sem a chave (FaceCar_CNN_V2 e V3): o quadro inteiro, redimensionado sem recortar.
 """
 
 import json
+import math
 import time
 from collections import deque
 from dataclasses import dataclass
@@ -48,10 +54,49 @@ def conferir_classes(caminho_modelo, classes: list) -> None:
                          f"[{', '.join(classes)}]")
 
 
-def preparar(quadro_bgr, tamanho: int) -> np.ndarray:
-    """Quadro inteiro em (1, tamanho, tamanho, 3), RGB, float32 de 0 a 255.
+RECORTES = ("quadro", "rosto")
+FATOR_RECORTE = 1.4   # lado do quadrado = maior lado da caixa dos pontos do rosto x este fator
 
-    Redimensiona sem recortar, como o carregador de imagens do Keras faz no treino.
+
+def ler_recorte(caminho_modelo) -> str:
+    """"rosto" ou "quadro": a imagem com que o modelo foi treinado, em <modelo>.classes.json."""
+    caminho = Path(caminho_modelo)
+    arquivo = caminho.with_name(f"{caminho.stem}.classes.json")
+    if not arquivo.is_file():
+        return "quadro"
+    return json.loads(arquivo.read_text(encoding="utf-8")).get("recorte", "quadro")
+
+
+def _arredondar(valor: float) -> int:
+    return math.floor(valor + 0.5)   # meio para cima, como o Math.round do JavaScript
+
+
+def caixa_do_rosto(pontos, largura: int, altura: int, fator: float = FATOR_RECORTE):
+    """(x, y, lado) do quadrado do rosto, em pixels, dentro da imagem.
+
+    O quadrado fica centrado na caixa dos pontos, com lado = maior lado dela x `fator`
+    (sobra testa, queixo e um pouco de fundo, para a cabeça inclinada caber); perto da
+    borda, é empurrado para dentro, e nunca passa do menor lado da imagem.
+    """
+    pontos = np.asarray(pontos, dtype=float)
+    (x0, y0), (x1, y1) = pontos.min(axis=0), pontos.max(axis=0)
+    lado = min(max(x1 - x0, y1 - y0) * fator, largura, altura)
+    x = min(max((x0 + x1) / 2 - lado / 2, 0), largura - lado)
+    y = min(max((y0 + y1) / 2 - lado / 2, 0), altura - lado)
+    return _arredondar(x), _arredondar(y), _arredondar(lado)
+
+
+def recortar_rosto(quadro, pontos) -> np.ndarray:
+    """O quadrado do rosto (caixa_do_rosto) recortado do quadro."""
+    altura, largura = quadro.shape[:2]
+    x, y, lado = caixa_do_rosto(pontos, largura, altura)
+    return quadro[y:y + lado, x:x + lado]
+
+
+def preparar(quadro_bgr, tamanho: int) -> np.ndarray:
+    """Imagem em (1, tamanho, tamanho, 3), RGB, float32 de 0 a 255.
+
+    Redimensiona sem recortar, como o carregador de imagens do notebook de treino.
     """
     imagem = cv2.resize(quadro_bgr, (tamanho, tamanho), interpolation=cv2.INTER_LINEAR)
     return cv2.cvtColor(imagem, cv2.COLOR_BGR2RGB)[np.newaxis].astype(np.float32)
@@ -94,14 +139,20 @@ def _conferir_probabilidades(p: np.ndarray) -> None:
 
 
 class ClassificadorSonolencia:
-    """Aplica o modelo a um quadro; `classes` dá o nome de cada saída, na ordem."""
+    """Aplica o modelo a um quadro; `classes` dá o nome de cada saída, na ordem.
 
-    def __init__(self, classes: list, modelo):
+    `recorte` diz a imagem com que o modelo foi treinado: "rosto" ou "quadro" (inteiro).
+    """
+
+    def __init__(self, classes: list, modelo, recorte: str = "quadro"):
         saidas = modelo.output_shape[-1]
         if saidas != len(classes):
             raise ValueError(f"o modelo tem {saidas} saídas, mas há {len(classes)} classes "
                              f"configuradas: {classes}")
+        if recorte not in RECORTES:
+            raise ValueError(f"recorte '{recorte}' desconhecido; use um de {list(RECORTES)}")
         self.classes = list(classes)
+        self.recorte = recorte
         self.modelo = modelo
         self.tamanho = modelo.input_shape[1]
 
@@ -113,12 +164,16 @@ class ClassificadorSonolencia:
         conferir_classes(caminho, classes)
         import keras  # carregado só quando o modelo é usado: leva alguns segundos
 
-        classificador = cls(classes, keras.models.load_model(caminho, compile=False))
+        classificador = cls(classes, keras.models.load_model(caminho, compile=False),
+                            ler_recorte(caminho))
         # A primeira chamada monta o grafo e é bem mais lenta; melhor pagar isso agora.
         classificador.classificar(np.zeros((classificador.tamanho,) * 2 + (3,), np.uint8))
         return classificador
 
-    def classificar(self, quadro_bgr) -> Resultado:
+    def classificar(self, quadro_bgr, pontos=None) -> Resultado:
+        """Classifica o quadro. `pontos` são os do rosto (Rosto.pontos), para o recorte."""
+        if self.recorte == "rosto" and pontos is not None:
+            quadro_bgr = recortar_rosto(quadro_bgr, pontos)
         # predict_on_batch roda o grafo compilado: ~22 ms por quadro nesta máquina, contra
         # ~160 ms de modelo(x), que executa camada por camada.
         entrada = preparar(quadro_bgr, self.tamanho)

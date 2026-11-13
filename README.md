@@ -16,7 +16,8 @@ python simulador/servidor.py     # http://localhost:8000/simulador/  (ou simulad
 webcam (navegador) ─┬─ MediaPipe → olhos, boca, cabeça, olhar e eventos (simulador/js/rosto.js,
                     │              mesmas regras e limiares de entrada/rosto.py e config/analise.json)
                     │            → métricas metricas.v1 e PERCLOS (Partes 1 e 2 em JS)
-                    └─ quadro inteiro reduzido a 160×160, RGB, sem desenho
+                    └─ quadro inteiro, ou só o rosto se o modelo foi treinado assim
+                       (simulador/js/recorte.js), reduzido ao tamanho do modelo, RGB, sem desenho
                          → WebSocket /cnn → simulador/servidor.py → cnn_sonolencia.keras
                          → sonolento / alerta / bocejo e a média dos últimos 2 s
 índice = 100 × (sonolento + 0,45 × bocejo)  →  política da Parte 2  →  sinal.v1  →  simulador
@@ -121,7 +122,7 @@ para vê-los, rode com `TF_CPP_MIN_LOG_LEVEL=0`.
 #### Olhos, boca e cabeça
 
 Depois da barra `|`, cada linha mostra o estado do rosto. Ele **não vem do modelo**, que classifica
-o quadro inteiro como sonolento, alerta ou bocejo: vem da geometria do rosto (MediaPipe), com as
+a imagem como sonolento, alerta ou bocejo: vem da geometria do rosto (MediaPipe), com as
 mesmas fórmulas do extrator de métricas. As duas fontes são independentes; o bocejo do modelo e o
 evento `bocejo` da geometria podem discordar. O EAR mede a abertura do olho e a abertura da boca é a distância interna dos lábios
 dividida pela largura da boca. Os eventos aparecem numa linha própria, também com `--sem-log`:
@@ -206,10 +207,12 @@ estar no grupo da serial (`uucp` no Arch, `dialout` no Debian e no Ubuntu); veja
 
 #### O modelo
 
-O modelo atual (em `modelo/`) é o FaceCar_CNN_V2 (MobileNetV2), treinado com o quadro inteiro em RGB,
-redimensionado para 160×160, com os pixels de 0 a 255 (a normalização é uma camada dele); a análise
-lê o tamanho do próprio modelo e prepara a imagem do mesmo jeito, antes de qualquer desenho na
-janela. O modelo devolve 3 probabilidades, nesta ordem: `alerta` (0), `sonolento` (1) e
+O modelo recebe uma imagem RGB quadrada, com os pixels de 0 a 255 (a normalização é uma camada
+dele); a análise lê o tamanho do próprio modelo e prepara a imagem do mesmo jeito que o treino,
+antes de qualquer desenho na janela. Qual imagem depende do `"recorte"` gravado pelo treino em
+`cnn_sonolencia.classes.json`: com `"rosto"` (a partir do FaceCar_CNN_V4), só o quadrado do rosto
+em volta dos pontos do MediaPipe (`caixa_do_rosto` em `entrada/classificador.py`; o simulador
+recorta igual); sem a chave (FaceCar_CNN_V2 e V3), o quadro inteiro. O modelo devolve 3 probabilidades, nesta ordem: `alerta` (0), `sonolento` (1) e
 `bocejo` (2), com valores de 0 a 1 que somam 1 (`classificador.classes` em `config/analise.json`;
 o programa confere que o número de classes bate com o de saídas e que cada previsão soma 1, e
 termina com erro se não for assim; se houver um `cnn_sonolencia.classes.json` ao lado do modelo
@@ -342,9 +345,16 @@ renomeia, anota tudo em `dataset/organizacao.csv` e desfaz com `--desfazer`. Fic
 `dataset/_fora_do_treino/` os vídeos `5` (pouco alerta) do RLDD e 34 fotos cujo rosto contradiz a
 pasta, achadas pela abertura dos olhos e da boca.
 
-O bocejo só tem fotos de 2 pessoas, poucas para dividir por pessoa. Por
-isso, as fotos dele são repartidas em blocos de 15 fotos seguidas, e a nota do bocejo no teste fica
-otimista até haver bocejos de pelo menos 7 pessoas.
+A rede vê só o rosto: cada foto e cada quadro passa pelo MediaPipe, com a mesma regra de recorte
+da análise e do simulador (`treinamento/recortes.py`), e os recortes ficam em `treinamento/rostos/`.
+Imagens sem rosto ficam fora do treino.
+
+O bocejo só tem fotos de 2 pessoas, poucas para dividir por pessoa. Por isso, as fotos dessas
+2 pessoas, em todas as classes delas, são repartidas em blocos de 15 fotos seguidas
+(`treinamento/divisao.py`). A nota dessas fotos no teste fica otimista, e o notebook mostra à parte
+a nota das pessoas que a rede nunca viu. A divisão é recusada se uma pessoa estiver no treino e
+aparecer no teste com uma classe que o treino não tem dela. Foi o que derrubou o primeiro treino do
+V3 (quadro inteiro): a pessoa 1 só aparecia bocejando no treino, e ele acertou 13,6% no teste.
 
 Roda no computador, no VS Code com o kernel do `.venv` (`uv sync` instala o `ipykernel`), ou de
 uma vez, fora do editor, sem GPU em 1 a 2 horas:
@@ -354,12 +364,12 @@ nohup treinamento/treinar.sh > treinamento/resultados/treinar.log 2>&1 &
 tail -f treinamento/resultados/treino_fase1.csv   # uma linha por época (depois, treino_fase2.csv)
 ```
 
-No Colab, a pasta `dataset` precisaria ir para o Drive, mas com os vídeos do RLDD são 101 GB.
-No fim, grava `cnn_sonolencia.keras` e `cnn_sonolencia.classes.json` direto em `modelo/`, e o
+O notebook usa o código do projeto (recorte e divisão) e o dataset tem 101 GB, então não roda no
+Colab. No fim, grava `cnn_sonolencia.keras` e `cnn_sonolencia.classes.json` direto em `modelo/`, e o
 modelo anterior vai para `modelo/anteriores/<data e hora>/`. Os gráficos ficam em
 `treinamento/resultados/`. A rede base é a MobileNetV3Large a 224×224 (~29 ms por quadro na
 análise, sem GPU), com aumento de dados, suavização de rótulos, escolha da melhor época pela F1
-macro e ajuste fino. Dataset, quadros, resultados e `modelo/` ficam fora do git.
+macro e ajuste fino. Dataset, quadros, rostos, resultados e `modelo/` ficam fora do git.
 
 ## Estrutura
 
@@ -374,5 +384,6 @@ exemplos/        dados sintéticos da Parte 2
 docs/            guias das Partes 2 e 3
 scripts/         preparação, servidor local e extração pelo navegador
 testes/          casos compartilhados, testes Python (entrada/, estimador/) e JS (js/)
-treinamento/     notebook do modelo de imagens (modelo.ipynb) e organização do dataset
+treinamento/     notebook do modelo de imagens (modelo.ipynb), organização do dataset, recorte do
+                 rosto e divisão por pessoa
 ```
