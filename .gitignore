@@ -12,3 +12,5 @@ detalhes/
 /treinamento/resultados_cnn/*
 /treinamento/dados/reais/
 *.keras
+# modelo de olhos V3 (CNN auxiliar, observacional): versionado junto com o código
+!/cnn_olhos_v3.keras

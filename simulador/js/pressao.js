@@ -168,7 +168,7 @@ V.on('ready', () => {
   painel(true);
 });
 // o sensor simulado continua mandando leituras com a simulação pausada, como o Arduino real
-V.addRenderer(dt => { simular(dt); verificar(performance.now()); painel(); });
+V.addRenderer(dt => { simular(dt); verificar(performance.now()); painel(); }, 'pressao');
 
 V.pressao = {
   get valor() { return P.valor; }, get fonte() { return P.fonte; }, get frouxo() { return P.frouxo; },

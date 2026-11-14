@@ -21,12 +21,18 @@ import { estimar, validarConfig } from "../../demo-navegador/estimador.js";
 import { estadoInicial, transicionar } from "../../demo-navegador/politica.js";
 import { estadoEmissorInicial, emitir } from "../../demo-navegador/mensagens.js";
 import { MonitorRosto, direcaoDaCabeca, olharDaIris, olhos, rotuloDaCabeca, rotuloDoOlhar } from "./rosto.js";
+import { MonitorHibrido } from "./monitor-hibrido.js";
+import { conectarAvisoHibrido } from "./aviso-hibrido.js";
 
 const V = window.VIGIA;
 const $ = (id) => document.getElementById(id);
+conectarAvisoHibrido(V, $("camWarning"));
 const WASM = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.0/wasm";
 const BUNDLE_CJS = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.0/vision_bundle.cjs"; // para o worker
-const LARGURA_MAX = 640;   // quadro mandado ao worker: o MediaPipe reduz bem mais que isso
+const LARGURA_MAX = 480;   // quadro mandado ao worker: o MediaPipe (256 px) reduz bem mais que isso
+// Ritmo da detecção: 15 quadros/s (o estimador aceita até max_intervalo_ms = 250 ms entre quadros).
+// O MediaPipe usa a mesma placa de vídeo que a 3D; a 22/s ele roubava tempo da animação.
+const DETECCAO_MS = 66;
 // Baixado por scripts/preparar.sh; sem ele, usa a mesma versão publicada pelo Google.
 const MODELO_LOCAL = "../modelos/face_landmarker.task";
 const MODELO_REMOTO = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
@@ -53,7 +59,7 @@ function opcoesMediapipe() {
 }
 function criarWorker(modelo) {
   return new Promise((ok, falha) => {
-    const w = new Worker(new URL("./rosto-worker.js?v=0.9.75", import.meta.url));
+    const w = new Worker(new URL("./rosto-worker.js?v=0.9.126", import.meta.url));
     const fim = (erro) => { clearTimeout(limite); w.onmessage = w.onerror = null; if (erro) { w.terminate(); falha(erro); } else ok(w); };
     const limite = setTimeout(() => fim(new Error("o worker não respondeu")), 60000);
     w.onmessage = (e) => {
@@ -85,7 +91,8 @@ async function prepararLandmarker() {
 
 // Estado da sessão do scanner
 const S = { ativo: false, visivel: true, t0: 0, ultimoT: -1, quadro: 0, calc: null, historico: [], linhas: [],
-  estado: null, emissor: null, respondeu: false, timer: null, sessao: "", ultimo: null, monitor: null, piscadas: 0 };
+  estado: null, emissor: null, respondeu: false, timer: null, sessao: "", ultimo: null, monitor: null,
+  monitorHibrido: null, piscadas: 0 };
 const RETENCAO = cfgEstimador.janela_s * 1000 + cfgEstimador.min_fechamento_ms + cfgEstimador.max_intervalo_ms;
 const agora = () => Math.round(performance.now() - S.t0); // relógio monotônico da sessão (ms)
 
@@ -147,26 +154,51 @@ function analisar(faceLandmarks, matrizes, vw, vh, t, captura) {
   // olhos, boca e cabeça pela geometria, com os limiares de config/analise.json
   const ear = registro.ear_esq != null && registro.ear_dir != null ? (registro.ear_esq + registro.ear_dir) / 2 : null;
   const rosto = S.monitor.registrar(t, pts ? ear : null, pts ? registro.abertura_boca : null, matriz ? rotuloDaCabeca(matriz) : null);
+  const hibrido = S.monitorHibrido.registrar(t, Boolean(pts), ear);
+  for (const evento of hibrido.eventos) V.log("Monitor híbrido: " + evento, "alert");
+  V.emit("monitorHibrido", { t_ms: t, ...hibrido });
   for (const evento of rosto.eventos) {
     if (evento.startsWith("piscada")) S.piscadas++; // piscadas são normais: só contadas
     else V.log("Rosto: " + evento, "monitor");
   }
-  S.ultimo = { ...S.ultimo, registro, pontos: normalizados, matriz, abertura: abertura(registro), rosto,
+  S.ultimo = { ...S.ultimo, registro, pontos: normalizados, matriz, abertura: abertura(registro), rosto, hibrido,
     olhar: pts ? rotuloDoOlhar(pts, indices) : null, piscadas: S.piscadas,
     evento: rosto.eventos.length ? { texto: rosto.eventos.at(-1), t } : S.ultimo?.evento };
 }
 
+/* Olhos fechados (EAR do MediaPipe, monitor-hibrido.js): piscadas (até piscada_max_ms) não contam;
+ * daí o índice sobe em linha reta até 100 em fechamento_saturacao_ms de olhos fechados sem parar.
+ * Com 3 s de saturação: ~0,9 s fechado = 20 (atenção), ~1,4 s = 40 (crítico), ~2,2 s = 70.
+ * Sem rosto ou sem leitura recente do EAR: null (não há evidência). */
+function indiceOlhosFechados() {
+  const h = S.ultimo?.hibrido, lim = cfgAnalise.rosto;
+  if (h?.emEspera) return S.olhosIndice ?? null; // rosto sumiu por um instante: mantém o último valor
+  if (!h?.valido || !V.ia?.rostoVisivel) return (S.olhosIndice = null);
+  if (!h.olhosFechados) return (S.olhosIndice = 0);
+  const ini = lim.piscada_max_ms ?? 400, sat = lim.fechamento_saturacao_ms ?? 3000;
+  return (S.olhosIndice = Math.round(100 * Math.min(1, Math.max(0, (h.fechamentoContinuoMs - ini) / Math.max(1, sat - ini)))));
+}
 function tick() {
   if (!S.ativo) return;
   const t = agora();
   try {
     const geometria = estimar(S.historico.filter((r) => r.t_ms <= t), cfgEstimador, t); // só para exibir (PERCLOS)
-    // índice do modelo + bônus do volante frouxo (pressao.js), como a fusão da Parte 1 (entrada/pressao.py)
+    // Índice de fadiga 0..100 = o maior entre o do modelo CNN e o dos olhos fechados (EAR), mais o
+    // bônus do volante frouxo (pressao.js), como a fusão da Parte 1 (entrada/pressao.py).
+    // Faixas da política (config/estimador.json): <20 normal · 20-40 atenção (aviso inicial) ·
+    // 40-70 crítico (aviso intermediário) · >=70 sem resposta: intervenção (aviso final).
     const modelo = V.cnn?.indice() ?? null, volante = V.pressao?.bonusIndice() ?? 0;
-    // mão frouxa: no mínimo ATENÇÃO (limiar 35 da política), mas nunca ALERTA só por ela (65)
-    const cnn = modelo == null ? null : Math.min(100, volante ? Math.max(modelo + volante, 40) : modelo);
-    const estimativa = { t_ms: t, indice: cnn, indice_modelo: modelo, bonus_volante: volante, confianca: cnn == null ? 0 : 1, perclos: geometria.perclos, indice_geometria: geometria.indice };
-    S.fonte = cnn != null ? "cnn" : "sem_cnn";
+    const olhos = indiceOlhosFechados();
+    const base = modelo == null && olhos == null ? null : Math.max(modelo ?? 0, olhos ?? 0);
+    // mão frouxa: no mínimo ATENÇÃO (limiar 20), mas nunca crítico só por ela (40)
+    let indice = base == null ? null : Math.min(100, volante ? Math.max(base + volante, 25) : base);
+    // rosto perdido por um instante (até perda_rosto_tolerancia_ms): mantém o último índice em vez
+    // de cair em DEGRADADO e perder o nível (uma intervenção em andamento, por exemplo)
+    const tolerancia = cfgAnalise.rosto.perda_rosto_tolerancia_ms ?? 1000;
+    if (indice != null) S.ultimoIndice = { v: indice, t };
+    else if (S.ultimoIndice && t - S.ultimoIndice.t <= tolerancia) indice = S.ultimoIndice.v;
+    const estimativa = { t_ms: t, indice, indice_modelo: modelo, indice_olhos: olhos, bonus_volante: volante, confianca: indice == null ? 0 : 1, perclos: geometria.perclos, indice_geometria: geometria.indice };
+    S.fonte = modelo != null ? (olhos > modelo ? "olhos" : "cnn") : olhos != null ? "olhos" : "sem_cnn";
     S.estado = transicionar(S.estado, estimativa, t, cfgEstimador, S.respondeu);
     S.respondeu = false;
     let mensagens;
@@ -188,9 +220,8 @@ function laco() {
   if (worker) worker.onmessage = aoResultado;
   const passo = (now, meta) => {
     if (!S.ativo) return;
-    // até ~22 quadros/s (o estimador aceita intervalos de até max_intervalo_ms); com o worker,
-    // só manda outro quadro quando o anterior voltou
-    if (!(worker && pendente) && video.readyState >= 2 && video.videoWidth && now - processado >= 45) {
+    // até ~15 quadros/s (DETECCAO_MS); com o worker, só manda outro quadro quando o anterior voltou
+    if (!(worker && pendente) && video.readyState >= 2 && video.videoWidth && now - processado >= DETECCAO_MS) {
       processado = now;
       if (worker) mandarAoWorker(video, meta?.captureTime ?? now); else aoQuadro(video, meta?.captureTime ?? now);
     }
@@ -210,7 +241,7 @@ async function iniciar(visivel = true) {
   Object.assign(S, { ativo: true, t0: performance.now(), ultimoT: -1, quadro: 0, historico: [], linhas: [],
     calc: new CalculadoraMetricas(cfgExtrator.confianca, indices), estado: estadoInicial(),
     sessao: "pagina-" + Date.now().toString(36), respondeu: false, ultimo: null,
-    monitor: new MonitorRosto(cfgAnalise.rosto), piscadas: 0 });
+    monitor: new MonitorRosto(cfgAnalise.rosto), monitorHibrido: new MonitorHibrido(cfgAnalise.rosto), piscadas: 0, ultimoIndice: null, olhosIndice: null });
   S.emissor = estadoEmissorInicial(S.sessao);
   V.sinal.abrirCanal("ia", S.sessao);
   laco();
@@ -270,6 +301,7 @@ V.ia = {
   get ultimo() { return S.ultimo; }, get sessao() { return S.sessao; }, indices, limiares: cfgAnalise.rosto,
   get rostoVisivel() { return !!S.ultimo?.registro?.rosto_visivel; }, // cnn.js só analisa com o motorista
   geo: { direcaoDaCabeca, olharDaIris, olhos }, // para o desenho em driver-monitor.js (script clássico)
+  get monitoramentoHibrido() { return S.ultimo?.hibrido ?? null; },
   iniciar, parar, mostrar: () => alternarVisivel(true), ocultar: () => alternarVisivel(false),
   responder: () => { S.respondeu = true; },
   csv: () => [cabecalhoCsv(contrato), ...S.linhas].join("\n") + "\n",

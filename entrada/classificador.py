@@ -1,4 +1,4 @@
-"""Classifica o estado do motorista com o modelo Keras treinado (cnn_sonolencia.keras).
+"""Classifica o estado do motorista com a CNN V2 verificada.
 
 O modelo foi treinado com o quadro inteiro da câmera, em RGB, redimensionado para o
 tamanho de entrada dele (160x160 no FaceCar_CNN_V2), com os pixels de 0 a 255: a

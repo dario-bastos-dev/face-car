@@ -1,4 +1,4 @@
-// Modelo de imagens da Parte 1 (cnn_sonolencia.keras) rodando no servidor Python.
+// Modelo de imagens CNN V2 rodando no servidor Python.
 //
 //   câmera da página → quadro inteiro reduzido ao tamanho de entrada do modelo (RGB, sem desenho)
 //   → WebSocket /cnn do simulador/servidor.py → sonolento / alerta / bocejo + média da janela
@@ -14,12 +14,13 @@
 // Como na análise em Python, sem o motorista na câmera nenhum quadro vai ao modelo e o índice some.
 const V = window.VIGIA;
 const $ = (id) => document.getElementById(id);
+const MODO = new URLSearchParams(location.search).get("cnnModo") === "inteiro" ? "inteiro" : "rosto";
 const INTERVALO_MS = 125;     // até ~8 quadros por segundo: a média de 2 s não precisa de mais, e a animação fica livre
 const VALIDADE_MS = 800;      // resultado mais velho que isto não comanda os níveis
-const PESO_BOCEJO = 0.45;     // bocejo sozinho leva a ATENÇÃO (limiar 35), não a ALERTA
+const PESO_BOCEJO = 0.35;     // bocejo sozinho leva a ATENÇÃO (20-40), não ao crítico (40)
 const MAX_LEITURAS = 36000;    // ~1 h de leituras guardadas para a validação
 
-const C = { estado: "desligado", motivo: "", url: null, tamanho: 0, classes: [], ultimo: null, recebidoEm: 0 };
+const C = { estado: "desligado", motivo: "", url: null, tamanho: 0, classes: [], ultimo: null, recebidoEm: 0, modelo: null, modo: MODO };
 const leituras = [];          // uma linha por resultado do modelo (exportável em CSV)
 let ws = null, canvas = null, ctx = null, emTransito = false, enviadoEm = 0, tentativaEm = -1e9;
 
@@ -49,16 +50,18 @@ async function conectar() {
   w.onmessage = (e) => {
     let m; try { m = JSON.parse(e.data); } catch { return; }
     if (m.tipo === "cnn") {
+      if (!V.ia?.rostoVisivel) { emTransito = false; C.ultimo = null; return; }
       emTransito = false;
       C.ultimo = m; C.recebidoEm = performance.now();
       registrar(m);
       painel();
     } else if (m.tipo === "cnn_pronto") {
+      C.ultimo = null; C.modelo = m.modelo || null;
       C.tamanho = m.tamanho; C.classes = m.classes;
       canvas = Object.assign(document.createElement("canvas"), { width: m.tamanho, height: m.tamanho });
       ctx = canvas.getContext("2d", { willReadFrequently: true });
       definir("pronto");
-      V.log(`Modelo CNN conectado (${m.classes.join(", ")}; entrada ${m.tamanho}×${m.tamanho})`, "camera");
+      V.log(`Modelo CNN conectado (${m.classes.join(", ")}; entrada ${m.tamanho}×${m.tamanho}; modo ${MODO})`, "camera");
     } else if (m.tipo === "cnn_indisponivel") {
       definir("indisponivel", m.motivo || "");
       V.log("Modelo CNN indisponível no servidor: " + (m.motivo || "motivo não informado"), "error");
@@ -66,7 +69,7 @@ async function conectar() {
   };
   w.onclose = () => {
     if (ws !== w) return;
-    ws = null; emTransito = false;
+    ws = null; emTransito = false; C.ultimo = null; C.recebidoEm = 0; C.modelo = null;
     if (C.estado === "pronto" || C.estado === "conectando") definir("desconectado");
   };
 }
@@ -74,26 +77,52 @@ async function conectar() {
 // Pode mandar outro quadro agora? (Também reconecta sozinho; com o modelo indisponível, tenta de
 // novo com menos frequência.)
 function podeEnviar(agora) {
-  if (!V.ia?.ativo || !V.ia.rostoVisivel) return false;   // sem o motorista na câmera, sem análise
+  if (!V.ia?.ativo || !V.ia.rostoVisivel) { C.ultimo = null; emTransito = false; return false; }   // sem rosto, não há classificação atual
   if (!ws) { if (agora - tentativaEm > (C.estado === "indisponivel" ? 15000 : 5000)) conectar(); return false; }
   if (ws.readyState !== WebSocket.OPEN || C.estado !== "pronto") return false;
   if (emTransito && agora - enviadoEm < 2000) return false; // resposta perdida: segue depois de 2 s
   return agora - enviadoEm >= INTERVALO_MS;
 }
-// Quadro inteiro da câmera (sem o espelhamento da tela) em tamanho x tamanho, RGB: reduzir a
-// 160x160 e copiar os pixels custa 3 a 4 ms na página, bem menos que o MediaPipe.
+function caixaRosto() {
+  const pontos = V.ia?.ultimo?.pontos;
+  if (!pontos?.length) return null;
+  const xs = pontos.map(([x]) => x), ys = pontos.map(([, y]) => y);
+  const xmin = Math.max(0, Math.min(...xs)), ymin = Math.max(0, Math.min(...ys));
+  return { xmin, ymin, width: Math.min(1, Math.max(...xs) - xmin), height: Math.min(1, Math.max(...ys) - ymin) };
+}
+function earAtual() {
+  const registro = V.ia?.ultimo?.registro;
+  const esq = registro?.ear_esq, dir = registro?.ear_dir;
+  return Number.isFinite(esq) && Number.isFinite(dir) ? (esq + dir) / 2 : null;
+}
+
+// O modo inteiro preserva o protocolo anterior; o modo rosto envia o quadro original
+// e a caixa ao Python para reproduzir cv2.INTER_LINEAR e o padding de camera_v2.py.
 function enviarQuadro() {
   const agora = performance.now();
   if (!podeEnviar(agora)) return;
   const video = $("cameraFeed");
   if (video.readyState < 2 || !video.videoWidth) return;
   const S = C.tamanho;
-  ctx.drawImage(video, 0, 0, S, S);
-  const rgba = ctx.getImageData(0, 0, S, S).data, buf = new ArrayBuffer(8 + S * S * 3);
-  new DataView(buf).setFloat64(0, agora, true);
-  const rgb = new Uint8Array(buf, 8);
-  for (let i = 0, j = 0; i < rgba.length; i += 4) { rgb[j++] = rgba[i]; rgb[j++] = rgba[i + 1]; rgb[j++] = rgba[i + 2]; }
-  ws.send(buf);
+  if (MODO === "inteiro") {
+    ctx.drawImage(video, 0, 0, S, S);
+    const rgba = ctx.getImageData(0, 0, S, S).data, buf = new ArrayBuffer(8 + S * S * 3);
+    new DataView(buf).setFloat64(0, agora, true);
+    const rgb = new Uint8Array(buf, 8);
+    for (let i = 0, j = 0; i < rgba.length; i += 4) { rgb[j++] = rgba[i]; rgb[j++] = rgba[i + 1]; rgb[j++] = rgba[i + 2]; }
+    ws.send(buf);
+  } else {
+    const caixa = caixaRosto();
+    if (!caixa) { C.ultimo = null; return; }
+    const w = Math.min(video.videoWidth, 640), h = Math.max(1, Math.round(video.videoHeight * w / video.videoWidth));
+    const bruto = Object.assign(document.createElement("canvas"), { width: w, height: h });
+    const brutoCtx = bruto.getContext("2d", { willReadFrequently: true });
+    brutoCtx.drawImage(video, 0, 0, w, h);
+    const rgba = brutoCtx.getImageData(0, 0, w, h).data, rgb = new Uint8Array(w * h * 3);
+    for (let i = 0, j = 0; i < rgba.length; i += 4) { rgb[j++] = rgba[i]; rgb[j++] = rgba[i + 1]; rgb[j++] = rgba[i + 2]; }
+    ws.send(JSON.stringify({ tipo: "cnn_quadro", t_ms: agora, largura: w, altura: h, caixa, ear: earAtual() }));
+    ws.send(rgb);
+  }
   emTransito = true; enviadoEm = agora;
 }
 
@@ -116,12 +145,12 @@ function indice() {
 function registrar(m) {
   if (leituras.length >= MAX_LEITURAS) return;
   const pm = m.media.probabilidades, ix = Math.round(100 * Math.min(1, (pm.sonolento ?? 0) + PESO_BOCEJO * (pm.bocejo ?? 0)));
-  leituras.push([Math.round(m.t_ms), m.classe, ...C.classes.map(k => m.probabilidades[k]?.toFixed(4)), m.media.classe,
+  leituras.push([MODO, "webcam-canvas-rgb-websocket-cnn", Math.round(m.t_ms), m.classe, ...C.classes.map(k => m.probabilidades[k]?.toFixed(4)), m.media.classe,
     ...C.classes.map(k => pm[k]?.toFixed(4)), ix, V.ia?.ultimo?.estado ?? "", V.state.level, m.ms]);
   const b = document.getElementById("cnnCsvBtn"); if (b) b.disabled = false;
 }
 function baixarCsv() {
-  const cab = ["t_ms", "classe", ...C.classes.map(k => "p_" + k), "classe_media", ...C.classes.map(k => "media_" + k), "indice", "estado_sinal", "nivel_simulador", "ms_previsao"];
+  const cab = ["preprocessamento", "etapa", "t_ms", "classe", ...C.classes.map(k => "p_" + k), "classe_media", ...C.classes.map(k => "media_" + k), "indice_risco_derivado", "estado_sinal", "nivel_simulador", "ms_previsao"];
   const csv = [cab.join(","), ...leituras.map(l => l.join(","))].join("\n") + "\n";
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
@@ -166,7 +195,7 @@ function painel(forcar = false) {
   }
 }
 
-V.addRenderer(() => { enviarQuadro(); painel(); });
+V.addRenderer(() => { enviarQuadro(); painel(); }, 'cnn');
 document.getElementById("cnnCsvBtn").onclick = baixarCsv;
 V.cnn = {
   get estado() { return C.estado; }, get ultimo() { return C.ultimo; }, get leituras() { return leituras.length; },

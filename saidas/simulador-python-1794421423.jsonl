@@ -1,0 +1,685 @@
+{"direcao": "enviada", "t_local_ms": 0, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 1, "ts": 0, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 0, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 2, "ts": 0, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 547, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 3, "ts": 547, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 547, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 4, "ts": 547, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 1077, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 5, "ts": 1077, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 1077, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 6, "ts": 1077, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 1625, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 7, "ts": 1625, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 1625, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 8, "ts": 1625, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 1905, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 1, "status": "aceita", "ts_local": 3891}
+{"direcao": "recebida", "t_local_ms": 1905, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 2, "status": "aceita", "ts_local": 3899}
+{"direcao": "recebida", "t_local_ms": 1905, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 3, "status": "aceita", "ts_local": 3899}
+{"direcao": "recebida", "t_local_ms": 1905, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 4, "status": "aceita", "ts_local": 3900}
+{"direcao": "recebida", "t_local_ms": 1905, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 5, "status": "aceita", "ts_local": 3900}
+{"direcao": "recebida", "t_local_ms": 1905, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 6, "status": "aceita", "ts_local": 3900}
+{"direcao": "recebida", "t_local_ms": 1905, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 7, "status": "aceita", "ts_local": 3900}
+{"direcao": "recebida", "t_local_ms": 1922, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 8, "status": "aceita", "ts_local": 3900}
+{"direcao": "enviada", "t_local_ms": 2172, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 9, "ts": 2172, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 2172, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 10, "ts": 2172, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 2172, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 9, "status": "aceita", "ts_local": 4156}
+{"direcao": "recebida", "t_local_ms": 2172, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 10, "status": "aceita", "ts_local": 4156}
+{"direcao": "enviada", "t_local_ms": 2702, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 11, "ts": 2702, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 2702, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 12, "ts": 2702, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 2702, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 11, "status": "aceita", "ts_local": 4693}
+{"direcao": "recebida", "t_local_ms": 2702, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 12, "status": "aceita", "ts_local": 4694}
+{"direcao": "enviada", "t_local_ms": 3250, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 13, "ts": 3250, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 3250, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 14, "ts": 3250, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 3250, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 13, "status": "aceita", "ts_local": 5236}
+{"direcao": "recebida", "t_local_ms": 3250, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 14, "status": "aceita", "ts_local": 5237}
+{"direcao": "enviada", "t_local_ms": 3797, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 15, "ts": 3797, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 3797, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 16, "ts": 3797, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 3812, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 15, "status": "aceita", "ts_local": 5800}
+{"direcao": "recebida", "t_local_ms": 3812, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 16, "status": "aceita", "ts_local": 5801}
+{"direcao": "enviada", "t_local_ms": 4344, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 17, "ts": 4344, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 4344, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 18, "ts": 4344, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 4344, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 17, "status": "aceita", "ts_local": 6330}
+{"direcao": "recebida", "t_local_ms": 4344, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 18, "status": "aceita", "ts_local": 6330}
+{"direcao": "enviada", "t_local_ms": 4890, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 19, "ts": 4890, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 4890, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 20, "ts": 4890, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 4890, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 19, "status": "aceita", "ts_local": 6871}
+{"direcao": "recebida", "t_local_ms": 4890, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 20, "status": "aceita", "ts_local": 6871}
+{"direcao": "enviada", "t_local_ms": 5422, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 21, "ts": 5422, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 5422, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 22, "ts": 5422, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 5422, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 21, "status": "aceita", "ts_local": 7410}
+{"direcao": "recebida", "t_local_ms": 5422, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 22, "status": "aceita", "ts_local": 7411}
+{"direcao": "enviada", "t_local_ms": 5969, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 23, "ts": 5969, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 5969, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 24, "ts": 5969, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 5969, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 23, "status": "aceita", "ts_local": 7953}
+{"direcao": "recebida", "t_local_ms": 5969, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 24, "status": "aceita", "ts_local": 7953}
+{"direcao": "enviada", "t_local_ms": 6515, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 25, "ts": 6515, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 6515, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 26, "ts": 6515, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 6515, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 25, "status": "aceita", "ts_local": 8500}
+{"direcao": "recebida", "t_local_ms": 6515, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 26, "status": "aceita", "ts_local": 8502}
+{"direcao": "enviada", "t_local_ms": 7062, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 27, "ts": 7062, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 7062, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 28, "ts": 7062, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 7062, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 27, "status": "aceita", "ts_local": 9050}
+{"direcao": "recebida", "t_local_ms": 7062, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 28, "status": "aceita", "ts_local": 9051}
+{"direcao": "enviada", "t_local_ms": 7625, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 29, "ts": 7625, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 7625, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 30, "ts": 7625, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 7625, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 29, "status": "aceita", "ts_local": 9611}
+{"direcao": "recebida", "t_local_ms": 7625, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 30, "status": "aceita", "ts_local": 9612}
+{"direcao": "enviada", "t_local_ms": 8155, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 31, "ts": 8155, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 8155, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 32, "ts": 8155, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 8155, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 31, "status": "aceita", "ts_local": 10150}
+{"direcao": "recebida", "t_local_ms": 8172, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 32, "status": "aceita", "ts_local": 10150}
+{"direcao": "enviada", "t_local_ms": 8672, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 33, "ts": 8672, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 8672, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 34, "ts": 8672, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 8672, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 33, "status": "aceita", "ts_local": 10663}
+{"direcao": "recebida", "t_local_ms": 8672, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 34, "status": "aceita", "ts_local": 10663}
+{"direcao": "enviada", "t_local_ms": 9234, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 35, "ts": 9234, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 9234, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 36, "ts": 9234, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 9234, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 35, "status": "aceita", "ts_local": 11222}
+{"direcao": "recebida", "t_local_ms": 9234, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 36, "status": "aceita", "ts_local": 11223}
+{"direcao": "enviada", "t_local_ms": 9780, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 37, "ts": 9765, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 9780, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 38, "ts": 9765, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 9780, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 37, "status": "aceita", "ts_local": 11772}
+{"direcao": "recebida", "t_local_ms": 9780, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 38, "status": "aceita", "ts_local": 11772}
+{"direcao": "enviada", "t_local_ms": 10312, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 39, "ts": 10312, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 10312, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 40, "ts": 10312, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 10312, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 39, "status": "aceita", "ts_local": 12303}
+{"direcao": "recebida", "t_local_ms": 10312, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 40, "status": "aceita", "ts_local": 12304}
+{"direcao": "enviada", "t_local_ms": 10859, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 41, "ts": 10859, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 10859, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 42, "ts": 10859, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 10859, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 41, "status": "aceita", "ts_local": 12842}
+{"direcao": "recebida", "t_local_ms": 10859, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 42, "status": "aceita", "ts_local": 12843}
+{"direcao": "enviada", "t_local_ms": 11437, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 43, "ts": 11437, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 11437, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 44, "ts": 11437, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 11437, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 43, "status": "aceita", "ts_local": 13430}
+{"direcao": "recebida", "t_local_ms": 11437, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 44, "status": "aceita", "ts_local": 13431}
+{"direcao": "enviada", "t_local_ms": 11969, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 45, "ts": 11969, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 11969, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 46, "ts": 11969, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 11984, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 45, "status": "aceita", "ts_local": 13966}
+{"direcao": "recebida", "t_local_ms": 11984, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 46, "status": "aceita", "ts_local": 13970}
+{"direcao": "enviada", "t_local_ms": 12484, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 47, "ts": 12484, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 12484, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 48, "ts": 12484, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 12484, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 47, "status": "aceita", "ts_local": 14471}
+{"direcao": "recebida", "t_local_ms": 12484, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 48, "status": "aceita", "ts_local": 14473}
+{"direcao": "enviada", "t_local_ms": 13077, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 49, "ts": 13077, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 13077, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 50, "ts": 13077, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 13077, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 49, "status": "aceita", "ts_local": 15072}
+{"direcao": "recebida", "t_local_ms": 13077, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 50, "status": "aceita", "ts_local": 15073}
+{"direcao": "enviada", "t_local_ms": 13625, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 51, "ts": 13625, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 13625, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 52, "ts": 13625, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 13625, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 51, "status": "aceita", "ts_local": 15612}
+{"direcao": "recebida", "t_local_ms": 13625, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 52, "status": "aceita", "ts_local": 15613}
+{"direcao": "enviada", "t_local_ms": 14172, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 53, "ts": 14172, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 14172, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 54, "ts": 14172, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 14172, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 53, "status": "aceita", "ts_local": 16156}
+{"direcao": "recebida", "t_local_ms": 14172, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 54, "status": "aceita", "ts_local": 16156}
+{"direcao": "enviada", "t_local_ms": 14687, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 55, "ts": 14687, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 14687, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 56, "ts": 14687, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 14687, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 55, "status": "aceita", "ts_local": 16681}
+{"direcao": "recebida", "t_local_ms": 14687, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 56, "status": "aceita", "ts_local": 16682}
+{"direcao": "enviada", "t_local_ms": 15202, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 57, "ts": 15202, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 15202, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 58, "ts": 15202, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 15202, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 57, "status": "aceita", "ts_local": 17195}
+{"direcao": "recebida", "t_local_ms": 15202, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 58, "status": "aceita", "ts_local": 17195}
+{"direcao": "enviada", "t_local_ms": 15765, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 59, "ts": 15765, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 15765, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 60, "ts": 15765, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 15765, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 59, "status": "aceita", "ts_local": 17748}
+{"direcao": "recebida", "t_local_ms": 15765, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 60, "status": "aceita", "ts_local": 17748}
+{"direcao": "enviada", "t_local_ms": 16297, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 61, "ts": 16280, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 16312, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 62, "ts": 16280, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 16312, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 61, "status": "aceita", "ts_local": 18291}
+{"direcao": "recebida", "t_local_ms": 16312, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 62, "status": "aceita", "ts_local": 18306}
+{"direcao": "enviada", "t_local_ms": 16812, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 63, "ts": 16812, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 16812, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 64, "ts": 16812, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 16812, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 63, "status": "aceita", "ts_local": 18797}
+{"direcao": "recebida", "t_local_ms": 16812, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 64, "status": "aceita", "ts_local": 18798}
+{"direcao": "enviada", "t_local_ms": 17327, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 65, "ts": 17327, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 17327, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 66, "ts": 17327, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 17344, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 65, "status": "aceita", "ts_local": 19323}
+{"direcao": "recebida", "t_local_ms": 17344, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 66, "status": "aceita", "ts_local": 19323}
+{"direcao": "enviada", "t_local_ms": 17844, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 67, "ts": 17844, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 17844, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 68, "ts": 17844, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 17844, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 67, "status": "aceita", "ts_local": 19835}
+{"direcao": "recebida", "t_local_ms": 17844, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 68, "status": "aceita", "ts_local": 19836}
+{"direcao": "enviada", "t_local_ms": 18405, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 69, "ts": 18405, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 18405, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 70, "ts": 18405, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 18405, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 69, "status": "aceita", "ts_local": 20395}
+{"direcao": "recebida", "t_local_ms": 18405, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 70, "status": "aceita", "ts_local": 20395}
+{"direcao": "enviada", "t_local_ms": 18937, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 71, "ts": 18937, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 18937, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 72, "ts": 18937, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 18937, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 71, "status": "aceita", "ts_local": 20930}
+{"direcao": "recebida", "t_local_ms": 18937, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 72, "status": "aceita", "ts_local": 20931}
+{"direcao": "enviada", "t_local_ms": 19500, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 73, "ts": 19500, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 19500, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 74, "ts": 19500, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 19500, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 73, "status": "aceita", "ts_local": 21491}
+{"direcao": "recebida", "t_local_ms": 19500, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 74, "status": "aceita", "ts_local": 21491}
+{"direcao": "enviada", "t_local_ms": 20062, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 75, "ts": 20047, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 20062, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 76, "ts": 20047, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 20062, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 75, "status": "aceita", "ts_local": 22043}
+{"direcao": "recebida", "t_local_ms": 20062, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 76, "status": "aceita", "ts_local": 22044}
+{"direcao": "enviada", "t_local_ms": 20547, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 77, "ts": 20547, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 20547, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 78, "ts": 20547, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 20547, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 77, "status": "aceita", "ts_local": 22542}
+{"direcao": "recebida", "t_local_ms": 20547, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 78, "status": "aceita", "ts_local": 22542}
+{"direcao": "enviada", "t_local_ms": 21109, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 79, "ts": 21062, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 21109, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 80, "ts": 21062, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 21125, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 79, "status": "aceita", "ts_local": 23105}
+{"direcao": "recebida", "t_local_ms": 21125, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 80, "status": "aceita", "ts_local": 23111}
+{"direcao": "enviada", "t_local_ms": 21609, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 81, "ts": 21594, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 21609, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 82, "ts": 21594, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 21625, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 81, "status": "aceita", "ts_local": 23605}
+{"direcao": "recebida", "t_local_ms": 21625, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 82, "status": "aceita", "ts_local": 23612}
+{"direcao": "enviada", "t_local_ms": 22140, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 83, "ts": 22140, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 22140, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 84, "ts": 22140, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 22140, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 83, "status": "aceita", "ts_local": 24128}
+{"direcao": "recebida", "t_local_ms": 22140, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 84, "status": "aceita", "ts_local": 24130}
+{"direcao": "enviada", "t_local_ms": 22672, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 85, "ts": 22672, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 22672, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 86, "ts": 22672, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 22672, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 85, "status": "aceita", "ts_local": 24657}
+{"direcao": "recebida", "t_local_ms": 22672, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 86, "status": "aceita", "ts_local": 24659}
+{"direcao": "enviada", "t_local_ms": 23187, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 87, "ts": 23172, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 23187, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 88, "ts": 23172, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 23187, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 87, "status": "aceita", "ts_local": 25177}
+{"direcao": "recebida", "t_local_ms": 23187, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 88, "status": "aceita", "ts_local": 25177}
+{"direcao": "enviada", "t_local_ms": 23719, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 89, "ts": 23719, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 23719, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 90, "ts": 23719, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 23719, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 89, "status": "aceita", "ts_local": 25710}
+{"direcao": "recebida", "t_local_ms": 23719, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 90, "status": "aceita", "ts_local": 25711}
+{"direcao": "enviada", "t_local_ms": 24250, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 91, "ts": 24234, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 24250, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 92, "ts": 24234, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 24250, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 91, "status": "aceita", "ts_local": 26234}
+{"direcao": "recebida", "t_local_ms": 24250, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 92, "status": "aceita", "ts_local": 26234}
+{"direcao": "enviada", "t_local_ms": 24780, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 93, "ts": 24780, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 24780, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 94, "ts": 24780, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 24780, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 93, "status": "aceita", "ts_local": 26771}
+{"direcao": "recebida", "t_local_ms": 24780, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 94, "status": "aceita", "ts_local": 26772}
+{"direcao": "enviada", "t_local_ms": 25297, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 95, "ts": 25297, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 25297, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 96, "ts": 25297, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 25297, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 95, "status": "aceita", "ts_local": 27286}
+{"direcao": "recebida", "t_local_ms": 25297, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 96, "status": "aceita", "ts_local": 27286}
+{"direcao": "enviada", "t_local_ms": 25827, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 97, "ts": 25827, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 25827, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 98, "ts": 25827, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 25827, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 97, "status": "aceita", "ts_local": 27820}
+{"direcao": "recebida", "t_local_ms": 25827, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 98, "status": "aceita", "ts_local": 27822}
+{"direcao": "enviada", "t_local_ms": 26375, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 99, "ts": 26359, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 26375, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 100, "ts": 26359, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 26375, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 99, "status": "aceita", "ts_local": 28358}
+{"direcao": "recebida", "t_local_ms": 26375, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 100, "status": "aceita", "ts_local": 28359}
+{"direcao": "enviada", "t_local_ms": 26922, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 101, "ts": 26922, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 26922, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 102, "ts": 26922, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 26922, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 101, "status": "aceita", "ts_local": 28911}
+{"direcao": "recebida", "t_local_ms": 26922, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 102, "status": "aceita", "ts_local": 28911}
+{"direcao": "enviada", "t_local_ms": 27452, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 103, "ts": 27437, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 27452, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 104, "ts": 27437, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 27452, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 103, "status": "aceita", "ts_local": 29436}
+{"direcao": "recebida", "t_local_ms": 27452, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 104, "status": "aceita", "ts_local": 29437}
+{"direcao": "enviada", "t_local_ms": 28000, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 105, "ts": 27969, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 28000, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 106, "ts": 27969, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 28000, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 105, "status": "aceita", "ts_local": 29985}
+{"direcao": "recebida", "t_local_ms": 28000, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 106, "status": "aceita", "ts_local": 29986}
+{"direcao": "enviada", "t_local_ms": 28484, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 107, "ts": 28469, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 28484, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 108, "ts": 28469, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 28484, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 107, "status": "aceita", "ts_local": 30468}
+{"direcao": "recebida", "t_local_ms": 28484, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 108, "status": "aceita", "ts_local": 30468}
+{"direcao": "enviada", "t_local_ms": 29030, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 109, "ts": 29030, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 29030, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 110, "ts": 29030, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 29047, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 109, "status": "aceita", "ts_local": 31026}
+{"direcao": "recebida", "t_local_ms": 29047, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 110, "status": "aceita", "ts_local": 31027}
+{"direcao": "enviada", "t_local_ms": 29562, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 111, "ts": 29562, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 29562, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 112, "ts": 29562, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 29562, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 111, "status": "aceita", "ts_local": 31553}
+{"direcao": "recebida", "t_local_ms": 29562, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 112, "status": "aceita", "ts_local": 31555}
+{"direcao": "enviada", "t_local_ms": 30125, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 113, "ts": 30109, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 30125, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 114, "ts": 30109, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 30125, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 113, "status": "aceita", "ts_local": 32110}
+{"direcao": "recebida", "t_local_ms": 30125, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 114, "status": "aceita", "ts_local": 32110}
+{"direcao": "enviada", "t_local_ms": 30640, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 115, "ts": 30640, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 30640, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 116, "ts": 30640, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 30655, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 115, "status": "aceita", "ts_local": 32635}
+{"direcao": "recebida", "t_local_ms": 30655, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 116, "status": "aceita", "ts_local": 32636}
+{"direcao": "enviada", "t_local_ms": 31187, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 117, "ts": 31172, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 31187, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 118, "ts": 31172, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 31187, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 117, "status": "aceita", "ts_local": 33174}
+{"direcao": "recebida", "t_local_ms": 31187, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 118, "status": "aceita", "ts_local": 33175}
+{"direcao": "enviada", "t_local_ms": 31734, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 119, "ts": 31719, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 31734, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 120, "ts": 31719, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 31734, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 119, "status": "aceita", "ts_local": 33725}
+{"direcao": "recebida", "t_local_ms": 31750, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 120, "status": "aceita", "ts_local": 33732}
+{"direcao": "enviada", "t_local_ms": 32265, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 121, "ts": 32250, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 32265, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 122, "ts": 32250, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 32265, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 121, "status": "aceita", "ts_local": 34254}
+{"direcao": "recebida", "t_local_ms": 32265, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 122, "status": "aceita", "ts_local": 34255}
+{"direcao": "enviada", "t_local_ms": 32750, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 123, "ts": 32750, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 32750, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 124, "ts": 32750, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 32750, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 123, "status": "aceita", "ts_local": 34741}
+{"direcao": "recebida", "t_local_ms": 32750, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 124, "status": "aceita", "ts_local": 34742}
+{"direcao": "enviada", "t_local_ms": 33327, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 125, "ts": 33312, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 33327, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 126, "ts": 33312, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 33327, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 125, "status": "aceita", "ts_local": 35313}
+{"direcao": "recebida", "t_local_ms": 33327, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 126, "status": "aceita", "ts_local": 35313}
+{"direcao": "enviada", "t_local_ms": 33952, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 127, "ts": 33937, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 34030, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 128, "ts": 33937, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 34030, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 127, "status": "aceita", "ts_local": 35942}
+{"direcao": "recebida", "t_local_ms": 34047, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 128, "status": "aceita", "ts_local": 36026}
+{"direcao": "enviada", "t_local_ms": 34500, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 129, "ts": 34484, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 34500, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 130, "ts": 34484, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 34500, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 129, "status": "aceita", "ts_local": 36487}
+{"direcao": "recebida", "t_local_ms": 34500, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 130, "status": "aceita", "ts_local": 36487}
+{"direcao": "enviada", "t_local_ms": 35030, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 131, "ts": 35030, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 35030, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 132, "ts": 35030, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 35030, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 131, "status": "aceita", "ts_local": 37021}
+{"direcao": "recebida", "t_local_ms": 35030, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 132, "status": "aceita", "ts_local": 37023}
+{"direcao": "enviada", "t_local_ms": 35577, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 133, "ts": 35562, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 35577, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 134, "ts": 35562, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 35577, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 133, "status": "aceita", "ts_local": 37566}
+{"direcao": "recebida", "t_local_ms": 35577, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 134, "status": "aceita", "ts_local": 37566}
+{"direcao": "enviada", "t_local_ms": 36077, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 135, "ts": 36062, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 36077, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 136, "ts": 36062, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 36077, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 135, "status": "aceita", "ts_local": 38059}
+{"direcao": "recebida", "t_local_ms": 36077, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 136, "status": "aceita", "ts_local": 38060}
+{"direcao": "enviada", "t_local_ms": 36609, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 137, "ts": 36609, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 36609, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 138, "ts": 36609, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 36625, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 137, "status": "aceita", "ts_local": 38607}
+{"direcao": "recebida", "t_local_ms": 36625, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 138, "status": "aceita", "ts_local": 38607}
+{"direcao": "enviada", "t_local_ms": 37155, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 139, "ts": 37155, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 37155, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 140, "ts": 37155, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 37155, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 139, "status": "aceita", "ts_local": 39150}
+{"direcao": "recebida", "t_local_ms": 37155, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 140, "status": "aceita", "ts_local": 39150}
+{"direcao": "enviada", "t_local_ms": 37719, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 141, "ts": 37702, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 37719, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 142, "ts": 37702, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 37719, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 141, "status": "aceita", "ts_local": 39706}
+{"direcao": "recebida", "t_local_ms": 37719, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 142, "status": "aceita", "ts_local": 39706}
+{"direcao": "enviada", "t_local_ms": 38219, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 143, "ts": 38219, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 38219, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 144, "ts": 38219, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 38234, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 143, "status": "aceita", "ts_local": 40210}
+{"direcao": "recebida", "t_local_ms": 38234, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 144, "status": "aceita", "ts_local": 40215}
+{"direcao": "enviada", "t_local_ms": 38765, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 145, "ts": 38765, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 38765, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 146, "ts": 38765, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 38765, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 145, "status": "aceita", "ts_local": 40756}
+{"direcao": "recebida", "t_local_ms": 38765, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 146, "status": "aceita", "ts_local": 40758}
+{"direcao": "enviada", "t_local_ms": 39327, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 147, "ts": 39297, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 39327, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 148, "ts": 39297, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 39344, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 147, "status": "aceita", "ts_local": 41320}
+{"direcao": "recebida", "t_local_ms": 39344, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 148, "status": "aceita", "ts_local": 41323}
+{"direcao": "enviada", "t_local_ms": 39875, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 149, "ts": 39875, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 39890, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 150, "ts": 39875, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 39890, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 149, "status": "aceita", "ts_local": 41873}
+{"direcao": "recebida", "t_local_ms": 39890, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 150, "status": "aceita", "ts_local": 41873}
+{"direcao": "enviada", "t_local_ms": 40405, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 151, "ts": 40390, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 40405, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 152, "ts": 40390, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 40405, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 151, "status": "aceita", "ts_local": 42389}
+{"direcao": "recebida", "t_local_ms": 40405, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 152, "status": "aceita", "ts_local": 42389}
+{"direcao": "enviada", "t_local_ms": 40937, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 153, "ts": 40937, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 40952, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 154, "ts": 40937, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 40952, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 153, "status": "aceita", "ts_local": 42933}
+{"direcao": "recebida", "t_local_ms": 40952, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 154, "status": "aceita", "ts_local": 42935}
+{"direcao": "enviada", "t_local_ms": 41515, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 155, "ts": 41500, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 41515, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 156, "ts": 41500, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 41515, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 155, "status": "aceita", "ts_local": 43499}
+{"direcao": "recebida", "t_local_ms": 41515, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 156, "status": "aceita", "ts_local": 43500}
+{"direcao": "enviada", "t_local_ms": 42030, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 157, "ts": 42030, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 42030, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 158, "ts": 42030, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 42030, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 157, "status": "aceita", "ts_local": 44023}
+{"direcao": "recebida", "t_local_ms": 42030, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 158, "status": "aceita", "ts_local": 44023}
+{"direcao": "enviada", "t_local_ms": 42577, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 159, "ts": 42562, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 42577, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 160, "ts": 42562, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 42577, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 159, "status": "aceita", "ts_local": 44567}
+{"direcao": "recebida", "t_local_ms": 42577, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 160, "status": "aceita", "ts_local": 44567}
+{"direcao": "enviada", "t_local_ms": 43077, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 161, "ts": 43062, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 43077, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 162, "ts": 43062, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 43077, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 161, "status": "aceita", "ts_local": 45065}
+{"direcao": "recebida", "t_local_ms": 43077, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 162, "status": "aceita", "ts_local": 45066}
+{"direcao": "enviada", "t_local_ms": 43609, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 163, "ts": 43594, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 43609, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 164, "ts": 43594, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 43609, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 163, "status": "aceita", "ts_local": 45595}
+{"direcao": "recebida", "t_local_ms": 43609, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 164, "status": "aceita", "ts_local": 45596}
+{"direcao": "enviada", "t_local_ms": 44172, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 165, "ts": 44172, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 44172, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 166, "ts": 44172, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 44187, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 165, "status": "aceita", "ts_local": 46165}
+{"direcao": "recebida", "t_local_ms": 44187, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 166, "status": "aceita", "ts_local": 46167}
+{"direcao": "enviada", "t_local_ms": 44765, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 167, "ts": 44750, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 44765, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 168, "ts": 44750, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 44765, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 167, "status": "aceita", "ts_local": 46749}
+{"direcao": "recebida", "t_local_ms": 44765, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 168, "status": "aceita", "ts_local": 46752}
+{"direcao": "enviada", "t_local_ms": 45265, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 169, "ts": 45250, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 45265, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 170, "ts": 45250, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 45265, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 169, "status": "aceita", "ts_local": 47252}
+{"direcao": "recebida", "t_local_ms": 45265, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 170, "status": "aceita", "ts_local": 47252}
+{"direcao": "enviada", "t_local_ms": 45797, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 171, "ts": 45797, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 45797, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 172, "ts": 45797, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 45797, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 171, "status": "aceita", "ts_local": 47789}
+{"direcao": "recebida", "t_local_ms": 45797, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 172, "status": "aceita", "ts_local": 47789}
+{"direcao": "enviada", "t_local_ms": 46375, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 173, "ts": 46359, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 46375, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 174, "ts": 46359, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 46375, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 173, "status": "aceita", "ts_local": 48356}
+{"direcao": "recebida", "t_local_ms": 46375, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 174, "status": "aceita", "ts_local": 48356}
+{"direcao": "enviada", "t_local_ms": 46890, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 175, "ts": 46890, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 46905, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 176, "ts": 46890, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 46905, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 175, "status": "aceita", "ts_local": 48886}
+{"direcao": "recebida", "t_local_ms": 46905, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 176, "status": "aceita", "ts_local": 48887}
+{"direcao": "enviada", "t_local_ms": 47469, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 177, "ts": 47452, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 47469, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 178, "ts": 47452, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 47469, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 177, "status": "aceita", "ts_local": 49452}
+{"direcao": "recebida", "t_local_ms": 47469, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 178, "status": "aceita", "ts_local": 49452}
+{"direcao": "enviada", "t_local_ms": 48000, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 179, "ts": 48000, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 48000, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 180, "ts": 48000, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 48000, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 179, "status": "aceita", "ts_local": 49990}
+{"direcao": "recebida", "t_local_ms": 48000, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 180, "status": "aceita", "ts_local": 49990}
+{"direcao": "enviada", "t_local_ms": 48609, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 181, "ts": 48594, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 48625, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 182, "ts": 48594, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 48625, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 181, "status": "aceita", "ts_local": 50603}
+{"direcao": "recebida", "t_local_ms": 48625, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 182, "status": "aceita", "ts_local": 50611}
+{"direcao": "enviada", "t_local_ms": 49140, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 183, "ts": 49125, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 49140, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 184, "ts": 49125, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 49140, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 183, "status": "aceita", "ts_local": 51131}
+{"direcao": "recebida", "t_local_ms": 49140, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 184, "status": "aceita", "ts_local": 51131}
+{"direcao": "enviada", "t_local_ms": 49687, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 185, "ts": 49687, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 49687, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 186, "ts": 49687, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 49702, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 185, "status": "aceita", "ts_local": 51682}
+{"direcao": "recebida", "t_local_ms": 49702, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 186, "status": "aceita", "ts_local": 51683}
+{"direcao": "enviada", "t_local_ms": 50234, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 187, "ts": 50219, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 50234, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 188, "ts": 50219, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 50234, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 187, "status": "aceita", "ts_local": 52215}
+{"direcao": "recebida", "t_local_ms": 50234, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 188, "status": "aceita", "ts_local": 52220}
+{"direcao": "enviada", "t_local_ms": 50750, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 189, "ts": 50734, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 50750, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 190, "ts": 50734, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 50750, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 189, "status": "aceita", "ts_local": 52732}
+{"direcao": "recebida", "t_local_ms": 50750, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 190, "status": "aceita", "ts_local": 52732}
+{"direcao": "enviada", "t_local_ms": 51297, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 191, "ts": 51280, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 51297, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 192, "ts": 51280, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 51297, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 191, "status": "aceita", "ts_local": 53284}
+{"direcao": "recebida", "t_local_ms": 51297, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 192, "status": "aceita", "ts_local": 53289}
+{"direcao": "enviada", "t_local_ms": 51844, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 193, "ts": 51827, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 51844, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 194, "ts": 51827, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 51859, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 193, "status": "aceita", "ts_local": 53840}
+{"direcao": "recebida", "t_local_ms": 51859, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 194, "status": "aceita", "ts_local": 53840}
+{"direcao": "enviada", "t_local_ms": 52375, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 195, "ts": 52359, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 52375, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 196, "ts": 52359, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 52375, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 195, "status": "aceita", "ts_local": 54359}
+{"direcao": "recebida", "t_local_ms": 52375, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 196, "status": "aceita", "ts_local": 54366}
+{"direcao": "enviada", "t_local_ms": 52890, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 197, "ts": 52890, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 52890, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 198, "ts": 52890, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 52905, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 197, "status": "aceita", "ts_local": 54884}
+{"direcao": "recebida", "t_local_ms": 52905, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 198, "status": "aceita", "ts_local": 54885}
+{"direcao": "enviada", "t_local_ms": 53452, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 199, "ts": 53437, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 53452, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 200, "ts": 53437, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 53452, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 199, "status": "aceita", "ts_local": 55444}
+{"direcao": "recebida", "t_local_ms": 53452, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 200, "status": "aceita", "ts_local": 55444}
+{"direcao": "enviada", "t_local_ms": 53969, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 201, "ts": 53969, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 53969, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 202, "ts": 53969, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 53969, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 201, "status": "aceita", "ts_local": 55959}
+{"direcao": "recebida", "t_local_ms": 53969, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 202, "status": "aceita", "ts_local": 55960}
+{"direcao": "enviada", "t_local_ms": 54500, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 203, "ts": 54484, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 54500, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 204, "ts": 54484, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 54500, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 203, "status": "aceita", "ts_local": 56482}
+{"direcao": "recebida", "t_local_ms": 54500, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 204, "status": "aceita", "ts_local": 56482}
+{"direcao": "enviada", "t_local_ms": 55000, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 205, "ts": 54984, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 55000, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 206, "ts": 54984, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 55015, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 205, "status": "aceita", "ts_local": 56996}
+{"direcao": "recebida", "t_local_ms": 55015, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 206, "status": "aceita", "ts_local": 56997}
+{"direcao": "enviada", "t_local_ms": 55530, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 207, "ts": 55530, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 55530, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 208, "ts": 55530, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 55530, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 207, "status": "aceita", "ts_local": 57523}
+{"direcao": "recebida", "t_local_ms": 55530, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 208, "status": "aceita", "ts_local": 57523}
+{"direcao": "enviada", "t_local_ms": 56062, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 209, "ts": 56047, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 56062, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 210, "ts": 56047, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 56062, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 209, "status": "aceita", "ts_local": 58044}
+{"direcao": "recebida", "t_local_ms": 56062, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 210, "status": "aceita", "ts_local": 58045}
+{"direcao": "enviada", "t_local_ms": 56594, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 211, "ts": 56594, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 56594, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 212, "ts": 56594, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 56594, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 211, "status": "aceita", "ts_local": 58583}
+{"direcao": "recebida", "t_local_ms": 56594, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 212, "status": "aceita", "ts_local": 58584}
+{"direcao": "enviada", "t_local_ms": 57187, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 213, "ts": 57172, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 57187, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 214, "ts": 57172, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 57187, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 213, "status": "aceita", "ts_local": 59169}
+{"direcao": "recebida", "t_local_ms": 57187, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 214, "status": "aceita", "ts_local": 59171}
+{"direcao": "enviada", "t_local_ms": 57750, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 215, "ts": 57734, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 57750, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 216, "ts": 57734, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 57750, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 215, "status": "aceita", "ts_local": 59733}
+{"direcao": "recebida", "t_local_ms": 57750, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 216, "status": "aceita", "ts_local": 59733}
+{"direcao": "enviada", "t_local_ms": 58234, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 217, "ts": 58234, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 58234, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 218, "ts": 58234, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 58250, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 217, "status": "aceita", "ts_local": 60229}
+{"direcao": "recebida", "t_local_ms": 58250, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 218, "status": "aceita", "ts_local": 60230}
+{"direcao": "enviada", "t_local_ms": 58780, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 219, "ts": 58780, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 58780, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 220, "ts": 58780, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 58812, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 219, "status": "aceita", "ts_local": 60789}
+{"direcao": "recebida", "t_local_ms": 58812, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 220, "status": "aceita", "ts_local": 60793}
+{"direcao": "enviada", "t_local_ms": 59312, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 221, "ts": 59312, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 59327, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 222, "ts": 59312, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 59327, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 221, "status": "aceita", "ts_local": 61311}
+{"direcao": "recebida", "t_local_ms": 59327, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 222, "status": "aceita", "ts_local": 61311}
+{"direcao": "enviada", "t_local_ms": 59875, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 223, "ts": 59844, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 59875, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 224, "ts": 59844, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 59875, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 223, "status": "aceita", "ts_local": 61861}
+{"direcao": "recebida", "t_local_ms": 59875, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 224, "status": "aceita", "ts_local": 61862}
+{"direcao": "enviada", "t_local_ms": 60405, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 225, "ts": 60390, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 60422, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 226, "ts": 60390, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 60422, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 225, "status": "aceita", "ts_local": 62405}
+{"direcao": "recebida", "t_local_ms": 60422, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 226, "status": "aceita", "ts_local": 62405}
+{"direcao": "enviada", "t_local_ms": 60937, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 227, "ts": 60937, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 60937, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 228, "ts": 60937, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 60937, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 227, "status": "aceita", "ts_local": 62932}
+{"direcao": "recebida", "t_local_ms": 60952, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 228, "status": "aceita", "ts_local": 62933}
+{"direcao": "enviada", "t_local_ms": 61562, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 229, "ts": 61484, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 61577, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 230, "ts": 61484, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 61577, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 229, "status": "aceita", "ts_local": 63558}
+{"direcao": "recebida", "t_local_ms": 61640, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 230, "status": "aceita", "ts_local": 63565}
+{"direcao": "enviada", "t_local_ms": 62077, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 231, "ts": 62047, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 62077, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 232, "ts": 62047, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 62077, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 231, "status": "aceita", "ts_local": 64068}
+{"direcao": "recebida", "t_local_ms": 62077, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 232, "status": "aceita", "ts_local": 64069}
+{"direcao": "enviada", "t_local_ms": 62609, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 233, "ts": 62609, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 62609, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 234, "ts": 62609, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 62609, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 233, "status": "aceita", "ts_local": 64596}
+{"direcao": "recebida", "t_local_ms": 62609, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 234, "status": "aceita", "ts_local": 64597}
+{"direcao": "enviada", "t_local_ms": 63140, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 235, "ts": 63140, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 63155, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 236, "ts": 63140, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 63155, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 235, "status": "aceita", "ts_local": 65144}
+{"direcao": "recebida", "t_local_ms": 63155, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 236, "status": "aceita", "ts_local": 65146}
+{"direcao": "enviada", "t_local_ms": 63702, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 237, "ts": 63702, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 63702, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 238, "ts": 63702, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 63719, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 237, "status": "aceita", "ts_local": 65699}
+{"direcao": "recebida", "t_local_ms": 63719, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 238, "status": "aceita", "ts_local": 65700}
+{"direcao": "enviada", "t_local_ms": 64219, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 239, "ts": 64202, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 64219, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 240, "ts": 64202, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 64219, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 239, "status": "aceita", "ts_local": 66203}
+{"direcao": "recebida", "t_local_ms": 64219, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 240, "status": "aceita", "ts_local": 66204}
+{"direcao": "enviada", "t_local_ms": 64702, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 241, "ts": 64702, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 64702, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 242, "ts": 64702, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 64719, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 241, "status": "aceita", "ts_local": 66698}
+{"direcao": "recebida", "t_local_ms": 64719, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 242, "status": "aceita", "ts_local": 66698}
+{"direcao": "enviada", "t_local_ms": 65250, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 243, "ts": 65250, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 65250, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 244, "ts": 65250, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 65250, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 243, "status": "aceita", "ts_local": 67239}
+{"direcao": "recebida", "t_local_ms": 65250, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 244, "status": "aceita", "ts_local": 67241}
+{"direcao": "enviada", "t_local_ms": 65765, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 245, "ts": 65765, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 65765, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 246, "ts": 65765, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 65780, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 245, "status": "aceita", "ts_local": 67759}
+{"direcao": "recebida", "t_local_ms": 65780, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 246, "status": "aceita", "ts_local": 67760}
+{"direcao": "enviada", "t_local_ms": 66297, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 247, "ts": 66297, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 66297, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 248, "ts": 66297, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 66297, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 247, "status": "aceita", "ts_local": 68286}
+{"direcao": "recebida", "t_local_ms": 66297, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 248, "status": "aceita", "ts_local": 68287}
+{"direcao": "enviada", "t_local_ms": 66812, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 249, "ts": 66797, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 66812, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 250, "ts": 66797, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 66812, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 249, "status": "aceita", "ts_local": 68795}
+{"direcao": "recebida", "t_local_ms": 66812, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 250, "status": "aceita", "ts_local": 68795}
+{"direcao": "enviada", "t_local_ms": 67405, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 251, "ts": 67375, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 67422, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 252, "ts": 67375, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 67422, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 251, "status": "aceita", "ts_local": 69401}
+{"direcao": "recebida", "t_local_ms": 67422, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 252, "status": "aceita", "ts_local": 69405}
+{"direcao": "enviada", "t_local_ms": 67905, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 253, "ts": 67890, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 67905, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 254, "ts": 67890, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 67905, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 253, "status": "aceita", "ts_local": 69888}
+{"direcao": "recebida", "t_local_ms": 67922, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 254, "status": "aceita", "ts_local": 69899}
+{"direcao": "enviada", "t_local_ms": 68422, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 255, "ts": 68405, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 68422, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 256, "ts": 68405, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 68422, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 255, "status": "aceita", "ts_local": 70413}
+{"direcao": "recebida", "t_local_ms": 68422, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 256, "status": "aceita", "ts_local": 70413}
+{"direcao": "enviada", "t_local_ms": 68952, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 257, "ts": 68952, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 68969, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 258, "ts": 68952, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 68969, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 257, "status": "aceita", "ts_local": 70948}
+{"direcao": "recebida", "t_local_ms": 68969, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 258, "status": "aceita", "ts_local": 70948}
+{"direcao": "enviada", "t_local_ms": 69500, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 259, "ts": 69484, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 69500, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 260, "ts": 69484, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 69500, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 259, "status": "aceita", "ts_local": 71483}
+{"direcao": "recebida", "t_local_ms": 69500, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 260, "status": "aceita", "ts_local": 71488}
+{"direcao": "enviada", "t_local_ms": 70094, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 261, "ts": 70077, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 70094, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 262, "ts": 70077, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 70094, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 261, "status": "aceita", "ts_local": 72075}
+{"direcao": "recebida", "t_local_ms": 70094, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 262, "status": "aceita", "ts_local": 72076}
+{"direcao": "enviada", "t_local_ms": 70655, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 263, "ts": 70655, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 70655, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 264, "ts": 70655, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 70655, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 263, "status": "aceita", "ts_local": 72644}
+{"direcao": "recebida", "t_local_ms": 70655, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 264, "status": "aceita", "ts_local": 72644}
+{"direcao": "enviada", "t_local_ms": 71187, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 265, "ts": 71187, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 71187, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 266, "ts": 71187, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 71202, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 265, "status": "aceita", "ts_local": 73181}
+{"direcao": "recebida", "t_local_ms": 71202, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 266, "status": "aceita", "ts_local": 73182}
+{"direcao": "enviada", "t_local_ms": 71734, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 267, "ts": 71734, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 71734, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 268, "ts": 71734, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 71734, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 267, "status": "aceita", "ts_local": 73728}
+{"direcao": "recebida", "t_local_ms": 71734, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 268, "status": "aceita", "ts_local": 73728}
+{"direcao": "enviada", "t_local_ms": 72250, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 269, "ts": 72234, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 72250, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 270, "ts": 72234, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 72250, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 269, "status": "aceita", "ts_local": 74231}
+{"direcao": "recebida", "t_local_ms": 72250, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 270, "status": "aceita", "ts_local": 74232}
+{"direcao": "enviada", "t_local_ms": 72797, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 271, "ts": 72780, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 72797, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 272, "ts": 72780, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 72797, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 271, "status": "aceita", "ts_local": 74781}
+{"direcao": "recebida", "t_local_ms": 72797, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 272, "status": "aceita", "ts_local": 74782}
+{"direcao": "enviada", "t_local_ms": 73327, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 273, "ts": 73312, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 73327, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 274, "ts": 73312, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 73327, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 273, "status": "aceita", "ts_local": 75311}
+{"direcao": "recebida", "t_local_ms": 73327, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 274, "status": "aceita", "ts_local": 75312}
+{"direcao": "enviada", "t_local_ms": 73812, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 275, "ts": 73812, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 73812, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 276, "ts": 73812, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 73827, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 275, "status": "aceita", "ts_local": 75807}
+{"direcao": "recebida", "t_local_ms": 73827, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 276, "status": "aceita", "ts_local": 75808}
+{"direcao": "enviada", "t_local_ms": 74344, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 277, "ts": 74344, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 74344, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 278, "ts": 74344, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 74344, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 277, "status": "aceita", "ts_local": 76333}
+{"direcao": "recebida", "t_local_ms": 74344, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 278, "status": "aceita", "ts_local": 76335}
+{"direcao": "enviada", "t_local_ms": 74905, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 279, "ts": 74905, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 74905, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 280, "ts": 74905, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 74905, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 279, "status": "aceita", "ts_local": 76893}
+{"direcao": "recebida", "t_local_ms": 74905, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 280, "status": "aceita", "ts_local": 76893}
+{"direcao": "enviada", "t_local_ms": 75452, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 281, "ts": 75422, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 75452, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 282, "ts": 75422, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 75469, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 281, "status": "aceita", "ts_local": 77443}
+{"direcao": "recebida", "t_local_ms": 75469, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 282, "status": "aceita", "ts_local": 77452}
+{"direcao": "enviada", "t_local_ms": 76000, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 283, "ts": 76000, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 76000, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 284, "ts": 76000, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 76015, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 283, "status": "aceita", "ts_local": 77996}
+{"direcao": "recebida", "t_local_ms": 76015, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 284, "status": "aceita", "ts_local": 77996}
+{"direcao": "enviada", "t_local_ms": 76562, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 285, "ts": 76562, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 76562, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 286, "ts": 76562, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 76562, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 285, "status": "aceita", "ts_local": 78552}
+{"direcao": "recebida", "t_local_ms": 76562, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 286, "status": "aceita", "ts_local": 78552}
+{"direcao": "enviada", "t_local_ms": 77094, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 287, "ts": 77077, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 77094, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 288, "ts": 77077, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 77094, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 287, "status": "aceita", "ts_local": 79073}
+{"direcao": "recebida", "t_local_ms": 77094, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 288, "status": "aceita", "ts_local": 79074}
+{"direcao": "enviada", "t_local_ms": 77640, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 289, "ts": 77640, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 77640, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 290, "ts": 77640, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 77640, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 289, "status": "aceita", "ts_local": 79626}
+{"direcao": "recebida", "t_local_ms": 77640, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 290, "status": "aceita", "ts_local": 79627}
+{"direcao": "enviada", "t_local_ms": 78140, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 291, "ts": 78140, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 78140, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 292, "ts": 78140, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 78140, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 291, "status": "aceita", "ts_local": 80135}
+{"direcao": "recebida", "t_local_ms": 78140, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 292, "status": "aceita", "ts_local": 80135}
+{"direcao": "enviada", "t_local_ms": 78672, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 293, "ts": 78655, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 78672, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 294, "ts": 78655, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 78672, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 293, "status": "aceita", "ts_local": 80653}
+{"direcao": "recebida", "t_local_ms": 78672, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 294, "status": "aceita", "ts_local": 80656}
+{"direcao": "enviada", "t_local_ms": 79219, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 295, "ts": 79219, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 79219, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 296, "ts": 79219, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 79234, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 295, "status": "aceita", "ts_local": 81214}
+{"direcao": "recebida", "t_local_ms": 79234, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 296, "status": "aceita", "ts_local": 81214}
+{"direcao": "enviada", "t_local_ms": 79734, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 297, "ts": 79719, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 79734, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 298, "ts": 79719, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 79734, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 297, "status": "aceita", "ts_local": 81718}
+{"direcao": "recebida", "t_local_ms": 79734, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 298, "status": "aceita", "ts_local": 81718}
+{"direcao": "enviada", "t_local_ms": 80265, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 299, "ts": 80265, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 80265, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 300, "ts": 80265, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 80280, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 299, "status": "aceita", "ts_local": 82259}
+{"direcao": "recebida", "t_local_ms": 80280, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 300, "status": "aceita", "ts_local": 82260}
+{"direcao": "enviada", "t_local_ms": 80859, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 301, "ts": 80844, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 80859, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 302, "ts": 80844, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 80859, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 301, "status": "aceita", "ts_local": 82840}
+{"direcao": "recebida", "t_local_ms": 80859, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 302, "status": "aceita", "ts_local": 82840}
+{"direcao": "enviada", "t_local_ms": 81359, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 303, "ts": 81359, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 81359, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 304, "ts": 81359, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 81359, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 303, "status": "aceita", "ts_local": 83352}
+{"direcao": "recebida", "t_local_ms": 81359, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 304, "status": "aceita", "ts_local": 83352}
+{"direcao": "enviada", "t_local_ms": 81984, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 305, "ts": 81937, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 81984, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 306, "ts": 81937, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 82000, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 305, "status": "aceita", "ts_local": 83974}
+{"direcao": "recebida", "t_local_ms": 82000, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 306, "status": "aceita", "ts_local": 83984}
+{"direcao": "enviada", "t_local_ms": 82484, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 307, "ts": 82484, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 82484, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 308, "ts": 82484, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 82500, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 307, "status": "aceita", "ts_local": 84480}
+{"direcao": "recebida", "t_local_ms": 82500, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 308, "status": "aceita", "ts_local": 84481}
+{"direcao": "enviada", "t_local_ms": 83030, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 309, "ts": 83015, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 83030, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 310, "ts": 83015, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 83030, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 309, "status": "aceita", "ts_local": 85014}
+{"direcao": "recebida", "t_local_ms": 83030, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 310, "status": "aceita", "ts_local": 85015}
+{"direcao": "enviada", "t_local_ms": 83530, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 311, "ts": 83515, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 83530, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 312, "ts": 83515, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 83530, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 311, "status": "aceita", "ts_local": 85517}
+{"direcao": "recebida", "t_local_ms": 83530, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 312, "status": "aceita", "ts_local": 85517}
+{"direcao": "enviada", "t_local_ms": 84062, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 313, "ts": 84062, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 84062, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 314, "ts": 84062, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 84062, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 313, "status": "aceita", "ts_local": 86050}
+{"direcao": "recebida", "t_local_ms": 84062, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 314, "status": "aceita", "ts_local": 86050}
+{"direcao": "enviada", "t_local_ms": 84609, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 315, "ts": 84594, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 84609, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 316, "ts": 84594, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 84609, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 315, "status": "aceita", "ts_local": 86593}
+{"direcao": "recebida", "t_local_ms": 84609, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 316, "status": "aceita", "ts_local": 86593}
+{"direcao": "enviada", "t_local_ms": 85140, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 317, "ts": 85140, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 85140, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 318, "ts": 85140, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 85140, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 317, "status": "aceita", "ts_local": 87129}
+{"direcao": "recebida", "t_local_ms": 85140, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 318, "status": "aceita", "ts_local": 87134}
+{"direcao": "enviada", "t_local_ms": 85672, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 319, "ts": 85655, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 85672, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 320, "ts": 85655, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 85672, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 319, "status": "aceita", "ts_local": 87660}
+{"direcao": "recebida", "t_local_ms": 85672, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 320, "status": "aceita", "ts_local": 87660}
+{"direcao": "enviada", "t_local_ms": 86202, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 321, "ts": 86202, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 86202, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 322, "ts": 86202, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 86202, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 321, "status": "aceita", "ts_local": 88192}
+{"direcao": "recebida", "t_local_ms": 86202, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 322, "status": "aceita", "ts_local": 88192}
+{"direcao": "enviada", "t_local_ms": 86780, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 323, "ts": 86765, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 86780, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 324, "ts": 86765, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 86780, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 323, "status": "aceita", "ts_local": 88773}
+{"direcao": "recebida", "t_local_ms": 86797, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 324, "status": "aceita", "ts_local": 88776}
+{"direcao": "enviada", "t_local_ms": 87280, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 325, "ts": 87280, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 87280, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 326, "ts": 87280, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 87297, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 325, "status": "aceita", "ts_local": 89279}
+{"direcao": "recebida", "t_local_ms": 87297, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 326, "status": "aceita", "ts_local": 89279}
+{"direcao": "enviada", "t_local_ms": 87844, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 327, "ts": 87827, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 87844, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 328, "ts": 87827, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 87844, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 327, "status": "aceita", "ts_local": 89834}
+{"direcao": "recebida", "t_local_ms": 87844, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 328, "status": "aceita", "ts_local": 89835}
+{"direcao": "enviada", "t_local_ms": 88375, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 329, "ts": 88375, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 88375, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 330, "ts": 88375, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 88390, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 329, "status": "aceita", "ts_local": 90370}
+{"direcao": "recebida", "t_local_ms": 88390, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 330, "status": "aceita", "ts_local": 90370}
+{"direcao": "enviada", "t_local_ms": 88952, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 331, "ts": 88952, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 88952, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 332, "ts": 88952, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 88952, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 331, "status": "aceita", "ts_local": 90938}
+{"direcao": "recebida", "t_local_ms": 88952, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 332, "status": "aceita", "ts_local": 90942}
+{"direcao": "enviada", "t_local_ms": 89547, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 333, "ts": 89530, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 89547, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 334, "ts": 89530, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 89562, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 333, "status": "aceita", "ts_local": 91545}
+{"direcao": "recebida", "t_local_ms": 89562, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 334, "status": "aceita", "ts_local": 91545}
+{"direcao": "enviada", "t_local_ms": 90062, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 335, "ts": 90062, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 90062, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 336, "ts": 90062, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 90062, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 335, "status": "aceita", "ts_local": 92054}
+{"direcao": "recebida", "t_local_ms": 90062, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 336, "status": "aceita", "ts_local": 92056}
+{"direcao": "enviada", "t_local_ms": 90640, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 337, "ts": 90640, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 90640, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 338, "ts": 90640, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 90640, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 337, "status": "aceita", "ts_local": 92625}
+{"direcao": "recebida", "t_local_ms": 90640, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 338, "status": "aceita", "ts_local": 92626}
+{"direcao": "enviada", "t_local_ms": 91172, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 339, "ts": 91155, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 91172, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 340, "ts": 91155, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 91172, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 339, "status": "aceita", "ts_local": 93158}
+{"direcao": "recebida", "t_local_ms": 91172, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 340, "status": "aceita", "ts_local": 93158}
+{"direcao": "enviada", "t_local_ms": 91687, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 341, "ts": 91687, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "enviada", "t_local_ms": 91687, "versao": 1, "sessao": "python-1794421423", "tipo": "heartbeat", "seq": 342, "ts": 91687, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}
+{"direcao": "recebida", "t_local_ms": 91702, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 341, "status": "aceita", "ts_local": 93682}
+{"direcao": "recebida", "t_local_ms": 91702, "tipo": "status_entrega", "sessao": "python-1794421423", "seq": 342, "status": "aceita", "ts_local": 93682}
+{"direcao": "enviada", "t_local_ms": 92219, "versao": 1, "sessao": "python-1794421423", "tipo": "acao", "seq": 343, "ts": 92219, "ttl": 2000, "estado": "DEGRADADO", "nivel": 0, "acao": "sistema_degradado", "indice": null, "confianca": 0.0}

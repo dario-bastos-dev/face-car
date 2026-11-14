@@ -229,6 +229,8 @@ class LimiaresRosto:
     ear_olho_fechado: float = 0.18     # EAR abaixo disto: olho fechado
     piscada_max_ms: int = 400          # fechado por até isto e reaberto: piscada
     olhos_fechados_alerta_ms: int = 1000
+    fechamento_saturacao_ms: int = 3000  # simulador: olhos fechados por isto = índice 100
+    perda_rosto_tolerancia_ms: int = 1000  # simulador: perda curta do rosto mantém o índice
     abertura_boca_aberta: float = 0.40
     bocejo_min_ms: int = 1500          # aberta por menos que isto: fala, não bocejo
     cabeca_baixa_alerta_ms: int = 15000  # cabeça baixa por isto: sinal de sonolência

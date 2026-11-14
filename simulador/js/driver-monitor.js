@@ -132,9 +132,9 @@ function camError(msg) {
 // Métricas simuladas por nível (alvo para onde os valores convergem suavemente).
 const TARGET = {
   normal: { eyes: 1, pitch: 0, yawn: 0, perclos: 5, fatigue: 10 },
-  attention: { eyes: .72, pitch: 9, yawn: .75, perclos: 22, fatigue: 48 },
-  critical: { eyes: .38, pitch: 18, yawn: .6, perclos: 46, fatigue: 74 },
-  intervention: { eyes: .05, pitch: 30, yawn: 0, perclos: 82, fatigue: 95 },
+  attention: { eyes: .72, pitch: 9, yawn: .75, perclos: 22, fatigue: 30 },
+  critical: { eyes: .38, pitch: 18, yawn: .6, perclos: 46, fatigue: 55 },
+  intervention: { eyes: .05, pitch: 30, yawn: 0, perclos: 82, fatigue: 90 },
   degraded: { eyes: 1, pitch: 0, yawn: 0, perclos: 5, fatigue: 10 }
 };
 function simulate(dt, t) {
@@ -350,15 +350,25 @@ function realBars() {
   setBar('mPerclos', (pc ?? 0) * 100, f(pc, 100, '%'), pc == null ? 'warn' : pc > .4 ? 'bad' : pc > .15 ? 'warn' : 'ok');
   mouthBar(reg?.abertura_boca, !!r?.rosto?.bocejando, V.ia.limiares.abertura_boca_aberta);
   const ix = est?.indice;
-  setBar('mFatigue', ix ?? 0, f(ix), ix == null ? 'warn' : ix > 65 ? 'bad' : ix > 35 ? 'warn' : 'ok');
-  fonte('IA REAL · MEDIAPIPE' + (r?.fonte === 'cnn' ? ' + CNN' : '') + (V.ia.visivel ? '' : ' · OCULTO'), true);
+  setBar('mFatigue', ix ?? 0, f(ix), ix == null ? 'warn' : ix >= 40 ? 'bad' : ix >= 20 ? 'warn' : 'ok');
+  fonte('IA REAL · MEDIAPIPE' + (r?.estimativa?.indice_modelo != null ? ' + CNN' : '') + (V.ia.visivel ? '' : ' · OCULTO'), true);
 }
+const desenhado = { chave: null, assin: '' }; // último resultado da IA desenhado no overlay
 function draw(dt, t) {
   if (!canvas || !W) return;
   const c = ctx, lvl = V.effectiveLevel();
   const color = lvl === 'normal' || lvl === 'degraded' ? '#38f0b0' : lvl === 'attention' ? '#ffc44d' : '#ff5a4f';
+  if (V.ia?.ativo) {
+    // IA real: a malha e os indicadores só mudam quando chega um resultado novo (~15 por segundo);
+    // redesenhar a cada quadro da animação (60/s) era trabalho repetido
+    const chave = V.ia.ultimo, assin = color + canvas.width + 'x' + canvas.height + V.ia.visivel + V.ia.carregando; // redimensionar limpa o canvas
+    if (chave === desenhado.chave && assin === desenhado.assin && chave) return;
+    desenhado.chave = chave; desenhado.assin = assin;
+    c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
+    drawReal(c, color); realBars(); return;
+  }
+  desenhado.chave = null;
   c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
-  if (V.ia?.ativo) { drawReal(c, color); realBars(); return; }
   if (!state.paused) simulate(dt, t);
   const f = m.face, fx = f.x * W, fy = f.y * H, fw = f.w * W, fh = f.h * H;
   if (!M.cameraActive) silhouette(c, f);
@@ -398,7 +408,7 @@ function draw(dt, t) {
   setBar('mEyes', m.eyesOpen * 100, Math.round(m.eyesOpen * 100) + '%', m.eyesOpen < .4 ? 'bad' : m.eyesOpen < .75 ? 'warn' : 'ok');
   setBar('mHead', clamp(m.headPitch / 35 * 100, 0, 100), Math.round(m.headPitch) + '°', m.headPitch > 20 ? 'bad' : m.headPitch > 8 ? 'warn' : 'ok');
   setBar('mPerclos', m.perclos, Math.round(m.perclos) + '%', m.perclos > 40 ? 'bad' : m.perclos > 15 ? 'warn' : 'ok');
-  setBar('mFatigue', m.fatigue, Math.round(m.fatigue), m.fatigue > 70 ? 'bad' : m.fatigue > 35 ? 'warn' : 'ok');
+  setBar('mFatigue', m.fatigue, Math.round(m.fatigue), m.fatigue >= 40 ? 'bad' : m.fatigue >= 20 ? 'warn' : 'ok');
   fonte(M.external ? 'IA CONECTADA' : 'MÉTRICAS SIMULADAS', M.external);
 }
 // Rótulo da fonte: só mexe no DOM quando muda (escrever o mesmo texto a cada quadro refaz o layout).
@@ -431,5 +441,5 @@ V.on('ready', () => {
   // Filtro infravermelho: só muda a imagem exibida (o MediaPipe lê o vídeo original).
   $('irBtn').onchange = e => setIR(e.target.checked);
 });
-V.addRenderer(draw);
+V.addRenderer(draw, 'camera-monitor');
 })();
