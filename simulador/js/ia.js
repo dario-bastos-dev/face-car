@@ -59,7 +59,7 @@ function opcoesMediapipe() {
 }
 function criarWorker(modelo) {
   return new Promise((ok, falha) => {
-    const w = new Worker(new URL("./rosto-worker.js?v=0.9.123", import.meta.url));
+    const w = new Worker(new URL("./rosto-worker.js?v=0.9.126", import.meta.url));
     const fim = (erro) => { clearTimeout(limite); w.onmessage = w.onerror = null; if (erro) { w.terminate(); falha(erro); } else ok(w); };
     const limite = setTimeout(() => fim(new Error("o worker não respondeu")), 60000);
     w.onmessage = (e) => {
@@ -166,17 +166,39 @@ function analisar(faceLandmarks, matrizes, vw, vh, t, captura) {
     evento: rosto.eventos.length ? { texto: rosto.eventos.at(-1), t } : S.ultimo?.evento };
 }
 
+/* Olhos fechados (EAR do MediaPipe, monitor-hibrido.js): piscadas (até piscada_max_ms) não contam;
+ * daí o índice sobe em linha reta até 100 em fechamento_saturacao_ms de olhos fechados sem parar.
+ * Com 3 s de saturação: ~0,9 s fechado = 20 (atenção), ~1,4 s = 40 (crítico), ~2,2 s = 70.
+ * Sem rosto ou sem leitura recente do EAR: null (não há evidência). */
+function indiceOlhosFechados() {
+  const h = S.ultimo?.hibrido, lim = cfgAnalise.rosto;
+  if (h?.emEspera) return S.olhosIndice ?? null; // rosto sumiu por um instante: mantém o último valor
+  if (!h?.valido || !V.ia?.rostoVisivel) return (S.olhosIndice = null);
+  if (!h.olhosFechados) return (S.olhosIndice = 0);
+  const ini = lim.piscada_max_ms ?? 400, sat = lim.fechamento_saturacao_ms ?? 3000;
+  return (S.olhosIndice = Math.round(100 * Math.min(1, Math.max(0, (h.fechamentoContinuoMs - ini) / Math.max(1, sat - ini)))));
+}
 function tick() {
   if (!S.ativo) return;
   const t = agora();
   try {
     const geometria = estimar(S.historico.filter((r) => r.t_ms <= t), cfgEstimador, t); // só para exibir (PERCLOS)
-    // índice do modelo + bônus do volante frouxo (pressao.js), como a fusão da Parte 1 (entrada/pressao.py)
+    // Índice de fadiga 0..100 = o maior entre o do modelo CNN e o dos olhos fechados (EAR), mais o
+    // bônus do volante frouxo (pressao.js), como a fusão da Parte 1 (entrada/pressao.py).
+    // Faixas da política (config/estimador.json): <20 normal · 20-40 atenção (aviso inicial) ·
+    // 40-70 crítico (aviso intermediário) · >=70 sem resposta: intervenção (aviso final).
     const modelo = V.cnn?.indice() ?? null, volante = V.pressao?.bonusIndice() ?? 0;
-    // mão frouxa: no mínimo ATENÇÃO (limiar 35 da política), mas nunca ALERTA só por ela (65)
-    const cnn = modelo == null ? null : Math.min(100, volante ? Math.max(modelo + volante, 40) : modelo);
-    const estimativa = { t_ms: t, indice: cnn, indice_modelo: modelo, bonus_volante: volante, confianca: cnn == null ? 0 : 1, perclos: geometria.perclos, indice_geometria: geometria.indice };
-    S.fonte = cnn != null ? "cnn" : "sem_cnn";
+    const olhos = indiceOlhosFechados();
+    const base = modelo == null && olhos == null ? null : Math.max(modelo ?? 0, olhos ?? 0);
+    // mão frouxa: no mínimo ATENÇÃO (limiar 20), mas nunca crítico só por ela (40)
+    let indice = base == null ? null : Math.min(100, volante ? Math.max(base + volante, 25) : base);
+    // rosto perdido por um instante (até perda_rosto_tolerancia_ms): mantém o último índice em vez
+    // de cair em DEGRADADO e perder o nível (uma intervenção em andamento, por exemplo)
+    const tolerancia = cfgAnalise.rosto.perda_rosto_tolerancia_ms ?? 1000;
+    if (indice != null) S.ultimoIndice = { v: indice, t };
+    else if (S.ultimoIndice && t - S.ultimoIndice.t <= tolerancia) indice = S.ultimoIndice.v;
+    const estimativa = { t_ms: t, indice, indice_modelo: modelo, indice_olhos: olhos, bonus_volante: volante, confianca: indice == null ? 0 : 1, perclos: geometria.perclos, indice_geometria: geometria.indice };
+    S.fonte = modelo != null ? (olhos > modelo ? "olhos" : "cnn") : olhos != null ? "olhos" : "sem_cnn";
     S.estado = transicionar(S.estado, estimativa, t, cfgEstimador, S.respondeu);
     S.respondeu = false;
     let mensagens;
@@ -219,7 +241,7 @@ async function iniciar(visivel = true) {
   Object.assign(S, { ativo: true, t0: performance.now(), ultimoT: -1, quadro: 0, historico: [], linhas: [],
     calc: new CalculadoraMetricas(cfgExtrator.confianca, indices), estado: estadoInicial(),
     sessao: "pagina-" + Date.now().toString(36), respondeu: false, ultimo: null,
-    monitor: new MonitorRosto(cfgAnalise.rosto), monitorHibrido: new MonitorHibrido(cfgAnalise.rosto), piscadas: 0 });
+    monitor: new MonitorRosto(cfgAnalise.rosto), monitorHibrido: new MonitorHibrido(cfgAnalise.rosto), piscadas: 0, ultimoIndice: null, olhosIndice: null });
   S.emissor = estadoEmissorInicial(S.sessao);
   V.sinal.abrirCanal("ia", S.sessao);
   laco();

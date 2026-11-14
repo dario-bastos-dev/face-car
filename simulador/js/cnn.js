@@ -17,7 +17,7 @@ const $ = (id) => document.getElementById(id);
 const MODO = new URLSearchParams(location.search).get("cnnModo") === "inteiro" ? "inteiro" : "rosto";
 const INTERVALO_MS = 125;     // até ~8 quadros por segundo: a média de 2 s não precisa de mais, e a animação fica livre
 const VALIDADE_MS = 800;      // resultado mais velho que isto não comanda os níveis
-const PESO_BOCEJO = 0.45;     // bocejo sozinho leva a ATENÇÃO (limiar 35), não a ALERTA
+const PESO_BOCEJO = 0.35;     // bocejo sozinho leva a ATENÇÃO (20-40), não ao crítico (40)
 const MAX_LEITURAS = 36000;    // ~1 h de leituras guardadas para a validação
 
 const C = { estado: "desligado", motivo: "", url: null, tamanho: 0, classes: [], ultimo: null, recebidoEm: 0, modelo: null, modo: MODO };

@@ -7,61 +7,61 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 24.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "DEGRADADO"
         },
         {
           "t_ms": 250,
-          "indice": 24.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "DEGRADADO"
         },
         {
           "t_ms": 500,
-          "indice": 24.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "DEGRADADO"
         },
         {
           "t_ms": 750,
-          "indice": 24.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "DEGRADADO"
         },
         {
           "t_ms": 1000,
-          "indice": 24.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "DEGRADADO"
         },
         {
           "t_ms": 1250,
-          "indice": 24.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "DEGRADADO"
         },
         {
           "t_ms": 1500,
-          "indice": 24.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "DEGRADADO"
         },
         {
           "t_ms": 1750,
-          "indice": 24.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "DEGRADADO"
         },
         {
           "t_ms": 1999,
-          "indice": 24.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "DEGRADADO"
         },
         {
           "t_ms": 2000,
-          "indice": 24.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         }
@@ -73,61 +73,61 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 25,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "DEGRADADO"
         },
         {
           "t_ms": 250,
-          "indice": 25,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "DEGRADADO"
         },
         {
           "t_ms": 500,
-          "indice": 25,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "DEGRADADO"
         },
         {
           "t_ms": 750,
-          "indice": 25,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "DEGRADADO"
         },
         {
           "t_ms": 1000,
-          "indice": 25,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "DEGRADADO"
         },
         {
           "t_ms": 1250,
-          "indice": 25,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "DEGRADADO"
         },
         {
           "t_ms": 1500,
-          "indice": 25,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "DEGRADADO"
         },
         {
           "t_ms": 1750,
-          "indice": 25,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "DEGRADADO"
         },
         {
           "t_ms": 1999,
-          "indice": 25,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "DEGRADADO"
         },
         {
           "t_ms": 2000,
-          "indice": 25,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         }
@@ -139,37 +139,37 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 35,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 250,
-          "indice": 35,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 500,
-          "indice": 35,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 750,
-          "indice": 35,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 999,
-          "indice": 35,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 1000,
-          "indice": 35,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         }
@@ -181,85 +181,85 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 25,
+          "indice": 15,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 250,
-          "indice": 25,
+          "indice": 15,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 500,
-          "indice": 25,
+          "indice": 15,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 750,
-          "indice": 25,
+          "indice": 15,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 1000,
-          "indice": 25,
+          "indice": 15,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 1250,
-          "indice": 25,
+          "indice": 15,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 1500,
-          "indice": 25,
+          "indice": 15,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 1750,
-          "indice": 25,
+          "indice": 15,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 2000,
-          "indice": 25,
+          "indice": 15,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 2250,
-          "indice": 25,
+          "indice": 15,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 2500,
-          "indice": 25,
+          "indice": 15,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 2750,
-          "indice": 25,
+          "indice": 15,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 2999,
-          "indice": 25,
+          "indice": 15,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 3000,
-          "indice": 25,
+          "indice": 15,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         }
@@ -271,49 +271,49 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 65,
+          "indice": 40,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 250,
-          "indice": 65,
+          "indice": 40,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 500,
-          "indice": 65,
+          "indice": 40,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 750,
-          "indice": 65,
+          "indice": 40,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 1000,
-          "indice": 65,
+          "indice": 40,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 1250,
-          "indice": 65,
+          "indice": 40,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 1499,
-          "indice": 65,
+          "indice": 40,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 1500,
-          "indice": 65,
+          "indice": 40,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         }
@@ -325,85 +325,85 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 250,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 500,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 750,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 1000,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 1250,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 1500,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 1750,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 2000,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 2250,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 2500,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 2750,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 2999,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 3000,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         }
@@ -415,133 +415,133 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 250,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 500,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 750,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 1000,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 1250,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 1500,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 1750,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 2000,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 2250,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 2500,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 2750,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 3000,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 3250,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 3500,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 3750,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 4000,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 4250,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 4500,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 4750,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 4999,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 5000,
-          "indice": 65,
+          "indice": 70,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         }
@@ -553,85 +553,85 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 250,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 500,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 750,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 1000,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 1250,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 1500,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 1750,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 2000,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 2250,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 2500,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 2750,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 2999,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 3000,
-          "indice": 45,
+          "indice": 30,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         }
@@ -643,7 +643,7 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 99,
+          "indice": 98.769,
           "confianca": 0.649999,
           "estado_esperado": "DEGRADADO"
         }
@@ -655,7 +655,7 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 99,
+          "indice": 98.286,
           "confianca": 0.649999,
           "estado_esperado": "DEGRADADO"
         }
@@ -667,7 +667,7 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 99,
+          "indice": 99.143,
           "confianca": 0.649999,
           "estado_esperado": "DEGRADADO"
         }
@@ -679,7 +679,7 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 99,
+          "indice": 98.727,
           "confianca": 0.649999,
           "estado_esperado": "DEGRADADO"
         }
@@ -691,157 +691,157 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 250,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 500,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 750,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 1000,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 1250,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 1500,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 1750,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 2000,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 2250,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 2500,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 2750,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 3000,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 3250,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 3500,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 3750,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 4000,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 4250,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 4500,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 4750,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 5000,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 5250,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 5500,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 5750,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 5999,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 6000,
-          "indice": 34.999,
+          "indice": 19.999,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         }
@@ -853,157 +853,157 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 250,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 500,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 750,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 1000,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 1250,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 1500,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 1750,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 2000,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 2250,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 2500,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 2750,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 3000,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 3250,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 3500,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 3750,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 4000,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 4250,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 4500,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 4750,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 5000,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 5250,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 5500,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 5750,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 5999,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         },
         {
           "t_ms": 6000,
-          "indice": 25.001,
+          "indice": 15.001,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         }
@@ -1015,157 +1015,157 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 250,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 500,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 750,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 1000,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 1250,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 1500,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 1750,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 2000,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 2250,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 2500,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 2750,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 3000,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 3250,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 3500,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 3750,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 4000,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 4250,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 4500,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 4750,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 5000,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 5250,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 5500,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 5750,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 5999,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 6000,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         }
@@ -1177,157 +1177,157 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 250,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 500,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 750,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 1000,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 1250,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 1500,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 1750,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 2000,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 2250,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 2500,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 2750,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 3000,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 3250,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 3500,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 3750,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 4000,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 4250,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 4500,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 4750,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 5000,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 5250,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 5500,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 5750,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 5999,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         },
         {
           "t_ms": 6000,
-          "indice": 45.001,
+          "indice": 30.001,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         }
@@ -1339,43 +1339,43 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 35,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 500,
-          "indice": 35,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 750,
-          "indice": 34,
+          "indice": 19,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 1000,
-          "indice": 35,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 1500,
-          "indice": 35,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 1999,
-          "indice": 35,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 2000,
-          "indice": 35,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         }
@@ -1387,31 +1387,31 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 35,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 501,
-          "indice": 35,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 1001,
-          "indice": 35,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 1500,
-          "indice": 35,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 1501,
-          "indice": 35,
+          "indice": 20,
           "confianca": 1,
           "estado_esperado": "ATENCAO"
         }
@@ -1424,14 +1424,14 @@
         {
           "t_ms": 250,
           "estimativa_t_ms": 0,
-          "indice": 20,
+          "indice": 11.429,
           "confianca": 1,
           "estado_esperado": "NORMAL"
         },
         {
           "t_ms": 251,
           "estimativa_t_ms": 0,
-          "indice": 20,
+          "indice": 11.429,
           "confianca": 1,
           "estado_esperado": "DEGRADADO"
         }
@@ -1455,294 +1455,294 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 250,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 500,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 750,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 1000,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 1250,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 1500,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 1750,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 2000,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 2250,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 2500,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 2750,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 3000,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 3250,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 3500,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 3750,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 4000,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 4250,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 4500,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 4750,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 5000,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": true,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 5250,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 5500,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 5750,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 6000,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 6250,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 6500,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 6750,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 7000,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 7250,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 7500,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 7750,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 8000,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 8250,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 8500,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 8750,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 9000,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 9250,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 9500,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 9750,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 9999,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 10000,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "resposta_motorista": false,
           "estado_esperado": "INTERVENCAO"
@@ -1755,133 +1755,133 @@
       "passos": [
         {
           "t_ms": 0,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 6000,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 6250,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 6500,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 6750,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 7000,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 7250,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 7500,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 7750,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 8000,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 8250,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 8500,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 8750,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 9000,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 9250,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 9500,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 9750,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 10000,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 10250,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 10500,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 10750,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "ALERTA"
         },
         {
           "t_ms": 11000,
-          "indice": 80,
+          "indice": 82.857,
           "confianca": 1,
           "estado_esperado": "INTERVENCAO"
         }

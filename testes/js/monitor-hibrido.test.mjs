@@ -25,3 +25,21 @@ test("ausência do rosto invalida e não preserva fechamento antigo", () => {
   assert.equal(retorno.fechamentoContinuoMs, 0);
 });
 
+
+test("perda curta do rosto não zera o fechamento em andamento", () => {
+  const m = new MonitorHibrido({ ...LIMIARES, perda_rosto_tolerancia_ms: 1000 });
+  m.registrar(0, true, 0.1);
+  m.registrar(1200, true, 0.1);
+  const perda = m.registrar(1600, false, null);
+  assert.equal(perda.valido, false);
+  assert.equal(perda.emEspera, true);
+  assert.equal(perda.alerta, true);
+  assert.equal(m.registrar(2000, true, 0.1).fechamentoContinuoMs, 2000);
+});
+
+test("perda longa do rosto reinicia o fechamento", () => {
+  const m = new MonitorHibrido({ ...LIMIARES, perda_rosto_tolerancia_ms: 1000 });
+  m.registrar(0, true, 0.1);
+  assert.equal(m.registrar(1500, false, null).emEspera, false);
+  assert.equal(m.registrar(1600, true, 0.1).fechamentoContinuoMs, 0);
+});

@@ -30,14 +30,14 @@
     "prazo_resposta_ms": 5000,
     "transicoes": [
       {"de": "*", "para": "DEGRADADO", "condicao": "sem_confianca", "duracao_ms": 0},
-      {"de": "DEGRADADO", "para": "NORMAL", "condicao": "recuperado", "limiar": 25, "duracao_ms": 2000},
-      {"de": "DEGRADADO", "para": "ATENCAO", "condicao": "alto", "limiar": 25, "duracao_ms": 2000},
-      {"de": "NORMAL", "para": "ATENCAO", "condicao": "alto", "limiar": 35, "duracao_ms": 1000},
-      {"de": "ATENCAO", "para": "NORMAL", "condicao": "baixo", "limiar": 25, "duracao_ms": 3000},
-      {"de": "ATENCAO", "para": "ALERTA", "condicao": "alto", "limiar": 65, "duracao_ms": 1500},
-      {"de": "ALERTA", "para": "ATENCAO", "condicao": "baixo", "limiar": 45, "duracao_ms": 3000},
-      {"de": "ALERTA", "para": "INTERVENCAO", "condicao": "sem_resposta", "limiar": 65, "duracao_ms": 1000},
-      {"de": "INTERVENCAO", "para": "ATENCAO", "condicao": "baixo", "limiar": 45, "duracao_ms": 3000}
+      {"de": "DEGRADADO", "para": "NORMAL", "condicao": "recuperado", "limiar": 20, "duracao_ms": 2000},
+      {"de": "DEGRADADO", "para": "ATENCAO", "condicao": "alto", "limiar": 20, "duracao_ms": 2000},
+      {"de": "NORMAL", "para": "ATENCAO", "condicao": "alto", "limiar": 20, "duracao_ms": 1000},
+      {"de": "ATENCAO", "para": "NORMAL", "condicao": "baixo", "limiar": 15, "duracao_ms": 3000},
+      {"de": "ATENCAO", "para": "ALERTA", "condicao": "alto", "limiar": 40, "duracao_ms": 1500},
+      {"de": "ALERTA", "para": "ATENCAO", "condicao": "baixo", "limiar": 30, "duracao_ms": 3000},
+      {"de": "ALERTA", "para": "INTERVENCAO", "condicao": "sem_resposta", "limiar": 70, "duracao_ms": 1000},
+      {"de": "INTERVENCAO", "para": "ATENCAO", "condicao": "baixo", "limiar": 30, "duracao_ms": 3000}
     ]
   },
   "mensagens": {"ttl_ms": 2000, "heartbeat_ms": 500, "renovar_acao_ms": 500}

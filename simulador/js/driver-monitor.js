@@ -132,9 +132,9 @@ function camError(msg) {
 // Métricas simuladas por nível (alvo para onde os valores convergem suavemente).
 const TARGET = {
   normal: { eyes: 1, pitch: 0, yawn: 0, perclos: 5, fatigue: 10 },
-  attention: { eyes: .72, pitch: 9, yawn: .75, perclos: 22, fatigue: 48 },
-  critical: { eyes: .38, pitch: 18, yawn: .6, perclos: 46, fatigue: 74 },
-  intervention: { eyes: .05, pitch: 30, yawn: 0, perclos: 82, fatigue: 95 },
+  attention: { eyes: .72, pitch: 9, yawn: .75, perclos: 22, fatigue: 30 },
+  critical: { eyes: .38, pitch: 18, yawn: .6, perclos: 46, fatigue: 55 },
+  intervention: { eyes: .05, pitch: 30, yawn: 0, perclos: 82, fatigue: 90 },
   degraded: { eyes: 1, pitch: 0, yawn: 0, perclos: 5, fatigue: 10 }
 };
 function simulate(dt, t) {
@@ -350,8 +350,8 @@ function realBars() {
   setBar('mPerclos', (pc ?? 0) * 100, f(pc, 100, '%'), pc == null ? 'warn' : pc > .4 ? 'bad' : pc > .15 ? 'warn' : 'ok');
   mouthBar(reg?.abertura_boca, !!r?.rosto?.bocejando, V.ia.limiares.abertura_boca_aberta);
   const ix = est?.indice;
-  setBar('mFatigue', ix ?? 0, f(ix), ix == null ? 'warn' : ix > 65 ? 'bad' : ix > 35 ? 'warn' : 'ok');
-  fonte('IA REAL · MEDIAPIPE' + (r?.fonte === 'cnn' ? ' + CNN' : '') + (V.ia.visivel ? '' : ' · OCULTO'), true);
+  setBar('mFatigue', ix ?? 0, f(ix), ix == null ? 'warn' : ix >= 40 ? 'bad' : ix >= 20 ? 'warn' : 'ok');
+  fonte('IA REAL · MEDIAPIPE' + (r?.estimativa?.indice_modelo != null ? ' + CNN' : '') + (V.ia.visivel ? '' : ' · OCULTO'), true);
 }
 const desenhado = { chave: null, assin: '' }; // último resultado da IA desenhado no overlay
 function draw(dt, t) {
@@ -408,7 +408,7 @@ function draw(dt, t) {
   setBar('mEyes', m.eyesOpen * 100, Math.round(m.eyesOpen * 100) + '%', m.eyesOpen < .4 ? 'bad' : m.eyesOpen < .75 ? 'warn' : 'ok');
   setBar('mHead', clamp(m.headPitch / 35 * 100, 0, 100), Math.round(m.headPitch) + '°', m.headPitch > 20 ? 'bad' : m.headPitch > 8 ? 'warn' : 'ok');
   setBar('mPerclos', m.perclos, Math.round(m.perclos) + '%', m.perclos > 40 ? 'bad' : m.perclos > 15 ? 'warn' : 'ok');
-  setBar('mFatigue', m.fatigue, Math.round(m.fatigue), m.fatigue > 70 ? 'bad' : m.fatigue > 35 ? 'warn' : 'ok');
+  setBar('mFatigue', m.fatigue, Math.round(m.fatigue), m.fatigue >= 40 ? 'bad' : m.fatigue >= 20 ? 'warn' : 'ok');
   fonte(M.external ? 'IA CONECTADA' : 'MÉTRICAS SIMULADAS', M.external);
 }
 // Rótulo da fonte: só mexe no DOM quando muda (escrever o mesmo texto a cada quadro refaz o layout).

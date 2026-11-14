@@ -38,6 +38,8 @@
     "ear_olho_fechado": 0.18,
     "piscada_max_ms": 400,
     "olhos_fechados_alerta_ms": 1000,
+    "fechamento_saturacao_ms": 3000,
+    "perda_rosto_tolerancia_ms": 1000,
     "abertura_boca_aberta": 0.4,
     "bocejo_min_ms": 1500,
     "cabeca_baixa_alerta_ms": 15000
