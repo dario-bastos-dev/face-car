@@ -1,0 +1,45 @@
+{
+  "modelo": "FaceCar_CNN_V3",
+  "classes": [
+    "alerta",
+    "sonolento",
+    "bocejo"
+  ],
+  "pastas": {
+    "alerta": "alerta",
+    "sonolento": "sonolento",
+    "bocejo": "bocejo"
+  },
+  "base": "MobileNetV3Large",
+  "entrada": [
+    224,
+    224,
+    3
+  ],
+  "pixels": "RGB de 0 a 255, quadro inteiro redimensionado sem recorte",
+  "divisao": "por pessoa",
+  "classes_em_blocos": [
+    "bocejo"
+  ],
+  "quadros_dos_videos": "2qps-max60",
+  "exemplos": {
+    "fotos": 987,
+    "quadros_de_video": 6599
+  },
+  "teste": {
+    "imagens": 1128,
+    "acuracia": 0.1356,
+    "f1_macro": 0.114,
+    "recall": {
+      "alerta": 0.0055,
+      "sonolento": 0.2389,
+      "bocejo": 1.0
+    },
+    "precision": {
+      "alerta": 0.0278,
+      "sonolento": 0.361,
+      "bocejo": 0.0232
+    }
+  },
+  "treinado_em": "2026-11-13"
+}

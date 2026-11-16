@@ -1,0 +1,84 @@
+{
+  "modelo": "FaceCar_CNN_V6",
+  "classes": [
+    "alerta",
+    "sonolento",
+    "bocejo"
+  ],
+  "pastas": {
+    "alerta": "alerta",
+    "sonolento": "sonolento",
+    "bocejo": "bocejo"
+  },
+  "base": "MobileNetV3Large",
+  "entrada": [
+    224,
+    224,
+    3
+  ],
+  "recorte": "rosto",
+  "fator_recorte": 1.4,
+  "pixels": "RGB de 0 a 255, quadrado do rosto (caixa_do_rosto) redimensionado",
+  "divisao": "por pessoa",
+  "pessoas_em_blocos": [
+    "proprio1",
+    "proprio2",
+    "voce1"
+  ],
+  "quadros_dos_videos": {
+    "alerta": "2qps-max60",
+    "sonolento": "2qps-max300",
+    "bocejo": "2qps-max60"
+  },
+  "limpeza_dos_rotulos": {
+    "fracao_olho": 0.75
+  },
+  "exemplos": {
+    "fotos": 978,
+    "quadros_de_video": 7115
+  },
+  "teste": {
+    "imagens": 1146,
+    "acuracia": 0.7373,
+    "f1_macro": 0.8169,
+    "recall": {
+      "alerta": 0.9602,
+      "sonolento": 0.5423,
+      "bocejo": 1.0
+    },
+    "precision": {
+      "alerta": 0.6317,
+      "sonolento": 0.9433,
+      "bocejo": 1.0
+    },
+    "pessoas_novas": {
+      "imagens": 995,
+      "acuracia": 0.7055,
+      "f1_macro": 0.6965,
+      "recall": {
+        "alerta": 0.9583,
+        "sonolento": 0.4917
+      },
+      "precision": {
+        "alerta": 0.6146,
+        "sonolento": 0.9331
+      }
+    },
+    "fotos_em_blocos": {
+      "imagens": 151,
+      "acuracia": 0.947,
+      "f1_macro": 0.9543,
+      "recall": {
+        "alerta": 0.9783,
+        "sonolento": 0.9067,
+        "bocejo": 1.0
+      },
+      "precision": {
+        "alerta": 0.8654,
+        "sonolento": 0.9855,
+        "bocejo": 1.0
+      }
+    }
+  },
+  "treinado_em": "2026-11-13"
+}

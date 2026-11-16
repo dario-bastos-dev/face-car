@@ -1,0 +1,141 @@
+{
+  "modelo": "FaceCar_CNN_V8",
+  "classes": [
+    "alerta",
+    "sonolento",
+    "bocejo"
+  ],
+  "pastas": {
+    "alerta": "alerta",
+    "sonolento": "sonolento",
+    "bocejo": "bocejo"
+  },
+  "base": "MobileNetV3Large",
+  "entrada": [
+    224,
+    224,
+    3
+  ],
+  "recorte": "rosto",
+  "fator_recorte": 1.4,
+  "pixels": "RGB de 0 a 255, quadrado do rosto (caixa_do_rosto) redimensionado",
+  "divisao": "por pessoa",
+  "pessoas_em_blocos": [
+    "proprio1",
+    "proprio2",
+    "voce1"
+  ],
+  "teste_separado": false,
+  "validacao_cruzada": {
+    "perfil": "v6",
+    "valores": {},
+    "acuracia_pessoas_novas": {
+      "media": 0.809,
+      "desvio": 0.0648,
+      "dobras": [
+        0.8884,
+        0.7297,
+        0.809
+      ]
+    },
+    "recall_alerta": {
+      "media": 0.8782,
+      "desvio": 0.054,
+      "dobras": [
+        0.9075,
+        0.9246,
+        0.8025
+      ]
+    },
+    "recall_sonolento": {
+      "media": 0.7532,
+      "desvio": 0.1298,
+      "dobras": [
+        0.8724,
+        0.5728,
+        0.8145
+      ]
+    },
+    "alarme_30_recall_sonolento": {
+      "media": 0.8415,
+      "desvio": 0.129,
+      "dobras": [
+        0.9423,
+        0.6594,
+        0.9227
+      ]
+    },
+    "alarme_30_falso_alarme": {
+      "media": 0.1903,
+      "desvio": 0.0937,
+      "dobras": [
+        0.1522,
+        0.0995,
+        0.3193
+      ]
+    }
+  },
+  "contra_decoreba": {
+    "max_por_pessoa_classe": null,
+    "fracao_liberada": 0.4,
+    "dropout": 0.3,
+    "decaimento_pesos": 0.0,
+    "aumento_forte": false
+  },
+  "quadros_dos_videos": {
+    "alerta": "2qps-max60",
+    "sonolento": "2qps-max300",
+    "bocejo": "2qps-max60"
+  },
+  "limpeza_dos_rotulos": {
+    "fracao_olho": 0.75
+  },
+  "exemplos": {
+    "fotos": 978,
+    "quadros_de_video": 7115
+  },
+  "teste": {
+    "imagens": 1146,
+    "acuracia": 0.788,
+    "f1_macro": 0.8541,
+    "recall": {
+      "alerta": 0.9502,
+      "sonolento": 0.645,
+      "bocejo": 1.0
+    },
+    "precision": {
+      "alerta": 0.6863,
+      "sonolento": 0.9406,
+      "bocejo": 1.0
+    },
+    "pessoas_novas": {
+      "imagens": 995,
+      "acuracia": 0.7598,
+      "f1_macro": 0.7569,
+      "recall": {
+        "alerta": 0.9474,
+        "sonolento": 0.6011
+      },
+      "precision": {
+        "alerta": 0.6677,
+        "sonolento": 0.931
+      }
+    },
+    "fotos_em_blocos": {
+      "imagens": 151,
+      "acuracia": 0.9735,
+      "f1_macro": 0.9768,
+      "recall": {
+        "alerta": 0.9783,
+        "sonolento": 0.96,
+        "bocejo": 1.0
+      },
+      "precision": {
+        "alerta": 0.9375,
+        "sonolento": 0.9863,
+        "bocejo": 1.0
+      }
+    }
+  },
+  "treinado_em": "2026-11-13"
+}

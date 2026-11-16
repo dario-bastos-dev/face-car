@@ -14,5 +14,4 @@ detalhes/
 /treinamento/dataset
 /treinamento/quadros
 /treinamento/rostos
-/modelo
 *.keras
