@@ -51,7 +51,7 @@ function update(dt) {
   set('ovStatus', 'text', V.LABEL[lvl]);
   set('ovStatus', 'color', LEVEL_COLOR[lvl]);
   set('ovStatus', 'fontSize', V.LABEL[lvl].length > 8 ? '14px' : '');
-  set('ovTarget', 'text', 'ALVO: ' + Math.round(state.target) + ' km/h');
+  set('ovTarget', 'text', state.re ? 'MARCHA R · RÉ' : 'ALVO: ' + Math.round(state.target) + ' km/h');
   const inter = !state.degraded && state.level === 'intervention';
   cls('ovHazard', 'on', state.hazardOn || state.leftOn || state.rightOn);
   cls('ovBrake', 'alert', !!state.luzFreio);
@@ -63,5 +63,5 @@ V.on('ready', () => {
   buildGauge(); shown = state.speed;
 });
 V.on('vehicle', v => { buildGauge(); $('ovDashName').textContent = 'PAINEL - ' + (v === 'truck' ? 'CAMINHÃO' : 'CARRO FAMILIAR'); });
-V.addRenderer(update);
+V.addRenderer(update, 'painel2d');
 })();

@@ -353,12 +353,22 @@ function realBars() {
   setBar('mFatigue', ix ?? 0, f(ix), ix == null ? 'warn' : ix > 65 ? 'bad' : ix > 35 ? 'warn' : 'ok');
   fonte('IA REAL · MEDIAPIPE' + (r?.fonte === 'cnn' ? ' + CNN' : '') + (V.ia.visivel ? '' : ' · OCULTO'), true);
 }
+const desenhado = { chave: null, assin: '' }; // último resultado da IA desenhado no overlay
 function draw(dt, t) {
   if (!canvas || !W) return;
   const c = ctx, lvl = V.effectiveLevel();
   const color = lvl === 'normal' || lvl === 'degraded' ? '#38f0b0' : lvl === 'attention' ? '#ffc44d' : '#ff5a4f';
+  if (V.ia?.ativo) {
+    // IA real: a malha e os indicadores só mudam quando chega um resultado novo (~15 por segundo);
+    // redesenhar a cada quadro da animação (60/s) era trabalho repetido
+    const chave = V.ia.ultimo, assin = color + canvas.width + 'x' + canvas.height + V.ia.visivel + V.ia.carregando; // redimensionar limpa o canvas
+    if (chave === desenhado.chave && assin === desenhado.assin && chave) return;
+    desenhado.chave = chave; desenhado.assin = assin;
+    c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
+    drawReal(c, color); realBars(); return;
+  }
+  desenhado.chave = null;
   c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
-  if (V.ia?.ativo) { drawReal(c, color); realBars(); return; }
   if (!state.paused) simulate(dt, t);
   const f = m.face, fx = f.x * W, fy = f.y * H, fw = f.w * W, fh = f.h * H;
   if (!M.cameraActive) silhouette(c, f);
@@ -431,5 +441,5 @@ V.on('ready', () => {
   // Filtro infravermelho: só muda a imagem exibida (o MediaPipe lê o vídeo original).
   $('irBtn').onchange = e => setIR(e.target.checked);
 });
-V.addRenderer(draw);
+V.addRenderer(draw, 'camera-monitor');
 })();

@@ -19,9 +19,14 @@ const VEHICLES = {
   truck: { name: 'CAMINHÃO', maxSpeed: 120, cruise: 75, decel: 1.3, accel: 1.1 }
 };
 
-// Geometria da via (metros). Mão única com duas faixas no mesmo sentido: a da direita (x>0), onde
-// o veículo próprio anda, e a da esquerda (x<0), para ultrapassar. Acostamento à direita.
-const ROAD = { laneWidth: 3.6, shoulder: 2.6, egoLaneX: 1.8, leftLaneX: -1.8, railOffset: 6.5 };
+// Geometria da via (metros). Quatro faixas: duas no nosso sentido (a da direita, x>0, onde o
+// veículo próprio anda, e a da esquerda, x<0, para ultrapassar) e, separadas delas por uma faixa
+// dupla amarela (x = -3,6), duas de contramão à esquerda (contramao: a interna, junto à dupla
+// amarela, é a de ultrapassagem de quem vem; a externa, a da direita deles). Linha branca
+// tracejada entre as duas de cada sentido. Acostamento dos dois lados. esq: quanto o lado esquerdo
+// (acostamento, calçada, cenário) fica além do lado direito por causa da contramão; o direito vai
+// até 3,6 m da linha do meio, o esquerdo até -10,8 m.
+const ROAD = { laneWidth: 3.6, shoulder: 2.6, egoLaneX: 1.8, leftLaneX: -1.8, contramao: [-5.4, -9.0], esq: 7.2, railOffset: 6.5 };
 
 const VIGIA_SIGN_EVERY = 1500;
 
@@ -33,6 +38,7 @@ const state = {
   returning: false, leftOn: false, rightOn: false, // setas (voltando à faixa, ou pelo volante)
   // 'padrao': o simulador dirige sozinho; 'volante': o motorista dirige pelo controlador (volante.js)
   controle: 'padrao',
+  re: false, // marcha R (ré), só no modo Volante (veja REVERSA)
   viewMode: '2d', reduceMotion: matchMedia('(prefers-reduced-motion:reduce)').matches,
   trafficDensity: 2, cycleMinutes: 4, zoneSeconds: 30, volume: .45,
   events: [], eventSeq: 0,
@@ -44,6 +50,7 @@ const world = {
   distance: 0,        // metros percorridos
   odometer: 123456.0, // km ilustrativos
   traffic: [],        // veículos nas duas faixas, no mesmo sentido: {id, z, x, lane, kmh, v0, kind, ...}
+  contramao: [],      // veículos na faixa de contramão, vindo de frente: {id, z, x, kmh, kind, ...}
   lead: null,         // veículo mais próximo à frente, no caminho do ego (calculado a cada quadro)
   follower: null,     // veículo mais próximo atrás, no caminho do ego
   spawnTimer: 0, nextId: 1, rpm: 0, gear: 'D', gearNum: 1,
@@ -122,17 +129,49 @@ function crossingsBetween(from, to) {
   return out;
 }
 function nearCrossing(S, m) { const r = ((S % WORLD_WRAP) + WORLD_WRAP) % WORLD_WRAP; return CROSSINGS.some(o => Math.abs(r - o) < m); }
+/* Cartões-postais de Matipó: ao entrar na cidade, três lugares conhecidos aparecem pela via, nesta
+ * ordem: a Igreja Matriz (à direita), a Praça do Café (à esquerda) e o centro acadêmico da
+ * Univertix (à direita). Cada um ocupa um quarteirão inteiro (POSTAL_MEIO para cada lado), no meio
+ * entre dois cruzamentos; ali o 3D e a 2D não põem as casas e prédios genéricos daquele lado.
+ * world.postais: [{ tipo, nome, lado, S }]. A cidade dura pelo menos até passar o último. */
+const POSTAIS = [
+  { tipo: 'igreja', nome: 'Igreja Matriz de Matipó', lado: 1 },
+  { tipo: 'praca', nome: 'Praça do Café', lado: -1 },
+  { tipo: 'univertix', nome: 'Centro acadêmico da Univertix', lado: 1 },
+];
+const POSTAL_MEIO = 75, POSTAL_ENTRADA = 140; // m; o primeiro fica a pelo menos 140 m da entrada
+world.postais = [];
+function marcarPostais(z) {
+  const meios = CROSSINGS.map((o, i) => (o + (CROSSINGS[i + 1] ?? CROSSINGS[0] + WORLD_WRAP)) / 2); // entre cruzamentos
+  let S = z.start + POSTAL_ENTRADA, k = Math.floor(S / WORLD_WRAP) - 1;
+  const lugares = [];
+  while (lugares.length < POSTAIS.length) {
+    for (const m of meios) { const c = k * WORLD_WRAP + m; if (c >= S && lugares.length < POSTAIS.length && !lugares.includes(c)) lugares.push(c); }
+    k++;
+  }
+  lugares.sort((a, b) => a - b);
+  POSTAIS.forEach((P, i) => world.postais.push({ ...P, S: lugares[i], visto: false }));
+  z.minFim = lugares.at(-1) + POSTAL_MEIO + 60;
+  world.postais = world.postais.filter(p => p.S > world.distance - 1500);
+}
+// Lote reservado a um cartão-postal na posição S (m) do lado `lado`, se houver.
+function postalEm(S, lado) { return world.postais.find(p => p.lado === lado && Math.abs(S - p.S) < POSTAL_MEIO); }
 function scheduleZoneSwitch(ahead = 600) {
   const last = world.zones[world.zones.length - 1];
   const type = last.type === 'city' ? 'field' : 'city';
+  // Matipó: não termina antes de passar pelos cartões-postais
+  if (type === 'field' && last.minFim && world.distance + ahead < last.minFim) return;
   const z = { type, start: Math.max(world.distance + ahead, last.start + 400) };
   if (type === 'city') z.name = CITY_NAMES[cityCount++ % CITY_NAMES.length];
+  if (z.name === 'MATIPÓ') marcarPostais(z);
   world.zones.push(z); zoneClock = 0;
   log(type === 'city' ? `Aproximando-se de ${z.name}: perímetro urbano a ${Math.round(z.start - world.distance)} m` : 'Fim do perímetro urbano à frente', 'environment');
   emit('zone', z);
 }
 function updateZones(dt) {
   if (state.speed > 1) zoneClock += dt; // conta só o tempo em movimento
+  // registro ao passar por um cartão-postal
+  for (const p of world.postais) if (!p.visto && Math.abs(p.S - world.distance) < 40) { p.visto = true; log(`Matipó: ${p.nome} à ${p.lado > 0 ? 'direita' : 'esquerda'}`, 'environment'); }
   if (zoneClock >= state.zoneSeconds) scheduleZoneSwitch();
   const z = world.zones; // descarta zonas que já ficaram bem para trás
   while (z.length > 2 && z[1].start < world.distance - 2500) { z.shift(); z[0].start = -1e9; }
@@ -140,7 +179,7 @@ function updateZones(dt) {
   if (inCity !== world.inCity) { world.inCity = inCity; const zz = zoneAt(world.distance); log(inCity ? `Perímetro urbano: ${zz.name}` : 'Rodovia: saída do perímetro urbano', 'environment'); emit('inCity', inCity); }
 }
 
-// Pedestres nas calçadas (só existem dentro da cidade). x = lateral (±7.4..9.8 m).
+// Pedestres nas calçadas (só existem dentro da cidade). x = lateral (7,4..9,8 m à direita; à esquerda, mais ROAD.esq).
 world.peds = [];
 const SHIRTS = ['#d23a33', '#2d5fa8', '#f2f2ef', '#2c6b4f', '#e0a526', '#6b3fa0', '#17191c', '#d86aa0', '#3aa0c8'];
 const PANTS = ['#2b3442', '#1d1f22', '#5b4a3a', '#3c4f63', '#8a7d6b', '#14213d'];
@@ -158,7 +197,8 @@ function updatePeds(dt) {
       const S = d - 60 + Math.random() * 520;
       if (cityAmount(S) > .97 && !nearCrossing(S, 7)) {
         const side = Math.random() < .5 ? -1 : 1;
-        Object.assign(p, { active: true, S, x: side * (7.4 + Math.random() * 2.3), dir: Math.random() < .5 ? 1 : -1 });
+        // calçada esquerda: além da contramão (ROAD.esq)
+        Object.assign(p, { active: true, S, x: side * (7.4 + Math.random() * 2.3 + (side < 0 ? ROAD.esq : 0)), dir: Math.random() < .5 ? 1 : -1 });
       }
     }
   }
@@ -222,9 +262,10 @@ function randomVehicle(only) {
   const kind = only ? pick(only) : pick(TYPE_BAG), t = VEHICLE_TYPES[kind];
   return { kind, len: t.len, color: pick(t.colors), cab: pick(CAB_COLORS) };
 }
-// A visão 2D desenha os veículos ampliados para leitura; os espaçamentos usam o
-// comprimento ampliado para que nenhum veículo se sobreponha em nenhuma das visões.
-const DISPLAY_SCALE = 2.1;
+// Todas as visões usam o tamanho real dos veículos (a 2D é desenhada na mesma escala nas duas
+// direções). Antes a 2D ampliava os veículos 2,1x e as batidas usavam caixas diferentes em cada
+// visão: com a 2D à vista (inclusive a tela simplificada da cabine), um veículo aparecia dentro do outro.
+const DISPLAY_SCALE = 1;
 const half = len => len * DISPLAY_SCALE / 2;
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
@@ -264,7 +305,7 @@ function vagaLivre(z, lane, len, m = 45) {
 // Largada: pista vazia nos primeiros LARGADA_VAZIA s; depois o tráfego chega aos poucos (surgir).
 const LARGADA_VAZIA = 1;
 function seedTraffic() {
-  world.traffic = []; world.colisao = null;
+  world.traffic = []; world.contramao = []; world.colisao = null;
   if ((world.largadaT ?? 99) < LARGADA_VAZIA) { atualizarVizinhos(); return; }
   const n = DENSIDADE[state.trafficDensity] || 0, ext = egoExtent();
   for (let i = 0; i < n; i++) {
@@ -306,13 +347,19 @@ function liderDe(T) {
     if (g < gap) { gap = g; lider = O; }
   }
   const ext = egoExtent();
-  if (T.z < ext.center && noCaminho(egoX(), egoLargura())) {
+  // Intervenção: o ego reduz devagar e atravessa até o acostamento da direita. Quem vem atrás numa
+  // faixa que ele vai cruzar (à direita da borda esquerda dele) também o trata como obstáculo e
+  // freia atrás dele, em vez de seguir e bater de lado.
+  const cruzando = intervencao() && T.lane !== 2 && T.x + T.width / 2 > egoX() - egoLargura() / 2;
+  if (T.z < ext.center && (noCaminho(egoX(), egoLargura()) || cruzando)) {
     const g = -ext.rear - frente;
     if (g < gap) { gap = g; lider = EGO; }
   }
   return { lider, gap };
 }
-const EGO = { ego: true, get kmh() { return state.speed; } };
+const EGO = { ego: true, get kmh() { return velEgo(); } };
+// Velocidade do ego com o sentido (km/h): negativa na ré. state.speed é sempre o módulo (painel, som).
+const velEgo = () => state.re ? -state.speed : state.speed;
 // Faixa `lane` livre para T entrar: espaço à frente e atrás, contando a diferença de velocidade.
 function faixaLivre(T, lane) {
   const frente = T.z + half(T.len), tras = T.z - half(T.len), ext = egoExtent();
@@ -339,7 +386,8 @@ function decidirFaixa(T, lider, gap, dt) {
   T.decT = .3 + Math.random() * .5;
   const voltando = state.controle === 'padrao' && (world.pull > 0 || world.posRetorno > 0);
   if (T.lane === 0) {
-    const preso = lider && gap < 30 + T.kmh / 3.6 * 2 && lider.kmh < T.v0 - 6;
+    // atrás do ego parado: não sai na hora; primeiro espera e buzina (atrasDoEgoParado decide)
+    const preso = lider && gap < 30 + T.kmh / 3.6 * 2 && lider.kmh < T.v0 - 6 && !(lider === EGO && state.speed < 3);
     // ego voltando do acostamento: quem vem atrás na faixa da direita passa para a esquerda
     const abrir = voltando && T.z < 0 && T.z > -260;
     if ((preso || abrir) && faixaLivre(T, 1)) { T.lane = 1; T.seta = -1; }
@@ -348,6 +396,26 @@ function decidirFaixa(T, lider, gap, dt) {
     const dir = liderNaFaixa(T, 0);
     const vale = !dir.lider || dir.gap > 150 || dir.lider.kmh >= T.v0 - 4;
     if (vale && faixaLivre(T, 0) && !(voltando && T.z < 0)) { T.lane = 0; T.seta = 1; }
+  }
+}
+/* Parado atrás do ego parado (na faixa dele): espera ATRAS.espera s, dá duas buzinadas curtas (uma
+ * vez só, evento buzinaTrafego) e, se o ego continuar parado por mais ATRAS.buzina s, dá seta e
+ * ultrapassa pela outra faixa do mesmo sentido assim que ela estiver livre, saindo devagar de trás
+ * dele. Se o ego andar antes, desiste e segue normalmente. */
+const ATRAS = { espera: .8, buzina: 5, gap: 20 };
+function atrasDoEgoParado(T, lider, gap, dt) {
+  const ext = egoExtent();
+  if (T.ultrapassandoEgo && T.z - half(T.len) > ext.front + 4) T.ultrapassandoEgo = false; // já passou
+  const preso = lider === EGO && state.speed < 3 && T.kmh < 8 && gap < ATRAS.gap && !emColisao() && !state.re;
+  if (!preso) { if (state.speed > 5 || lider !== EGO) { T.atrasT = 0; T.buzinouEgo = false; } return; }
+  T.atrasT = (T.atrasT || 0) + dt;
+  if (T.atrasT > ATRAS.espera && !T.buzinouEgo) { T.buzinouEgo = true; emit('buzinaTrafego', { ...T, toques: 2 }); }
+  if (T.atrasT >= ATRAS.espera + ATRAS.buzina && !T.ultrapassandoEgo && Math.abs(T.x - LANE_X[T.lane]) < .1) {
+    const outra = T.lane === 0 ? 1 : 0;
+    if (faixaLivre(T, outra)) {
+      T.lane = outra; T.seta = outra === 1 ? -1 : 1; T.ultrapassandoEgo = true; T.decT = 2;
+      log('O veículo de trás desistiu de esperar e vai ultrapassar', 'vehicle');
+    }
   }
 }
 /* Buzina pedindo passagem: o veículo logo à frente, no caminho do ego, dá seta para a direita,
@@ -405,7 +473,7 @@ function liderNaFaixa(T, lane) {
 }
 
 function updateTraffic(dt) {
-  const ego = state.speed / 3.6;
+  const ego = velEgo() / 3.6;
   world.largadaT = (world.largadaT ?? 99) + dt;
   world.spawnTimer += dt;
   if (world.spawnTimer >= .6) { world.spawnTimer = 0; surgir(); }
@@ -416,7 +484,8 @@ function updateTraffic(dt) {
     let acc;
     if (T.crash) acc = -11; // bateu: freia até parar e espera (veja atualizarColisao)
     else {
-      const pesado = isHeavy(T.kind), a = pesado ? 1 : 1.8, b = 3, s0 = 4, Th = 1.1;
+      // atrás do ego em intervenção (freando devagar rumo ao acostamento): distância maior
+      const pesado = isHeavy(T.kind), a = pesado ? 1 : 1.8, b = 3, s0 = lider === EGO && intervencao() ? 8 : 4, Th = lider === EGO && intervencao() ? 1.8 : 1.1;
       const v0 = Math.max(T.v0, 1) / 3.6;
       acc = a * (1 - Math.pow(v / v0, 4));
       if (lider) {
@@ -425,8 +494,10 @@ function updateTraffic(dt) {
         acc = a * (1 - Math.pow(v / v0, 4) - Math.pow(sStar / Math.max(gap, .3), 2));
       }
       acc = clamp(acc, -9, a);
-      // preso atrás do ego (ou fechado por ele): buzina, no máximo uma vez a cada 8 s
-      if (lider === EGO && (acc < -3.5 || (gap < 25 && state.speed < T.v0 - 25)) && (T.buzinaT ?? -99) < motion.t - 8) { T.buzinaT = motion.t; emit('buzinaTrafego', T); }
+      // preso atrás do ego (ou fechado por ele): buzina, no máximo uma vez a cada 8 s (parado atrás
+      // do ego parado é outro caso: buzina contínua e depois ultrapassa, em atrasDoEgoParado)
+      if (lider === EGO && !T.atrasT && state.speed >= 3 && (acc < -3.5 || (gap < 25 && state.speed < T.v0 - 25)) && (T.buzinaT ?? -99) < motion.t - 8) { T.buzinaT = motion.t; emit('buzinaTrafego', T); }
+      atrasDoEgoParado(T, lider, gap, dt);
       decidirFaixa(T, lider, gap, dt);
     }
     T.kmh = Math.max(0, (v + acc * dt) * 3.6);
@@ -440,7 +511,8 @@ function updateTraffic(dt) {
     // troca de faixa: velocidade lateral suave (cerca de 3 s de uma faixa para a outra)
     const dx = LANE_X[T.lane] - T.x;
     const latMax = T.encostar ? PASSAGEM.lateral : 1.25; // encostando para dar passagem: devagar
-    const alvo = Math.sign(dx) * Math.min(latMax, Math.sqrt(2 * .8 * Math.abs(dx))) * clamp(T.kmh / 20, 0, 1);
+    // saindo de trás do ego parado, quase parado: desvia devagar mesmo assim (como quem esterça e sai)
+    const alvo = Math.sign(dx) * Math.min(latMax, Math.sqrt(2 * .8 * Math.abs(dx))) * clamp(T.kmh / 20, T.ultrapassandoEgo ? .8 : 0, 1);
     T.latV += clamp(alvo - T.latV, -.9 * dt, .9 * dt);
     T.x += T.latV * dt;
     if (Math.abs(LANE_X[T.lane] - T.x) < .03 && Math.abs(T.latV) < .15) { T.x = LANE_X[T.lane]; T.latV = 0; }
@@ -450,11 +522,78 @@ function updateTraffic(dt) {
     if (lado !== T.lado) { T.lado = lado; state.passCount++; emit('pass', { ...T, rel: Math.abs(T.kmh - state.speed), ultrapassou: lado > 0 }); }
   }
   world.traffic = world.traffic.filter(t => t.z < 540 && t.z > -360 || world.colisao?.id === t.id);
+  updateContramao(dt);
   atualizarVizinhos();
   if (!(state.controle === 'volante' && !intervencao())) semSobreposicao(dt);
   else state.aeb = false;
   detectarColisao();
   atualizarColisao(dt);
+  separarDoEgo();
+}
+/* Contramão: duas faixas à esquerda, no sentido oposto. Os veículos surgem lá na frente e passam
+ * pelo ego em velocidade de estrada, em fila em cada faixa (sem trocar de faixa): os pesados e a
+ * maioria na externa (a da direita de quem vem), os mais rápidos também na interna. Se o ego invade
+ * a faixa deles (modo Volante), só o primeiro que vem de frente nela reage: freia forte e, a
+ * CONTRA.alerta m ou menos, pisca o farol sem parar e buzina contínuo (world.contraAlerta, som em
+ * audio.js) até o ego sair da frente dele; os de trás só seguem a fila. Se mesmo assim os dois se
+ * tocam, é uma colisão frontal (veja detectarColisao). */
+const CONTRA = { densidade: [0, 4, 7, 11], surgeZ: 560, frenagem: 7, alcance: 180, alerta: 50 };
+function surgirContramao() {
+  if ((world.largadaT ?? 99) < LARGADA_VAZIA) return;
+  const C = world.contramao;
+  if (C.length >= (CONTRA.densidade[state.trafficDensity] || 0)) return;
+  const v = randomVehicle(), z = CONTRA.surgeZ + Math.random() * 80;
+  const faixa = isHeavy(v.kind) || Math.random() < .6 ? 1 : 0, x = ROAD.contramao[faixa];
+  // espaço até quem já está lá na frente, na mesma faixa
+  if (C.some(t => t.x === x && Math.abs(t.z - z) < half(v.len) + half(t.len) + 25 + Math.random() * 40)) return;
+  const v0 = isHeavy(v.kind) ? 65 + Math.random() * 20 : faixa ? 80 + Math.random() * 25 : 95 + Math.random() * 30;
+  C.push({ id: world.nextId++, z, x, ...v, width: largura(v.kind), v0, kmh: v0, braking: false, crash: false, lado: 1, contra: true });
+}
+function updateContramao(dt) {
+  const ego = velEgo() / 3.6, C = world.contramao, ext = egoExtent();
+  world.contraTimer = (world.contraTimer || 0) + dt;
+  if (world.contraTimer >= .5) { world.contraTimer = 0; surgirContramao(); }
+  C.sort((a, b) => a.z - b.z); // quem vai na frente (no sentido deles) primeiro: o de menor z
+  // o primeiro que vem de frente na faixa que o ego ocupa (o de menor z à frente dele)
+  let primeiro = null;
+  for (const T of C) if (T.z > ext.front && ladoALado(egoX(), egoLargura(), T.x, T.width, .2) && (!primeiro || T.z < primeiro.z)) primeiro = T;
+  const frenteNa = new Map(); // faixa (x) -> o veículo logo à frente nela
+  for (const T of C) {
+    const frente = frenteNa.get(T.x) || null;
+    let alvo = T.v0, acc, perigo = false;
+    // batido de frente com o ego: espera parado até o ego sair da faixa dele; depois segue viagem
+    if (T.batido && !T.crash && !ladoALado(egoX(), egoLargura(), T.x, T.width, .3)) { T.batido = false; log('Contramão: veículo batido segue viagem', 'vehicle'); }
+    if (T.crash) acc = -11;
+    else if (T.batido) { acc = -11; alvo = 0; }
+    else {
+      // ego na faixa deles, à frente (entre o ego e o alcance): freia forte, buzina e dá farol
+      perigo = T === primeiro && T.z - half(T.len) - ext.front < CONTRA.alcance;
+      if (perigo) alvo = 0;
+      // segue o da frente dele (sem ultrapassar), com folga
+      if (frente) {
+        const gap = (T.z - half(T.len)) - (frente.z + half(frente.len));
+        if (gap < 30) alvo = Math.min(alvo, frente.kmh * clamp(gap / 30, 0, 1));
+      }
+      acc = alvo < T.kmh - .5 ? -(perigo ? CONTRA.frenagem : 3) : alvo > T.kmh + .5 ? 1.5 : 0;
+    }
+    // farol piscando e buzina contínua: o primeiro, a CONTRA.alerta m ou menos (também parado, depois de uma batida)
+    T.farol = T === primeiro && !T.batido && T.z - half(T.len) - ext.front <= CONTRA.alerta; // depois da batida, não
+    const v = Math.max(0, T.kmh / 3.6 + acc * dt);
+    T.braking = acc < -1 && v > .1;
+    T.kmh = Math.min(T.v0, v * 3.6);
+    T.z -= (T.kmh / 3.6 + ego) * dt;
+    if (frente) T.z = Math.max(T.z, frente.z + half(frente.len) + half(T.len) + 1); // nunca se sobrepõem
+    // passagem pelo ego (cruzou com ele)
+    const lado = T.z >= 0 ? 1 : -1;
+    if (lado !== T.lado) { T.lado = lado; state.passCount++; emit('pass', { ...T, rel: state.speed + T.kmh, contra: true }); }
+    frenteNa.set(T.x, T);
+  }
+  world.contramao = C.filter(t => t.z > -360 && t.z < 800 || world.colisao?.id === t.id);
+  const alerta = world.contramao.find(t => t.farol) || null;
+  if ((alerta?.id ?? null) !== (world.contraAlerta?.id ?? null)) {
+    if (alerta) log('Contramão: veículo de frente piscando o farol e buzinando', 'vehicle');
+    world.contraAlerta = alerta;
+  }
 }
 const intervencao = () => !state.degraded && state.level === 'intervention';
 // world.lead / world.follower: os mais próximos à frente e atrás, no caminho do ego
@@ -495,32 +634,60 @@ function semSobreposicao(dt) {
  * (pisca-alerta ligado), esperam 2 s e só então retomam: o tráfego volta à velocidade dele e o
  * motorista recupera os comandos. */
 const COLISAO = { freio: 11 * 3.6, parado: 2, carencia: 2.5 }; // freio em km/h por segundo
+// Caixas físicas (as mesmas na 2D e no 3D).
 function caixaEgo() {
-  const d2 = state.viewMode === '2d', ext = d2 ? egoExtent() : egoFisico();
-  const k = d2 ? (VIGIA.escala2d?.lat ?? 1) : 1;
-  return { zf: ext.front, zr: -ext.rear, x: egoX(), hw: egoLargura() * k / 2 };
+  const ext = egoFisico();
+  return { zf: ext.front, zr: -ext.rear, x: egoX(), hw: egoLargura() / 2 };
 }
 function caixa(T) {
-  const d2 = state.viewMode === '2d', hl = d2 ? half(T.len) : T.len / 2, k = d2 ? (VIGIA.escala2d?.lat ?? 1) : 1;
-  return { zf: T.z + hl, zr: T.z - hl, x: T.x, hw: T.width * k / 2 };
+  const hl = T.len / 2;
+  return { zf: T.z + hl, zr: T.z - hl, x: T.x, hw: T.width / 2 };
+}
+/* Nenhum veículo atravessa o ego, em nenhuma visão e em nenhum momento: também na carência depois
+ * de uma batida (quando detectarColisao ignora o mesmo veículo) e com o motorista insistindo no
+ * acelerador ou no volante. A cada quadro, quem se sobrepõe ao ego é afastado pelo lado de menor
+ * sobreposição, e as velocidades se acertam para não voltar a entrar. */
+function separarDoEgo() {
+  for (const T of world.traffic.concat(world.contramao)) {
+    const E = caixaEgo(), B = caixa(T);
+    const sobreZ = Math.min(E.zf, B.zf) - Math.max(E.zr, B.zr), sobreX = E.hw + B.hw - Math.abs(E.x - B.x);
+    if (sobreZ <= 0 || sobreX <= 0) continue;
+    if (sobreX < sobreZ) {
+      // lado a lado: o ego sai para o lado oposto ao do outro veículo
+      world.egoOffset += (Math.sign(egoX() - T.x) || 1) * (sobreX + .02);
+      world.pull = world.pullFrac = world.egoOffset / PULL_DIST;
+      world.lateralSpeed = 0;
+    } else if (T.z > 0) {
+      // à frente: encosta no para-choque traseiro dele (ou no dianteiro, se vem de frente)
+      T.z += E.zf - B.zr + .02;
+      if (T.contra) { T.kmh = 0; state.speed = 0; }
+      else state.speed = Math.min(state.speed, T.kmh);
+    } else {
+      // atrás: fica encostado na traseira do ego, sem passar (dando ré para cima dele, o ego para)
+      T.z -= B.zf - E.zr + .02;
+      if (state.re) state.speed = 0;
+      else if (!T.contra) T.kmh = Math.min(T.kmh, state.speed);
+    }
+  }
 }
 function detectarColisao() {
   const C = world.colisao;
   if (C && C.fase !== 'carencia') return;
   const E = caixaEgo();
-  for (const T of world.traffic) {
+  for (const T of world.traffic.concat(world.contramao)) {
     if (C && C.id === T.id) continue;
     const B = caixa(T);
     const sobreZ = Math.min(E.zf, B.zf) - Math.max(E.zr, B.zr), sobreX = E.hw + B.hw - Math.abs(E.x - B.x);
     if (sobreZ <= 0 || sobreX <= 0) continue;
-    // lateral quando a sobreposição de lado é a menor; senão, traseira (ego bate atrás) ou o ego é atingido
-    const tipo = sobreX < sobreZ * .5 ? 'lateral' : T.z > 0 ? 'traseira' : 'atingido por trás';
+    // lateral quando a sobreposição de lado é a menor; senão, traseira (ego bate atrás), o ego é
+    // atingido, ou frontal (veículo da contramão)
+    const tipo = sobreX < sobreZ * .5 ? 'lateral' : T.contra ? 'frontal' : T.z > 0 ? 'traseira' : 'atingido por trás';
     colidir(T, tipo, sobreX, sobreZ);
     return;
   }
 }
 function colidir(T, tipo, sobreX) {
-  const rel = Math.abs(state.speed - T.kmh);
+  const rel = T.contra ? state.speed + T.kmh : Math.abs(state.speed - T.kmh); // de frente: as velocidades somam
   // separa os dois (nenhuma visão mostra um veículo dentro do outro)
   if (tipo === 'lateral') {
     world.egoOffset += Math.sign(egoX() - T.x || 1) * (sobreX + .05);
@@ -531,8 +698,13 @@ function colidir(T, tipo, sobreX) {
     T.z += T.z > 0 ? E.zf - B.zr + .05 : E.zr - B.zf - .05;
   }
   // choque: as velocidades se aproximam (troca de quantidade de movimento simplificada)
-  const media = (state.speed + T.kmh) / 2;
-  state.speed += (media - state.speed) * .6; T.kmh += (media - T.kmh) * .6;
+  // de frente: os dois quase param no impacto; o da contramão fica parado (sem buzina nem farol,
+  // com pisca-alerta) até o ego sair da faixa dele (veja updateContramao)
+  if (T.contra) { state.speed *= .15; T.kmh *= .15; T.batido = true; }
+  else {
+    const media = (state.speed + T.kmh) / 2;
+    state.speed += (media - state.speed) * .6; T.kmh += (media - T.kmh) * .6;
+  }
   T.crash = true; T.seta = 0;
   world.colisao = { id: T.id, fase: 'parando', t: 0 };
   const nome = (isHeavy(T.kind) ? 'caminhão' : T.kind === 'van' ? 'van' : T.kind === 'pickup' ? 'picape' : 'carro');
@@ -541,7 +713,7 @@ function colidir(T, tipo, sobreX) {
 }
 function atualizarColisao(dt) {
   const C = world.colisao; if (!C) return;
-  const T = world.traffic.find(t => t.id === C.id);
+  const T = world.traffic.find(t => t.id === C.id) || world.contramao.find(t => t.id === C.id);
   C.t += dt;
   if (C.fase === 'parando') {
     // o ego também freia (em updateSpeed); os dois ficam encostados, sem se sobrepor
@@ -571,9 +743,10 @@ function ladoLivre() {
   return true;
 }
 // Extensão física do veículo próprio em relação ao motorista (z = 0), a da cabine 3D.
-function egoFisico() { return state.vehicle === 'truck' ? { front: 1.3, rear: 15.4 } : { front: 1.0, rear: 3.6 }; }
-// Extensão do veículo próprio em relação ao motorista (z = 0): a maior entre a física
-// (cabine 3D) e a desenhada na 2D. center = onde a 2D desenha o ego.
+// Do olho do motorista ao para-choque dianteiro e ao traseiro (m). Carro (4,5 m): o capô fica uns
+// 2,1 m à frente do motorista; caminhão de cabine avançada (16,5 m): 1,3 m.
+function egoFisico() { return state.vehicle === 'truck' ? { front: 1.3, rear: 15.2 } : { front: 2.1, rear: 2.4 }; }
+// Extensão do veículo próprio em relação ao motorista (z = 0). center = onde a 2D desenha o ego.
 function egoExtent() {
   const phys = egoFisico();
   const center = (phys.front - phys.rear) / 2, h = Math.max((phys.front + phys.rear) / 2, half(vehicleLength(state.vehicle)));
@@ -588,13 +761,17 @@ function updateSpeed(dt) {
   const antes = state.speed;
   // colisão: os dois veículos freiam até parar e esperam a retomada (comandos travados)
   if (emColisao()) {
+    if (state.re) { state.re = false; state.speed = 0; }
     if (world.colisao.fase === 'parando') state.speed = Math.max(0, state.speed - COLISAO.freio * dt);
     state.freando = true; state.target = state.speed;
+    world.cantando = 0; world.cantandoAtivo = false;
     motor(dt, false, 0); return;
   }
   // intervenção: reduz até ~30 km/h enquanto encosta e só para depois de chegar ao acostamento
   if (intervention) desired = world.pull >= .98 ? 0 : Math.max(15, Math.min(state.speed, 30));
-  if (state.controle === 'volante' && !intervention) { pedais(dt, v); motor(dt, false, Math.max(0, VIGIA.controle?.pedal ?? 0)); return; }
+  if (state.controle === 'volante' && !intervention) { pedais(dt, v); motor(dt, false, state.re ? 0 : Math.max(0, VIGIA.controle?.pedal ?? 0)); return; }
+  if (state.re) { state.re = false; state.speed = 0; } // a ré só existe no modo Volante
+  world.cantando = 0; world.cantandoAtivo = false; // pneus cantando: só na frenagem do motorista (pedais)
   if (state.degraded) desired = state.speed;
   else if (!intervention && desired > 0) {
     state.cruiseT += dt;
@@ -604,7 +781,7 @@ function updateSpeed(dt) {
   const L = world.lead;
   if (L && !intervention) desired = Math.min(desired, Math.max(0, L.kmh + (L.z - half(L.len) - egoExtent().front - 35) * .4));
   if (state.speed > desired) {
-    const drop = intervention ? v.decel * 3.6 : Math.min(9, (state.speed - desired) * 2 + .5);
+    const drop = intervention ? v.decel * 3.6 * INTER_FREIO : Math.min(9, (state.speed - desired) * 2 + .5);
     state.speed = Math.max(desired, state.speed - drop * dt);
   } else if (state.speed < desired) {
     const corte = world.trocaT < .25 && world.trocaSobe ? .35 : 1; // torque cortado na troca de marcha
@@ -617,16 +794,65 @@ function updateSpeed(dt) {
 }
 // Modo volante: acelerador e freio pelo eixo Y do controlador. Sem pedal, o veículo perde
 // velocidade aos poucos (freio-motor). Nunca dá ré: a velocidade para em zero.
+// Freio total: ~10 m/s² no carro (0,9 g, frenagem de emergência) e ~6 m/s² no caminhão.
+const FREIO_FORCA = 4.6; // multiplica v.decel (m/s²) no freio total
+/* Pneus cantando: só numa frenagem brusca a 120 km/h ou mais. Começa quando o pedal vai fundo de
+ * repente (em até 0,3 s desde um freio leve) e o freio tira velocidade depressa: pelo menos 20 km/h
+ * por segundo, ou seja, uns 30 km/h em 1,5 s. Freadas leves (que reduzem pouco) e qualquer freada
+ * abaixo de 120 km/h não cantam. Uma vez começado, continua enquanto o freio seguir forte (15 km/h
+ * por segundo ou mais) e o veículo andando, mais alto quanto mais rápido e mais fundo o pedal.
+ * world.cantando 0..1 (audio.js e o rastro de pneus da 2D). */
+const CANTAR = { velMin: 120, taxaMin: 20, taxaSegue: 15, janela: .3, velFim: 8 }; // km/h, km/h/s, s, km/h
+function pneusCantando(dt, p, v) {
+  const taxa = p < 0 ? -p * v.decel * 3.6 * FREIO_FORCA : 0; // km/h perdidos por segundo pelo freio
+  // há quanto tempo o pedal estava leve (> -0,3): mede se a pisada foi brusca
+  world.freioLeveT = p > -.3 ? 0 : (world.freioLeveT ?? 9) + dt;
+  if (!world.cantandoAtivo && taxa >= CANTAR.taxaMin && world.freioLeveT <= CANTAR.janela && state.speed >= CANTAR.velMin) {
+    world.cantandoAtivo = true;
+    log('Frenagem brusca a ' + Math.round(state.speed) + ' km/h: pneus cantando', 'vehicle');
+  }
+  if (world.cantandoAtivo && (taxa < CANTAR.taxaSegue || state.speed < CANTAR.velFim)) world.cantandoAtivo = false;
+  world.cantando = world.cantandoAtivo
+    ? clamp((-p - .3) / .7, 0, 1) * clamp(state.speed / 150, .25, 1) * clamp((state.speed - CANTAR.velFim) / 15, 0, 1)
+    : 0;
+}
+/* Ré (modo Volante): parado, segurar o freio por REVERSA.engata s engata a ré (R no painel); o
+ * freio passa a levar o veículo para trás, devagar (até REVERSA.vmax), e o acelerador freia a ré;
+ * parado de novo, o acelerador volta para D. Serve para sair de uma batida de frente, por exemplo.
+ * A ré não retoma a estrada já percorrida: volta no máximo REVERSA.recuo m (o que a visão 2D mostra
+ * atrás do veículo) a partir do ponto mais adiante a que ele já chegou; ali trava. */
+const REVERSA = { engata: .5, vmax: 10, acel: 6, freio: 14, recuo: 8 }; // s, km/h, km/h/s, km/h/s, m
+function re(dt, p) {
+  if (p < -.05) state.speed = Math.min(REVERSA.vmax * -p, state.speed + REVERSA.acel * -p * dt); // freio: para trás
+  else if (p > .05) state.speed = Math.max(0, state.speed - REVERSA.freio * p * dt);                // acelerador: freia a ré
+  else state.speed = Math.max(0, state.speed - 4 * dt);                                             // solto: para aos poucos
+  // limite: não volta além do que já passou
+  const limite = (world.distanciaMax ?? world.distance) - REVERSA.recuo;
+  if (world.distance - state.speed / 3.6 * dt <= limite) {
+    state.speed = 0;
+    if (!world.reLimite) { world.reLimite = true; log('Ré: limite atingido (não volta além do trecho à vista)', 'vehicle'); }
+  } else world.reLimite = false;
+  state.target = state.speed; state.freando = false;
+  world.cantando = 0; world.cantandoAtivo = false;
+  if (state.speed < .3 && p > .3) { state.re = false; log('Marcha D: ré desengatada', 'vehicle'); }
+}
 function pedais(dt, v) {
   const p = VIGIA.controle?.pedal ?? 0;  // -1 freio total .. 1 acelerador total
+  if (state.re) { re(dt, p); return; }
+  // parado e segurando o freio: engata a ré
+  world.freioParadoT = state.speed < .3 && p < -.3 ? (world.freioParadoT || 0) + dt : 0;
+  if (world.freioParadoT >= REVERSA.engata) { state.re = true; state.speed = 0; world.freioParadoT = 0; log('Marcha R: ré engatada (freio leva para trás, devagar)', 'vehicle'); return; }
   const max = v.maxSpeed;
   let a; // km/h por segundo
   if (p > 0) a = p * v.accel * 3.6 * 1.6 * clamp(1.15 - state.speed / max, 0, 1) * (world.trocaT < .25 && world.trocaSobe ? .3 : 1);
-  else if (p < 0) a = p * v.decel * 3.6 * 2.6;
-  else a = -(.8 + state.speed * .012);
+  else if (p < 0) a = p * v.decel * 3.6 * FREIO_FORCA;
+  // pé fora dos pedais: freio-motor e atrito, ~3 a 5 km/h por segundo (bem menos que o freio, que
+  // tira até ~36): de 100 a 60 km/h em ~9 s, parando aos poucos
+  else a = -(3 + state.speed * .02);
   state.speed = clamp(state.speed + a * dt, 0, max);
   state.target = state.speed;
   state.freando = p < -.05; // pedal de freio apertado: a luz acende, mesmo parado
+  pneusCantando(dt, p, v);
 }
 /* Câmbio automático ilustrativo (sem sensores reais). Cada marcha tem a velocidade em que o motor
  * chega ao giro máximo (TOPO); o giro é proporcional à velocidade nessa marcha. Sobe de marcha
@@ -639,8 +865,9 @@ const CAMBIO = {
 };
 const ESTOURO = { apos: 5, min: 5, max: 5, dura: .35 }; // 1º tiro após 5 s no máximo; depois, de 5 em 5 s
 function motor(dt, intervention, carga) {
-  world.distance += state.speed / 3.6 * dt;
+  world.distance += velEgo() / 3.6 * dt;
   world.odometer += state.speed / 3.6 * dt / 1000;
+  world.distanciaMax = Math.max(world.distanciaMax ?? world.distance, world.distance); // até onde já chegou (limite da ré)
   const cb = CAMBIO[state.vehicle === 'truck' ? 'truck' : 'car'], N = cb.topo.length - 1;
   world.carga += (carga - world.carga) * clamp(dt * 5, 0, 1);
   // intenção imediata (sem a suavização da carga): pé no acelerador agora, ou o piloto automático
@@ -680,19 +907,21 @@ function motor(dt, intervention, carga) {
       emit('estouro', { forca: world.estouroForca });
     }
   } else world.estourando = false;
-  world.gearNum = state.speed < 1 ? 0 : g;
-  world.gear = state.speed < .5 && intervention ? 'P' : 'D';
+  world.gearNum = state.speed < 1 || state.re ? 0 : g;
+  world.gear = state.re ? 'R' : state.speed < .5 && intervention ? 'P' : 'D';
 }
 
 /* ---------- acostamento ----------
- * Na intervenção, o veículo sai devagar da faixa para o centro do acostamento enquanto reduz,
- * e só então para. A velocidade lateral é baixa (pico de ~0,45 m/s) e proporcional à de avanço
- * (não desliza de lado parado). Quando a intervenção termina, volta à faixa só em movimento e
+ * Na intervenção, o veículo sai logo da faixa para o centro do acostamento enquanto reduz, e só
+ * então para. A velocidade lateral chega a INTER_LAT m/s (~3 s da faixa ao acostamento, sem ser
+ * uma manobra brusca) e é proporcional à de avanço (não desliza de lado parado). Quando a intervenção termina, volta à faixa só em movimento e
  * com espaço livre atrás e ao lado. Sem sinal (degradado), fica onde está. */
 const PULL_DIST = ROAD.laneWidth + ROAD.shoulder / 2 - ROAD.egoLaneX; // até o centro do acostamento
-const LAT_ACCEL = .12;   // m/s²: quanto a velocidade lateral pode mudar por segundo
+const LAT_ACCEL = .9;    // m/s²: quanto a velocidade lateral pode mudar por segundo
+const INTER_LAT = 1.4;   // m/s: velocidade lateral máxima entrando (ou saindo) do acostamento
+const INTER_FREIO = 1.5; // multiplica v.decel na redução da intervenção (carro: ~3,3 m/s², firme sem ser pânico)
 const STEER_MAX = 35;    // graus de volante, no máximo, para entrar ou sair do acostamento
-const STEER_RATE = 40;   // graus por segundo: o motorista gira o volante aos poucos
+const STEER_RATE = 70;   // graus por segundo: o motorista gira o volante aos poucos
 const SETA_LIMIAR = .2;  // giro do volante (fração) a partir do qual a seta liga
 const STEER_CONTROLADOR = 120; // graus de volante na cabine com o controlador todo virado
 function mergeIsSafe() {
@@ -706,18 +935,19 @@ function mergeIsSafe() {
   });
 }
 // Modo volante: até onde o motorista pode ir (m, a partir do centro da faixa da direita): à
-// esquerda, toda a faixa da esquerda, até a roda encostar na linha de bordo; à direita, até o
-// meio do acostamento.
+// esquerda, até a faixa de contramão (invadi-la é por conta e risco do motorista), até a roda
+// encostar na linha de bordo; à direita, até o meio do acostamento.
 function limitesVolante() {
   const meia = egoLargura() / 2;
-  return [ROAD.leftLaneX - ROAD.egoLaneX - (ROAD.laneWidth / 2 - meia - .1), PULL_DIST];
+  return [ROAD.contramao[1] - ROAD.egoLaneX - (ROAD.laneWidth / 2 - meia - .1), PULL_DIST]; // até a contramão externa
 }
 // Resposta progressiva: giro pequeno, correção suave; volante todo virado, troca de faixa rápida.
 // lateral = sinal(x) · |x|^VOLANTE_CURVA · min(VOLANTE_LAT, velocidade · VOLANTE_GANHO)
-const VOLANTE_LAT = 4.2;    // m/s de deslocamento lateral com o volante todo virado (em velocidade)
-const VOLANTE_GANHO = .17;  // fração da velocidade de avanço (parado não anda de lado)
+// A 90 km/h, volante todo virado: troca de faixa em ~0,65 s (manobra brusca); meio volante, ~1,5 s.
+const VOLANTE_LAT = 7.5;    // m/s de deslocamento lateral com o volante todo virado (em velocidade)
+const VOLANTE_GANHO = .3;   // fração da velocidade de avanço (parado não anda de lado)
 const VOLANTE_CURVA = 1.6;  // >1: o fim do curso do volante vira bem mais que o começo
-const VOLANTE_ACC = 6;      // m/s²: resposta do veículo ao volante
+const VOLANTE_ACC = 22;     // m/s²: resposta do veículo ao volante (alto: giro brusco responde na hora)
 function updateLateral(dt) {
   const inter = !state.degraded && state.level === 'intervention';
   const v0 = world.lateralSpeed, before = world.pull;
@@ -730,7 +960,10 @@ function updateLateral(dt) {
   if (state.controle === 'volante' && !inter) {
     // motorista no volante: o giro pede velocidade lateral, proporcional à de avanço (parado não anda de lado)
     const x = VIGIA.controle?.direcao ?? 0;
-    const alvo = Math.sign(x) * Math.pow(Math.abs(x), VOLANTE_CURVA) * Math.min(VOLANTE_LAT, state.speed / 3.6 * VOLANTE_GANHO);
+    // em manobra (devagar, inclusive na ré) o volante desloca mais por metro andado, como na vida real
+    const vm = state.speed / 3.6, ganho = VOLANTE_GANHO + .25 * clamp(1 - vm / 8, 0, 1);
+    // na ré o volante é invertido: virando para a esquerda, o veículo vai para a direita (e vice-versa)
+    const alvo = (state.re ? -1 : 1) * Math.sign(x) * Math.pow(Math.abs(x), VOLANTE_CURVA) * Math.min(VOLANTE_LAT, vm * ganho);
     v = dt > 0 ? v0 + clamp(alvo - v0, -VOLANTE_ACC * dt, VOLANTE_ACC * dt) : v0;
     let [min, max] = limitesVolante();
     // todo no acostamento com veículo ao lado na faixa: não volta para a faixa (seria uma batida)
@@ -750,7 +983,7 @@ function updateLateral(dt) {
     else if (!state.degraded && world.pull > 0 && state.speed > 20 && mergeIsSafe()) alvoPull = 0;
     // Velocidade lateral contínua: sobe e desce com aceleração limitada (inclusive quando a volta
     // pausa por falta de espaço) e freia antes do fim, para o volante nunca dar tranco.
-    const rate = Math.min(.3, state.speed / 3.6 * .08); // m/s
+    const rate = Math.min(INTER_LAT, state.speed / 3.6 * .17); // m/s (a 30 km/h já é a máxima)
     const falta = alvoPull == null ? 0 : (alvoPull - world.pull) * PULL_DIST;
     const alvo = Math.sign(falta) * Math.min(rate, Math.sqrt(2 * LAT_ACCEL * Math.abs(falta)));
     v = dt > 0 ? v0 + clamp(alvo - v0, -LAT_ACCEL * dt, LAT_ACCEL * dt) : v0;
@@ -764,7 +997,8 @@ function updateLateral(dt) {
   world.egoOffset = world.pull * PULL_DIST;
   const lat = world.lateralSpeed;
   if (state.controle === 'volante' && !inter) {
-    world.heading = lerp(world.heading, Math.atan2(lat, Math.max(state.speed / 3.6, 2)), clamp(dt * 3, 0, 1));
+    // rumo: a frente aponta para onde o veículo vai; na ré, para o lado contrário do deslocamento
+    world.heading = lerp(world.heading, Math.atan2(state.re ? -lat : lat, Math.max(state.speed / 3.6, 2)), clamp(dt * 3, 0, 1));
     return; // o motorista manobra: sem os registros da intervenção
   }
   // rumo do veículo: inclina um pouco na direção da manobra, sem tranco
@@ -850,12 +1084,13 @@ function refreshUI() {
  * Toda simulação começa parada: no Volante, o veículo espera o motorista acelerar; no Padrão, o
  * simulador acelera sozinho até a velocidade de cruzeiro. O logotipo VIGIA fica pintado no asfalto
  * LARGADA_LOGO m à frente do motorista (world.largada = posição na rodovia, em metros). */
-const LARGADA_LOGO = 30;
+const LARGADA_LOGO = 20;
 function largada() {
-  state.speed = 0;
+  state.speed = 0; state.re = false;
   state.target = state.controle === 'volante' ? 0 : cruiseFor();
   Object.assign(world, { marcha: 1, trocaT: 1, carga: 0, rpm: 0, limitadorT: 0, estourando: false });
   world.largada = world.distance + LARGADA_LOGO;
+  world.distanciaMax = world.distance;
   world.largadaT = 0; // s desde a largada (pista vazia nos primeiros LARGADA_VAZIA s)
 }
 
@@ -873,10 +1108,30 @@ function setVehicle(v) {
   emit('vehicle', v);
   log('Veículo selecionado: ' + (v === 'car' ? 'carro familiar' : 'caminhão'), 'vehicle');
 }
+/* Troca de câmera animada (TROCA.dur s):
+ *  - 2D -> cabine: a vista 2D se afasta (zoom out) e encolhe até caber na tela "Visão 2D" do painel
+ *    da cabine, que vai aparecendo em volta; no fim, some dentro do tablet;
+ *  - cabine -> 2D: o caminho inverso, um zoom para dentro do tablet até a 2D ocupar a tela toda.
+ * As duas vistas são desenhadas durante a troca; vistaAtiva(m) diz se a vista m precisa ser
+ * desenhada. Com "reduzir movimento", troca direto. */
+const TROCA = { dur: .85 };
+const troca = { ativa: false, de: '2d', para: '2d', t: 0 };
+const vistaAtiva = m => state.viewMode === m || troca.ativa;
 function setViewMode(v) {
   if (!['2d', '3d'].includes(v)) return;
+  const antes = state.viewMode;
   state.viewMode = v;
-  $('scene').classList.toggle('cockpit-view', v === '3d');
+  const sc = $('scene');
+  if (antes !== v && !state.reduceMotion && VIGIA.world3d?.ready && !VIGIA.world3d.falhou) {
+    Object.assign(troca, { ativa: true, de: antes, para: v, t: troca.ativa ? TROCA.dur - troca.t : 0 });
+    sc.classList.add('trocando');
+    sc.classList.add('cockpit-view');           // a cabine fica montada durante toda a troca
+    VIGIA.world3d.resize?.();                      // já com o tamanho certo (antes estava oculta)
+    telaAplicada = null;
+  } else {
+    if (troca.ativa) fimDaTroca();
+    sc.classList.toggle('cockpit-view', v === '3d');
+  }
   $('view2dBtn').classList.toggle('selected', v === '2d'); $('view3dBtn').classList.toggle('selected', v === '3d');
   $('view2dBtn').setAttribute('aria-pressed', v === '2d'); $('view3dBtn').setAttribute('aria-pressed', v === '3d');
   emit('view', v);
@@ -922,9 +1177,10 @@ function updateMotion(dt) {
     motion.manobra = lerp(motion.manobra, alvo, clamp(dt * 18, 0, 1));
     motion.steer = motion.manobra;
   } else {
-    const manobra = clamp(world.lateralSpeed * 8 + world.lateralAccel * 45, -STEER_MAX, STEER_MAX);
+    const manobra = clamp(world.lateralSpeed * 9 + world.lateralAccel * 12, -STEER_MAX, STEER_MAX);
     motion.manobra += clamp(manobra - motion.manobra, -STEER_RATE * dt, STEER_RATE * dt);
-    motion.steer = (Math.sin(t * .33) * 1.5 + Math.sin(t * .91 + 1.3) * .6 + Math.sin(t * 2.3) * .12) * k + motion.manobra; // graus
+    // pequenas correções do motorista; na intervenção (motorista desacordado) só a manobra automática
+    motion.steer = (inter ? 0 : (Math.sin(t * .33) * 1.5 + Math.sin(t * .91 + 1.3) * .6 + Math.sin(t * 2.3) * .12) * k) + motion.manobra; // graus
   }
   motion.roll = ((Math.sin(t * .47) * .16 + Math.sin(t * 1.3) * .06) * k + jolt * .25) * Math.PI / 180;
   motion.bob = (Math.sin(t * 1.9) * .8 + Math.sin(t * 5.1 + .5) * .35) * k + jolt * 1.6; // px
@@ -943,18 +1199,57 @@ function tremida(dt) {
   const m = calmo ? 0 : Math.sin((1 - motion.marcha) * Math.PI) * motion.marcha; // sobe e desce numa troca
   const b = motion.batida * motion.batida * (calmo ? .25 : 1);
   const ruido = f => Math.sin(t * f) * .6 + Math.sin(t * f * 1.73 + 1.1) * .4;
-  motion.tela.x = vel * 1.9 * ruido(41) + b * 14 * ruido(23);
-  motion.tela.y = vel * 1.55 * ruido(37) + m * 5 + b * 10 * ruido(19);
-  motion.tela.r = vel * .12 * ruido(29) + b * 1.2 * ruido(13); // graus
-  motion.tela.s = 1 + (vel * 2.6 + m * 5 + b * 16) / 600;      // amplia um pouco para não mostrar as bordas
+  // Velocidade: só uma vibração vertical leve e lenta (~2,5 Hz, até 0,7 px), sem giro nem zoom.
+  // Antes era rápida (~6 Hz), com deslocamento lateral, giro e zoom da tela inteira: em alta
+  // velocidade parecia que o jogo estava travando.
+  motion.tela.x = b * 14 * ruido(23);
+  motion.tela.y = vel * .7 * ruido(16) + m * 5 + b * 10 * ruido(19);
+  motion.tela.r = b * 1.2 * ruido(13); // graus
+  motion.tela.s = 1 + (m * 5 + b * 16) / 600 + (vel ? .0025 : 0); // amplia um pouco para não mostrar as bordas
 }
-on('pass', t => { if (t.rel > 25) motion.kick = Math.max(motion.kick, (isHeavy(t.kind) ? .7 : .25) * clamp(t.rel / 80, .3, 1)); });
+// passagem colada (mesmo sentido, faixa ao lado): um tranco leve; quem passa na contramão, duas faixas
+// além, não sacode o carro (a 200 km/h, cruzando com ~300 km/h de diferença, sacudia o tempo todo)
+on('pass', t => { if (t.rel > 25 && !t.contra) motion.kick = Math.max(motion.kick, (isHeavy(t.kind) ? .5 : .18) * clamp(t.rel / 80, .3, 1)); });
 on('marcha', () => { motion.marcha = 1; });
 on('estouro', e => { motion.marcha = Math.max(motion.marcha, .6 * e.forca); });
 on('buzinaInicio', () => pedirPassagem());
 on('colisao', c => { motion.batida = 1; motion.kick = 1.6; });
+function fimDaTroca() {
+  troca.ativa = false;
+  const sc = $('scene');
+  sc.classList.remove('trocando');
+  sc.classList.toggle('cockpit-view', state.viewMode === '3d');
+  for (const id of ['view2d', 'view3d']) { const el = $(id); el.style.transform = el.style.transformOrigin = el.style.clipPath = el.style.opacity = ''; }
+  telaAplicada = null;
+}
+// e = 0: só a 2D, em tela cheia; e = 1: a cabine, com a 2D dentro do tablet. A cabine é ampliada
+// em torno do tablet (que ocupa a largura da tela em e = 0) e a 2D acompanha o tablet: mesma
+// escala, mesmo centro, recortada no formato dele. Zoom em escala logarítmica (ritmo constante).
+function quadroDaTroca(dt) {
+  troca.t += dt;
+  const p = clamp(troca.t / TROCA.dur, 0, 1);
+  if (p >= 1) { fimDaTroca(); return; }
+  const k = smooth(smooth(p)), e = troca.para === '3d' ? k : 1 - k;
+  const sc = $('scene'), W = sc.clientWidth, H = sc.clientHeight;
+  const r = VIGIA.cabin?.telaMini?.();
+  if (!r || !W || !H) return;
+  const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
+  const Z = Math.exp(Math.log(W / r.w) * (1 - e));          // ampliação da cabine
+  const px = lerp(W / 2, cx, e), py = lerp(H / 2, cy, e);    // onde o centro do tablet aparece
+  const v3 = $('view3d'), v2 = $('view2d');
+  v3.style.transformOrigin = v2.style.transformOrigin = '0 0';
+  v3.style.transform = `translate(${px.toFixed(1)}px,${py.toFixed(1)}px) scale(${Z.toFixed(4)}) translate(${-cx.toFixed(1)}px,${-cy.toFixed(1)}px)`;
+  const s2 = Z * r.w / W;                                    // a 2D tem a largura do tablet ampliado
+  v2.style.transform = `translate(${px.toFixed(1)}px,${py.toFixed(1)}px) scale(${s2.toFixed(4)}) translate(${(-W / 2).toFixed(1)}px,${(-H / 2).toFixed(1)}px)`;
+  // recorte no formato do tablet (em coordenadas da própria 2D, antes da escala)
+  const hj = lerp(H, r.h * W / r.w, e), mv = Math.max(0, (H - hj) / 2), raio = lerp(0, 6 * W / r.w, e);
+  v2.style.clipPath = `inset(${mv.toFixed(1)}px 0px ${mv.toFixed(1)}px 0px round ${raio.toFixed(1)}px)`;
+  // perto do tablet, a 2D se dissolve na tela da cabine (que mostra a mesma cena)
+  v2.style.opacity = (1 - smooth(clamp((e - .72) / .28, 0, 1))).toFixed(3);
+}
 let telaAplicada = '';
-function aplicarTremida() {
+function aplicarTremida(dt) {
+  if (troca.ativa) { quadroDaTroca(dt); return; }
   const T = motion.tela;
   const css = Math.abs(T.x) + Math.abs(T.y) + Math.abs(T.r) < .01 && T.s < 1.0005 ? '' : `translate(${T.x.toFixed(2)}px,${T.y.toFixed(2)}px) rotate(${T.r.toFixed(3)}deg) scale(${T.s.toFixed(4)})`;
   if (css === telaAplicada) return;
@@ -982,13 +1277,35 @@ function flashVigia(dt) {
 let lastFrame = 0;
 const renderers = [];
 const inputs = []; // leitura de controladores, antes da física de cada quadro
+/* Medidor de desempenho (desligado por padrão): VIGIA.perf.ligar() mede o tempo de CPU de cada
+ * etapa do quadro (entradas, simulação e cada renderizador, pelo nome da função e do arquivo);
+ * VIGIA.perf.relatorio() devolve a média e o pico por etapa e o intervalo entre quadros. */
+const perf = { on: false, dados: {}, quadros: 0, intervalos: [],
+  ligar() { this.on = true; this.dados = {}; this.quadros = 0; this.intervalos = []; },
+  desligar() { this.on = false; },
+  somar(nome, ms) { const d = this.dados[nome] || (this.dados[nome] = { soma: 0, max: 0 }); d.soma += ms; d.max = Math.max(d.max, ms); },
+  relatorio() {
+    const r = {}, n = Math.max(1, this.quadros);
+    for (const [k, d] of Object.entries(this.dados)) r[k] = { media_ms: +(d.soma / n).toFixed(2), pico_ms: +d.max.toFixed(1) };
+    const iv = this.intervalos.slice().sort((a, b) => a - b);
+    r._quadro = { quadros: this.quadros, intervalo_medio_ms: +(iv.reduce((a, b) => a + b, 0) / Math.max(1, iv.length)).toFixed(1), p95_ms: +(iv[Math.floor(iv.length * .95)] || 0).toFixed(1) };
+    return r;
+  },
+};
+function medir(nome, fn) {
+  if (!perf.on) return fn();
+  const t0 = performance.now();
+  try { return fn(); } finally { perf.somar(nome, performance.now() - t0); }
+}
+const nomeDe = (f, i) => f.etiqueta || (f.name || 'anon') + '#' + i;
 function frame(time) {
   const dt = Math.min((time - (lastFrame || time)) / 1000, .08);
+  if (perf.on && lastFrame) { perf.quadros++; perf.intervalos.push(time - lastFrame); }
   lastFrame = time;
-  for (const f of inputs) { try { f(dt); } catch (e) { console.error(e); } }
-  if (!state.paused) simular(dt);
-  aplicarTremida();
-  for (const r of renderers) { try { r(dt, time); } catch (e) { console.error(e); } }
+  inputs.forEach((f, i) => { try { medir('entrada:' + nomeDe(f, i), () => f(dt)); } catch (e) { console.error(e); } });
+  if (!state.paused) medir('simulacao', () => simular(dt));
+  aplicarTremida(dt);
+  renderers.forEach((r, i) => { try { medir('desenho:' + nomeDe(r, i), () => r(dt, time)); } catch (e) { console.error(e); } });
   requestAnimationFrame(frame);
 }
 function simular(dt) {
@@ -1100,10 +1417,11 @@ function syncSettingsLabels() {
 
 const VIGIA = window.VIGIA = {
   version: '0.8.0', state, world, env, motion, VEHICLE_TYPES, WORLD_WRAP, CROSSINGS,
-  cityAmount, cityRanges, crossingsBetween, nearCrossing, scheduleZoneSwitch, zoneAt, ROAD, VEHICLES, LABEL, DISPLAY_SCALE, egoExtent, CAMBIO, ESTOURO,
+  cityAmount, cityRanges, crossingsBetween, nearCrossing, scheduleZoneSwitch, zoneAt, postalEm, POSTAL_MEIO, ROAD, VEHICLES, LABEL, DISPLAY_SCALE, egoExtent, CAMBIO, ESTOURO,
   clamp, lerp, smooth, on, emit, log, signsBetween, clockText, effectiveLevel,
-  setLevel, setDegraded, refreshUI, setVehicle, setViewMode, reset, acknowledge, toggleDayNight,
-  addRenderer: fn => renderers.push(fn),
+  setLevel, setDegraded, refreshUI, setVehicle, setViewMode, vistaAtiva, troca, TROCA, reset, acknowledge, toggleDayNight,
+  addRenderer: (fn, etiqueta) => { if (etiqueta) fn.etiqueta = etiqueta; renderers.push(fn); },
+  perf, medir,
   addInput: fn => inputs.push(fn),
   getState: () => ({ night: env.night > .5, nightAmount: env.night, timeOfDay: env.timeOfDay, viewMode: state.viewMode, vehicle: state.vehicle, level: state.level, speed: state.speed, target: state.target, degraded: state.degraded, traffic: world.traffic.length, audioActive: !!VIGIA.audio?.enabled, cameraActive: !!VIGIA.monitor?.cameraActive }),
   trafficSnapshot: () => world.traffic.map(t => ({ id: t.id, z: t.z, x: t.x, lane: t.lane, kmh: t.kmh, kind: t.kind, len: t.len, crash: t.crash })),

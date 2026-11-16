@@ -10,6 +10,16 @@ const { state, world, env, clamp } = V;
 let canvas, ctx, W = 0, H = 0, dpr = 1;
 let ppm = 16;        // pixels por metro (longitudinal e tamanho dos veículos)
 let lane = 150;      // largura de uma faixa em pixels
+let egoY = .66;      // altura do centro do ego na tela (fração); veja posicionarEgo
+// O ego fica o mais embaixo possível (para ver mais à frente), mas sempre com a traseira inteira na
+// tela e uma folga: até `base` da altura, ou mais acima se o veículo for comprido (o caminhão).
+const egoComprimento = () => (V.VEHICLE_TYPES[state.vehicle === 'truck' ? 'truck' : 'car'] || V.VEHICLE_TYPES.car).len * VSCALE; // m
+// O ego é desenhado com o centro em egoExtent().center (atrás do motorista, z < 0): a traseira fica
+// em H·egoY + (comprimento/2 - center)·ppm, e precisa caber acima de H - folga.
+function posicionarEgo(base, folga) {
+  const traseira = egoComprimento() / 2 - V.egoExtent().center; // m abaixo de z = 0
+  egoY = Math.min(base, 1 - (traseira * ppm + folga) / H);
+}
 let CX = 0;          // eixo da via
 const VSCALE = V.DISPLAY_SCALE; // mesma ampliação usada nos espaçamentos do núcleo // veículos levemente ampliados para leitura
 let grassPat, asphaltPat, gravelPat, forestPat, darkLayer, darkCtx;
@@ -88,9 +98,13 @@ function resize() {
   darkLayer.width = canvas.width; darkLayer.height = canvas.height;
   const narrow = W < 720;
   // Desktop: pista no centro, entre os painéis laterais (como na referência).
-  CX = narrow ? W * .5 : W * .505;
-  lane = narrow ? W * .25 : clamp(W * .15, 110, 260);
-  ppm = clamp(H / 62, 6, 18);
+  // Escala única nas duas direções e tamanho real, como na 3D: posições, faixas (3,6 m) e veículos
+  // usam os mesmos px por metro (VSCALE = 1). Um carro de 1,85 m ocupa metade da faixa, e o que se
+  // toca (ou não) na 2D é o mesmo que no 3D.
+  ppm = clamp(H / 34, 9, 30);
+  lane = V.ROAD.laneWidth * ppm * VSCALE;
+  // a pista vai da contramão externa (-1 - NE faixas) à faixa da direita (+1): o meio dela fica no centro
+  CX = (narrow ? W * .5 : W * .505) + lane * NE / 2;
   // largura desenhada de um veículo, em metros da pista: o núcleo usa nas batidas vistas na 2D
   V.escala2d = { lat: VSCALE * ppm / lane * V.ROAD.laneWidth };
   if (!grassPat) buildPatterns();
@@ -98,7 +112,11 @@ function resize() {
 
 // lateral em "faixas" (0 = eixo, ±1 = bordas da pista)
 function lx(f) { return CX + f * lane; }
-function sy(z) { return H * .66 - z * ppm; }
+// Cenário de um lado da pista (s = -1 esquerda, 1 direita), a f faixas da linha do meio do nosso
+// sentido: à esquerda, NE faixas além (a contramão fica entre a pista e o acostamento esquerdo).
+const NE = V.ROAD.esq / V.ROAD.laneWidth; // faixas de contramão (o lado esquerdo fica NE faixas além)
+function ld(s, f) { return s > 0 ? lx(f) : lx(-f - NE); }
+function sy(z) { return H * egoY - z * ppm; }
 // em larguras de faixa: asfalto até EDGE (linha de bordo em .97), acostamento asfaltado até
 // SHOULDER, cascalho até GRAVEL e vegetação baixa até o guard-rail (RAIL)
 const EDGE = 1.02, SHOULDER = 1.5, GRAVEL = 1.6, RAIL = 2.0;
@@ -110,18 +128,18 @@ function drawGround(scroll) {
   c.save(); c.translate(0, scroll % 512); c.fillStyle = forestPat; c.fillRect(0, -512, W, H + 1024); c.restore();
   // faixa de vegetação baixa entre a pista e o guard-rail
   for (const s of [-1, 1]) {
-    const a = lx(s * GRAVEL), b = lx(s * (RAIL + .05));
+    const a = ld(s, GRAVEL), b = ld(s, RAIL + .05);
     c.save(); c.translate(0, scroll % 256); c.fillStyle = grassPat; c.fillRect(Math.min(a, b), -256, Math.abs(b - a), H + 512); c.restore();
     c.save(); c.translate(0, scroll % 128); c.fillStyle = gravelPat;
-    const g0 = lx(s * SHOULDER), g1 = lx(s * GRAVEL);
+    const g0 = ld(s, SHOULDER), g1 = ld(s, GRAVEL);
     c.fillRect(Math.min(g0, g1), -128, Math.abs(g1 - g0), H + 256); c.restore();
   }
   // asfalto (pista e acostamentos); o acostamento é um pouco mais claro
-  c.save(); c.translate(0, scroll % 256); c.fillStyle = asphaltPat; c.fillRect(lx(-SHOULDER), -256, lx(SHOULDER) - lx(-SHOULDER), H + 512); c.restore();
+  c.save(); c.translate(0, scroll % 256); c.fillStyle = asphaltPat; c.fillRect(ld(-1, SHOULDER), -256, lx(SHOULDER) - ld(-1, SHOULDER), H + 512); c.restore();
   c.fillStyle = 'rgba(255,255,255,.05)';
-  for (const s of [-1, 1]) c.fillRect(Math.min(lx(s * EDGE), lx(s * SHOULDER)), 0, Math.abs(lx(s * SHOULDER) - lx(s * EDGE)), H);
+  for (const s of [-1, 1]) c.fillRect(Math.min(ld(s, EDGE), ld(s, SHOULDER)), 0, Math.abs(ld(s, SHOULDER) - ld(s, EDGE)), H);
   // trilhas de pneus
-  for (const f of [-.72, -.28, .28, .72]) {
+  for (const f of [-2.72, -2.28, -1.72, -1.28, -.72, -.28, .28, .72]) {
     const x = lx(f), w = lane * .2;
     const g = c.createLinearGradient(x - w, 0, x + w, 0);
     g.addColorStop(0, 'rgba(10,11,13,0)'); g.addColorStop(.5, 'rgba(10,11,13,.22)'); g.addColorStop(1, 'rgba(10,11,13,0)');
@@ -130,23 +148,29 @@ function drawGround(scroll) {
   // linhas de bordo (brancas, contínuas)
   const lw = Math.max(3, lane * .045);
   c.fillStyle = '#d9dcdc';
-  for (const s of [-1, 1]) c.fillRect(lx(s * .97) - lw / 2, 0, lw, H);
-  // mão única: linha branca tracejada entre as duas faixas (4 m pintados, 8 m de intervalo)
+  for (const s of [-1, 1]) c.fillRect(ld(s, .97) - lw / 2, 0, lw, H);
+  // As linhas do meio não passam pelo logo pintado na largada: a dupla amarela para antes dele e
+  // volta depois; dos tracejados, some o traço inteiro que tocaria no logo (sem pedaço cortado).
+  const [lt, lb] = trechoLogo();
+  // faixa dupla amarela contínua entre a contramão e o nosso sentido
+  c.fillStyle = '#e0b52a';
+  for (const k of [-1, 1]) {
+    const x = lx(-1) + k * lw * .9 - lw * .4;
+    if (lb < 0 || lt > H) c.fillRect(x, 0, lw * .8, H);
+    else { if (lt > 0) c.fillRect(x, 0, lw * .8, lt); if (lb < H) c.fillRect(x, lb, lw * .8, H - lb); }
+  }
+  // linha branca tracejada entre as duas faixas de cada sentido (4 m pintados, 8 m de intervalo)
   const dash = 4 * ppm, gap = 8 * ppm, period = dash + gap, off = scroll % period;
   c.fillStyle = '#e4e7e7'; c.shadowColor = 'rgba(255,255,255,.25)'; c.shadowBlur = 4;
-  const [lt, lb] = trechoLogo(); // a linha é interrompida onde o logo está pintado
   for (let y = -period + off; y < H; y += period) {
-    if (y + dash > lt && y < lb) {
-      if (y < lt) c.fillRect(CX - lw * .5, y, lw, lt - y);
-      if (y + dash > lb) c.fillRect(CX - lw * .5, lb, lw, y + dash - lb);
-      continue;
-    }
+    if (y + dash > lt && y < lb) continue;
     c.fillRect(CX - lw * .5, y, lw, dash);
+    c.fillRect(lx(-2) - lw * .5, y, lw, dash);
   }
   c.shadowBlur = 0;
   // guard-rail com postes
   for (const s of [-1, 1]) {
-    const x = lx(s * RAIL);
+    const x = ld(s, RAIL);
     c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(x + s * 3 - 2, 0, 4, H);
     const g = c.createLinearGradient(x - 3, 0, x + 3, 0); g.addColorStop(0, '#7d848b'); g.addColorStop(.5, '#d3d8dc'); g.addColorStop(1, '#7d848b');
     c.fillStyle = g; c.fillRect(x - 3, 0, 6, H);
@@ -170,7 +194,7 @@ function drawVegetation() {
         const f = GRAVEL + .06 + hash(i * 3.1 + k + s) * (RAIL - GRAVEL - .1);
         const z = i * seg + hash(i + k * 9.1 + s) * seg - world.distance;
         const r = lane * (.05 + hash(i * 1.9 + k * 4.4 + s) * .07);
-        items.push({ x: lx(s * f), y: sy(z), r, sprite: treeSprite(Math.floor(hash(i * 2.7 + k) * GREENS.length), (i * 13 + k) % 4) });
+        items.push({ x: ld(s, f), y: sy(z), r, sprite: treeSprite(Math.floor(hash(i * 2.7 + k) * GREENS.length), (i * 13 + k) % 4) });
       }
     }
   }
@@ -187,6 +211,9 @@ function drawLaneLabels() {
   c.textAlign = 'center';
   const short = lane < 130;
   c.fillText(short ? 'ESQ ↑' : 'ULTRAPASSAGEM  ↑', lx(-.5), y);
+  c.fillStyle = 'rgba(255,214,120,.85)';
+  for (const f of [-1.5, -2.5]) c.fillText(short ? '↓' : '↓  CONTRAMÃO', lx(f), y);
+  c.fillStyle = 'rgba(225,232,238,.82)';
   c.fillText(short ? 'DIR ↑' : 'FAIXA DA DIREITA  ↑', lx(.5), y);
   c.restore();
 }
@@ -196,9 +223,9 @@ const ROOFS = ['#7d7a75', '#9a958c', '#a2492e', '#b65a37', '#6f747a', '#c2b8a6',
 const WALK = 2.1; // borda externa da calçada (em larguras de faixa)
 // posição lateral do mundo (m) -> tela: faixa até 3,6 m, acostamento até o meio-fio (6,6 m), calçada depois
 function sideX(x) {
-  const s = Math.sign(x), a = Math.abs(x);
+  const s = Math.sign(x), a = s < 0 ? -x - V.ROAD.esq : x; // à esquerda, a partir da borda da contramão
   const f = a <= 3.6 ? a / 3.6 * EDGE : a <= 6.6 ? EDGE + (a - 3.6) / 3 * (CURB - EDGE) : CURB + Math.min(1, (a - 6.6) / 3.5) * (WALK - CURB);
-  return lx(s * f);
+  return ld(s, f);
 }
 // Centro do veículo próprio na 2D (em larguras de faixa). No acostamento, o veículo desenhado
 // fica inteiro à direita da linha de bordo, sem passar do guard-rail (campo) nem do meio-fio
@@ -221,10 +248,10 @@ function drawCity() {
     if (bot <= top) continue;
     c.save(); c.beginPath(); c.rect(0, top, W, bot - top); c.clip();
     for (const s of [-1, 1]) {
-      const xe = lx(s * CURB), xw = lx(s * WALK), xo = s < 0 ? 0 : W;
+      const xe = ld(s, CURB), xw = ld(s, WALK), xo = s < 0 ? 0 : W;
       c.fillStyle = '#8f8a80'; c.fillRect(Math.min(xw, xo), top, Math.abs(xo - xw), bot - top);      // quadras
       c.save(); c.translate(0, (world.distance * ppm) % 256); c.fillStyle = asphaltPat;                // acostamento
-      c.fillRect(Math.min(lx(s * EDGE), xe), top - 256, Math.abs(xe - lx(s * EDGE)), bot - top + 512); c.restore();
+      c.fillRect(Math.min(ld(s, EDGE), xe), top - 256, Math.abs(xe - ld(s, EDGE)), bot - top + 512); c.restore();
       c.fillStyle = '#b7b3a9'; c.fillRect(Math.min(xe, xw), top, Math.abs(xw - xe), bot - top);      // calçada
       c.fillStyle = '#dcd8cf'; c.fillRect(xe - (s < 0 ? 3 : 0), top, 3, bot - top);                  // meio-fio
       c.fillStyle = 'rgba(0,0,0,.08)';                                                                  // juntas da calçada
@@ -236,8 +263,9 @@ function drawCity() {
       const S = k * seg + seg / 2;
       if (S < a - 8 || S > b + 8 || V.nearCrossing(S, 14)) continue;
       for (const s of [-1, 1]) {
+        if (V.postalEm(S, s)) continue; // lote reservado a um cartão-postal de Matipó
         const h = hash(k * 3.7 + (s > 0 ? 11 : 0)), h2 = hash(k * 1.9 + s * 5);
-        const x0 = lx(s * (WALK + .08)), w = lane * (.45 + h * .9), len = seg * .82 * ppm;
+        const x0 = ld(s, WALK + .08), w = lane * (.45 + h * .9), len = seg * .82 * ppm;
         const y = sy(S - d) - len / 2, x = s > 0 ? x0 : x0 - w;
         c.fillStyle = 'rgba(0,0,0,.3)'; c.fillRect(x + 6, y + 6, w, len);
         const roof = ROOFS[Math.floor(h2 * ROOFS.length)];
@@ -247,16 +275,18 @@ function drawCity() {
         if (h < .3 && roof !== '#a2492e') { c.strokeStyle = 'rgba(0,0,0,.18)'; c.beginPath(); c.moveTo(x, y + len / 2); c.lineTo(x + w, y + len / 2); c.stroke(); }
       }
     }
+    drawPostais(a, b, d);
     // cruzamentos
     for (const S of V.crossingsBetween(from, to)) {
       const y = sy(S - d), hh = 9 * ppm;
       c.fillStyle = '#4a4d50';
-      c.fillRect(0, y - hh / 2, lx(-CURB), hh); c.fillRect(lx(CURB), y - hh / 2, W - lx(CURB), hh);
+      c.fillRect(0, y - hh / 2, ld(-1, CURB), hh); c.fillRect(lx(CURB), y - hh / 2, W - lx(CURB), hh);
       c.fillStyle = '#e8e8e2'; // faixa de pedestres na pista principal
       const yz = sy(S - 7.5 - d);
-      for (let i = 0; i < 12; i++) c.fillRect(lx(-CURB + (i + .25) * CURB * 2 / 12), yz - 1.5 * ppm, CURB * 2 / 12 * lane * .5, 3 * ppm);
+      const z0 = -CURB - NE, zw = CURB * 2 + NE; // da calçada esquerda (além da contramão) à direita
+      for (let i = 0; i < 16; i++) c.fillRect(lx(z0 + (i + .25) * zw / 16), yz - 1.5 * ppm, zw / 16 * lane * .5, 3 * ppm);
       // semáforos sempre verdes
-      for (const [x, yy] of [[lx(CURB + .02), sy(S - 9.5 - d)], [lx(-CURB - .02), sy(S + 9.5 - d)]]) {
+      for (const [x, yy] of [[lx(CURB + .02), sy(S - 9.5 - d)], [ld(-1, CURB + .02), sy(S + 9.5 - d)]]) {
         c.fillStyle = '#1a1c1e'; c.fillRect(x - 5, yy - 9, 10, 18);
         c.fillStyle = '#23ff6a'; c.shadowColor = '#23ff6a'; c.shadowBlur = 8; c.beginPath(); c.arc(x, yy + 4, 3, 0, 7); c.fill(); c.shadowBlur = 0;
       }
@@ -278,6 +308,79 @@ function drawCity() {
   }
 }
 
+/* Cartões-postais de Matipó vistos de cima (os mesmos do 3D, em world.postais): cada um é uma
+ * miniatura em escala única que cabe entre a calçada e a borda da tela (u = distância a partir da
+ * calçada, v = ao longo da via, em metros). Só o cenário, sem placa com o nome. */
+const POSTAL_FUNDO = { igreja: 53, praca: 50, univertix: 58 }; // m de profundidade de cada um
+function drawPostais(a, b, d) {
+  const c = ctx;
+  for (const p of world.postais) {
+    if (p.S < a - 80 || p.S > b + 80) continue;
+    const s = p.lado, x0 = ld(s, WALK), y = sy(p.S - d), livre = s > 0 ? W - x0 : x0;
+    if (livre < 20 || y < -H || y > 2 * H) continue;
+    const k = Math.min(ppm * VSCALE, livre * .96 / POSTAL_FUNDO[p.tipo]);
+    c.save(); c.translate(x0, y); c.scale(s * k, s * k);
+    if (p.tipo === 'igreja') postalIgreja(c); else if (p.tipo === 'praca') postalPraca(c); else postalUnivertix(c);
+    c.restore();
+  }
+}
+const circ = (c, x, y, r, cor) => { c.fillStyle = cor; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); };
+function copa(c, u, v, r) { circ(c, u + r * .25, v + r * .3, r, 'rgba(0,0,0,.25)'); circ(c, u, v, r, '#4f7d32'); circ(c, u - r * .25, v - r * .25, r * .55, '#6e9c45'); }
+function postalIgreja(c) {
+  c.fillStyle = '#c9c2b4'; c.fillRect(0, -18, 11, 36);                                   // adro
+  for (const sv of [-1, 1]) { c.fillStyle = '#5f8f3c'; c.fillRect(4, sv * 12 - 4.5, 5, 9); // canteiros e palmeiras
+    c.fillStyle = '#3f6e2a'; c.beginPath(); for (let i = 0; i < 18; i++) { const a = i * Math.PI / 9, r = i % 2 ? 1.2 : 3.4; c.lineTo(6.5 + Math.cos(a) * r, sv * 12 + Math.sin(a) * r); } c.fill(); }
+  c.fillStyle = 'rgba(0,0,0,.3)'; c.fillRect(12, -6.5, 39, 15);                           // sombra
+  c.fillStyle = '#a9785a'; c.fillRect(11, -7.5, 38, 15);                                   // telhado da nave
+  c.fillStyle = '#7d5640'; c.fillRect(11, -.25, 38, .5);                                   // cumeeira
+  c.fillStyle = '#8ab4e0'; for (let i = 0; i <= 6; i++) { const u = 12 + i * 6; c.fillRect(u - .3, -8, .6, 1); c.fillRect(u - .3, 7, .6, 1); }
+  circ(c, 46, 0, 4.4, '#5f93c8'); circ(c, 45.2, -.9, 2.6, '#8fbde9');                      // cúpula
+  c.fillStyle = '#e4e9ef'; c.fillRect(9.8, -3.3, 6.6, 6.6);                                // torre
+  c.fillStyle = '#a9c8ea'; c.beginPath(); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + Math.PI / 8; c.lineTo(13.1 + Math.cos(a) * 3.1, Math.sin(a) * 3.1); } c.fill();
+  c.strokeStyle = '#ffffff'; c.lineWidth = .15; for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + Math.PI / 8; c.beginPath(); c.moveTo(13.1, 0); c.lineTo(13.1 + Math.cos(a) * 3.1, Math.sin(a) * 3.1); c.stroke(); }
+  circ(c, 13.1, 0, .35, '#d6b04c');
+  copa(c, 3, -16.5, 2.6); copa(c, 3, 16.5, 2.6);
+}
+function postalPraca(c) {
+  const U = 25;
+  circ(c, U, 0, 24, '#beb5a5');
+  c.fillStyle = '#beb5a5'; c.fillRect(0, -5, 2, 10);                                      // calçadão
+  for (let i = 0; i < 5; i++) {                                                            // canteiros em anel
+    const a0 = i * Math.PI * 2 / 5 + .12, a1 = a0 + Math.PI * 2 / 5 - .24;
+    c.fillStyle = '#4f8a35'; c.beginPath(); c.arc(U, 0, 15, a0, a1); c.arc(U, 0, 11.5, a1, a0, true); c.closePath(); c.fill();
+    c.fillStyle = '#d22b2b'; for (let k = 0; k < 14; k++) { const a = a0 + (a1 - a0) * (k + .5) / 14, r = 12.3 + (k % 3) * .9; circ(c, U + Math.cos(a) * r, Math.sin(a) * r, .35, '#d22b2b'); }
+  }
+  circ(c, U, 0, 8.7, '#d9d2c3'); c.strokeStyle = '#b3a892'; c.lineWidth = .4; c.beginPath(); c.arc(U, 0, 8, 0, 7); c.stroke();
+  for (let i = 0; i < 9; i++) { const a = i * Math.PI * 2 / 9, r = 2.5 + (i % 3) * 1.8; circ(c, U + Math.cos(a) * r, Math.sin(a) * r, .55, '#9b8f7c'); }
+  circ(c, 15, -17, 2.6, '#2f6fd0'); circ(c, 10.5, -13, 3, '#f2c12e');                    // parquinho
+  c.fillStyle = '#33373d'; c.fillRect(42.3, -7.5, 1.4, 15);                                // pérgola
+  c.fillStyle = '#d9dde2'; c.fillRect(43.7, -7, 5.5, 14);
+  for (let i = 0; i < 9; i++) { const a = i * Math.PI * 2 / 9 + .3, r = 19.5 + (i % 2) * 2; if (Math.cos(a) > .85) continue; copa(c, U - Math.cos(a) * r, Math.sin(a) * r, 2.4); }
+}
+function postalUnivertix(c) {
+  const RZ = 27;
+  c.fillStyle = '#5d6166'; c.fillRect(1, -25, 9, 50);                                      // estacionamento
+  c.fillStyle = '#e6e6e0'; for (let i = -3; i <= 3; i++) c.fillRect(4, i * 6 - .06, 4, .12);
+  c.fillStyle = '#2a64b8'; c.fillRect(RZ + 4 - 11, 36 - 6.5, 22, 13);                      // quadra
+  c.fillStyle = '#c8573a'; c.fillRect(RZ + 4 - 9, 36 - 5, 18, 10);
+  const predio = (u, v, du, dv, ang) => {
+    c.save(); c.translate(u, v); c.rotate(ang);
+    c.fillStyle = 'rgba(0,0,0,.3)'; c.fillRect(-du / 2 + 1, -dv / 2 + 1, du, dv);
+    c.fillStyle = '#e8ecf0'; c.fillRect(-du / 2, -dv / 2, du, dv);
+    c.fillStyle = '#1b2d55'; c.fillRect(-du / 2 + .6, -dv / 2 + .6, du - 1.2, dv - 1.2);   // placas solares
+    c.strokeStyle = '#9fb2c8'; c.lineWidth = .12;
+    for (let x = -du / 2 + 1.6; x < du / 2 - .6; x += 1.6) { c.beginPath(); c.moveTo(x, -dv / 2 + .6); c.lineTo(x, dv / 2 - .6); c.stroke(); }
+    for (let y = -dv / 2 + 2.5; y < dv / 2 - .6; y += 2.5) { c.beginPath(); c.moveTo(-du / 2 + .6, y); c.lineTo(du / 2 - .6, y); c.stroke(); }
+    c.fillStyle = '#b4532a'; for (const sx of [-1, 1]) for (const sy2 of [-1, 1]) c.fillRect(sx * (du / 2 - .4) - .4, sy2 * (dv / 2 - .4) - .4, .8, .8);
+    c.restore();
+  };
+  predio(RZ - 1, -16, 26, 12, 0); predio(RZ + 2, 16, 26, 12, .35); predio(RZ + 22, 0, 12, 28, 0);
+  circ(c, RZ, 0, 7.5, '#eef0f2');                                                          // rotunda e cúpula listrada
+  for (let i = 0; i < 24; i++) { c.fillStyle = i % 2 ? '#1f5fb8' : '#3f86d8'; c.beginPath(); c.moveTo(RZ, 0); c.arc(RZ, 0, 5.4, i * Math.PI / 12, (i + 1) * Math.PI / 12); c.fill(); }
+  circ(c, RZ - 1.2, -1.2, 1.6, 'rgba(255,255,255,.35)');
+  for (const v of [-7.5, -5, 5, 7.5]) circ(c, RZ - 9, v, .9, '#2f5a2c');                  // ciprestes
+  c.fillStyle = '#173f8a'; c.fillRect(1.9, -11.6, 1.2, 1.2);                               // totem
+}
 function drawSigns() {
   const c = ctx, zMin = (sy(0) - H) / ppm, zMax = sy(0) / ppm;
   for (const s of V.signsBetween(world.distance + zMin, world.distance + zMax)) {
@@ -436,6 +539,14 @@ function drawVehicle(x, z, kind, color, dir, opts = {}) {
     c.shadowBlur = 12; c.fillStyle = '#ffd6cc';
     for (const s of [-1, 1]) rr(c, s * wid * .32 - wid * .09, ly + lh * .25, wid * .18, lh * .5, 2), c.fill();
   }
+  if (opts.re) { // luz de ré: branca, ao lado das lanternas, com um facho curto no asfalto atrás
+    c.shadowColor = '#ffffff'; c.shadowBlur = 14; c.fillStyle = '#f4f8ff';
+    for (const s of [-1, 1]) rr(c, s * wid * .12 - wid * .06, ly, wid * .12, wid * .07, 2), c.fill();
+    c.shadowBlur = 0; c.globalCompositeOperation = 'lighter';
+    const g = c.createRadialGradient(0, len / 2, wid * .1, 0, len / 2, wid * 1.4);
+    g.addColorStop(0, 'rgba(255,255,255,.35)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    c.fillStyle = g; c.beginPath(); c.ellipse(0, len / 2 + wid * .5, wid * 1.2, wid * .9, 0, 0, 7); c.fill();
+  }
   c.restore();
   if (opts.hazard || opts.left || opts.right) { // pisca-alerta (os quatro cantos) ou seta (só um lado)
     c.save(); c.fillStyle = '#ffb22c'; c.shadowColor = '#ffb22c'; c.shadowBlur = 18;
@@ -470,7 +581,8 @@ function drawNight(lights) {
 }
 
 function render() {
-  if (state.viewMode !== '2d' || !W) return;
+  if (!V.vistaAtiva('2d') || !W) return;
+  posicionarEgo(.7, H * .05);
   drawFrame(false);
 }
 
@@ -481,11 +593,16 @@ function renderMini(w, h) {
   if (!mini.canvas) { mini.canvas = document.createElement('canvas'); mini.dark = document.createElement('canvas'); }
   const d = 1, cw = Math.round(w * d), ch = Math.round(h * d); // tela pequena: 1x basta e é bem mais leve
   if (mini.canvas.width !== cw || mini.canvas.height !== ch) { mini.canvas.width = mini.dark.width = cw; mini.canvas.height = mini.dark.height = ch; }
-  const saved = [ctx, W, H, dpr, ppm, lane, CX, darkLayer, darkCtx];
+  const saved = [ctx, W, H, dpr, ppm, lane, CX, darkLayer, darkCtx, egoY];
   ctx = mini.canvas.getContext('2d'); darkLayer = mini.dark; darkCtx = mini.dark.getContext('2d');
-  W = w; H = h; dpr = d; CX = w / 2; lane = w * .3; ppm = clamp(h / 62, 1.5, 18);
+  // mesma escala única da 2D principal (faixa e veículos na proporção da 3D)
+  // as quatro faixas cabem com folga; o ego inteiro cabe em até 60% da altura (o caminhão, bem
+  // comprido, afasta a câmera); e dá para ver uns 16 m à frente
+  ppm = Math.min(w * .14 / (V.ROAD.laneWidth * VSCALE), h * .6 / egoComprimento(), h / 22);
+  W = w; H = h; dpr = d; lane = V.ROAD.laneWidth * ppm * VSCALE; CX = w / 2 + lane * NE / 2;
+  posicionarEgo(.74, h * .08);
   try { drawFrame(true); }
-  finally { [ctx, W, H, dpr, ppm, lane, CX, darkLayer, darkCtx] = saved; }
+  finally { [ctx, W, H, dpr, ppm, lane, CX, darkLayer, darkCtx, egoY] = saved; }
   return mini.canvas;
 }
 
@@ -495,6 +612,7 @@ function drawFrame(small) {
   const scroll = world.distance * ppm;
   drawGround(scroll);
   drawLogoLargada();
+  drawMarcasPneu();
   drawVegetation();
   drawCity();
   drawSigns();
@@ -510,7 +628,12 @@ function drawFrame(small) {
     vis.push({ x: lx(t.x / R.laneWidth), z: t.z, kind: t.kind, color: t.color || '#b7bec7', dir: -1,
       opts: { cab: t.cab, box: t.color, ang, brake: t.braking, hazard: t.crash && pisca, left: t.seta < 0 && pisca, right: t.seta > 0 && pisca } });
   }
-  vis.push({ x: lx(egoLane()), z: V.egoExtent().center, kind: state.vehicle, color: '#2f7fd6', dir: -1, ego: true, opts: { cab: '#1f5fa8', box: '#eef0f2', brake: !!state.luzFreio, hazard: state.hazardOn, left: state.leftOn, right: state.rightOn } });
+  // contramão: vêm de frente (desenhados virados para baixo), com farol alto piscando quando o ego invade
+  for (const t of world.contramao) {
+    vis.push({ x: lx(t.x / R.laneWidth), z: t.z, kind: t.kind, color: t.color || '#b7bec7', dir: 1,
+      opts: { cab: t.cab, box: t.color, brake: t.braking, hazard: (t.crash || t.batido) && world.pisca }, farol: t.farol && Math.floor(performance.now() / 110) % 2 === 0 });
+  }
+  vis.push({ x: lx(egoLane()), z: V.egoExtent().center, kind: state.vehicle, color: '#2f7fd6', dir: -1, ego: true, opts: { cab: '#1f5fa8', box: '#eef0f2', brake: !!state.luzFreio, re: state.re, hazard: state.hazardOn, left: state.leftOn, right: state.rightOn } });
 
   // fachos de luz sobre o asfalto (sempre acesos; mais fortes à noite)
   for (const v of vis) {
@@ -518,6 +641,7 @@ function drawFrame(small) {
     const len = T.len * ppm * VSCALE, wid = T.width * ppm * VSCALE;
     const front = sy(v.z) + v.dir * len / 2;
     if (v.ego) beam(v.x, front, -1, 19 * ppm, wid * .9, '150,200,255', .22 + n * .3);
+    else if (v.farol) beam(v.x, front, v.dir, 26 * ppm, wid * 1.4, '255,250,225', .75); // farol alto piscando
     else beam(v.x, front, v.dir, 13 * ppm, wid * .8, '255,226,160', .1 + n * .18);
   }
   const lights = [];
@@ -528,20 +652,65 @@ function drawFrame(small) {
   drawNight(lights);
   drawEstouro(lx(egoLane()));
 }
+/* Marcas de pneu da frenagem brusca (world.cantando > 0, veja pneusCantando em core.js): cada
+ * frenagem vira um rastro preso ao asfalto. Gravado a cada quadro em qualquer visão (para aparecer
+ * ao voltar para a 2D e na tela simplificada da cabine), com a posição na estrada (s, m), o centro
+ * lateral do ego (f, em faixas) e a força (a). Os quatro pneus deixam marca: o traseiro passa por
+ * cima do dianteiro e escurece o rastro. Somem quando ficam muito para trás. */
+const marcas = [];
+let marcaAtual = null, ultimaDist = 0;
+function gravarMarcas() {
+  if (world.distance < ultimaDist - 1) { marcas.length = 0; marcaAtual = null; } // largada: estrada nova
+  ultimaDist = world.distance;
+  const k = state.paused ? 0 : world.cantando || 0;
+  if (k > .03) {
+    const s = world.distance + V.egoExtent().center, p = { s, f: ppm ? egoLane() : .5 + world.egoOffset / V.ROAD.laneWidth, a: k };
+    if (!marcaAtual) { marcaAtual = { kind: state.vehicle, pts: [] }; marcas.push(marcaAtual); }
+    const u = marcaAtual.pts[marcaAtual.pts.length - 1];
+    if (!u || s - u.s > .15 || Math.abs(p.f - u.f) > .01) marcaAtual.pts.push(p);
+  } else marcaAtual = null;
+  while (marcas.length && marcas[0] !== marcaAtual && marcas[0].pts.at(-1).s < world.distance - 150) marcas.shift();
+}
+V.addInput(gravarMarcas); // todo quadro da simulação (também em VIGIA.passo), em qualquer visão
+function drawMarcasPneu() {
+  if (!marcas.length) return;
+  const c = ctx;
+  c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+  for (const m of marcas) {
+    if (m.pts.length < 2) continue;
+    const T = V.VEHICLE_TYPES[m.kind] || V.VEHICLE_TYPES.car;
+    const eixo = T.len * VSCALE * .32, lado = T.width * VSCALE * ppm * .36; // m ao longo, px de lado
+    c.lineWidth = Math.max(1.5, T.width * VSCALE * ppm * (m.kind === 'truck' ? .14 : .11));
+    for (const dz of [eixo, -eixo]) for (const dx of [-lado, lado]) {
+      for (let i = 1; i < m.pts.length; i++) {
+        const p0 = m.pts[i - 1], p1 = m.pts[i];
+        const y0 = sy(p0.s + dz - world.distance), y1 = sy(p1.s + dz - world.distance);
+        if ((y0 < -20 && y1 < -20) || (y0 > H + 20 && y1 > H + 20)) continue;
+        // começa fraca (o pneu ainda girando) e escurece com a força da frenagem
+        const a = Math.min(1, i / 8) * (.24 + .4 * (p0.a + p1.a) / 2);
+        c.strokeStyle = `rgba(14,14,16,${a})`;
+        c.beginPath(); c.moveTo(lx(p0.f) + dx, y0); c.lineTo(lx(p1.f) + dx, y1); c.stroke();
+      }
+    }
+  }
+  c.restore();
+}
 /* Logotipo VIGIA pintado no asfalto, na largada (world.largada), atravessando as duas faixas.
  * Visto de cima, sem a perspectiva: mantém a proporção do logo. */
 const logoPista = new Image(); logoPista.src = 'assets/vigia_asfalto.png?v=1';
 // Faixa da tela (y de cima, y de baixo) ocupada pelo logo, com uma folga; fora da tela: vazia.
+const LOGO_FAIXAS = 1 + NE + .85; // largura do logo em faixas: as quatro (as duas mãos), entre as linhas de bordo
+const LOGO_X = () => lx((1 - 1 - NE) / 2); // meio da pista (entre a contramão externa e a faixa da direita)
 function trechoLogo() {
   if (world.largada == null || !logoPista.naturalWidth) return [1e9, -1e9];
-  const w = lane * 1.85, h = w * logoPista.naturalHeight / logoPista.naturalWidth, y = sy(world.largada - world.distance);
+  const w = lane * LOGO_FAIXAS, h = w * logoPista.naturalHeight / logoPista.naturalWidth, y = sy(world.largada - world.distance);
   return [y - h / 2 - 1.5 * ppm, y + h / 2 + 1.5 * ppm];
 }
 function drawLogoLargada() {
   if (world.largada == null || !logoPista.complete || !logoPista.naturalWidth) return;
-  const w = lane * 1.85, h = w * logoPista.naturalHeight / logoPista.naturalWidth, y = sy(world.largada - world.distance);
+  const w = lane * LOGO_FAIXAS, h = w * logoPista.naturalHeight / logoPista.naturalWidth, y = sy(world.largada - world.distance);
   if (y < -h || y > H + h) return;
-  ctx.save(); ctx.globalAlpha = .92; ctx.drawImage(logoPista, CX - w / 2, y - h / 2, w, h); ctx.restore();
+  ctx.save(); ctx.globalAlpha = .92; ctx.drawImage(logoPista, LOGO_X() - w / 2, y - h / 2, w, h); ctx.restore();
 }
 /* Tiro no escapamento (muito tempo no limitador): uma chama sai do escapamento, atrás do ego
  * (lado direito da traseira), com faíscas, e some em ESTOURO.dura s. */
@@ -595,6 +764,6 @@ V.on('ready', () => {
   new ResizeObserver(resize).observe(canvas.parentElement);
   resize();
 });
-V.addRenderer(render);
+V.addRenderer(render, 'cena2d');
 V.scene2d = { renderMini };
 })();

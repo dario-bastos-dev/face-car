@@ -37,7 +37,7 @@ const MAOS = [
   { img: new Image(), src: 'assets/mao_esquerda.webp?v=6', centro: [1540, 478.7], raio: 414.5, giro: 0, pega: [1130.8, 385.1], pulso: [975, 570], braco: [-.45, .89] },
   { img: new Image(), src: 'assets/mao_direita.webp?v=6', centro: [-14, 478.7], raio: 414.5, giro: 0, pega: [396.2, 389.4], pulso: [552, 570], braco: [.45, .89] },
 ];
-for (const m of MAOS) m.img.src = m.src;
+for (const m of MAOS) { m.img.onload = () => { if (W) buildStatic(); }; m.img.src = m.src; }
 const OMBRO = 1100, OMBRO_DESVIO = 560, BRACO_MIN = .8;
 /* Troca de marcha: a mão direita solta o volante, desce até a alavanca (no console, abaixo e à
  * direita do volante, fora da vista) e volta. O braço inteiro recua ao longo dele mesmo, em direção
@@ -53,7 +53,24 @@ function trocaEnvelope() {
   if (t < sai + fica) return 1;
   return 1 - smoothT(Math.min(1, (t - sai - fica) / volta));
 }
+// Na intervenção o motorista está desacordado: as mãos ficam paradas onde estão (não trocam de
+// marcha nem acompanham o volante, que o veículo gira sozinho). O câmbio troca sozinho.
+const dormindo = () => state.level === 'intervention' && !state.degraded;
+/* Mãos soltando o volante: quando a intervenção começa, as duas mãos escorregam do aro e descem
+ * para fora da tela (ao longo do braço, como o motorista desacordado deixando os braços caírem);
+ * fica só o volante, girando sozinho. Quando volta ao normal, sobem de novo e pegam o volante.
+ * solta.f: 0 = no volante, 1 = fora da tela. */
+const SOLTA = { desce: 1.4, sobe: .9, recuo: 1 }; // s, s, raios do volante (o bastante para sair da tela)
+const solta = { f: 0 }; // depuração: VIGIA.cabin.solta.f
+function atualizarSolta(dt) {
+  const alvo = dormindo() ? 1 : 0;
+  if (state.reduceMotion) { solta.f = alvo; return; }
+  solta.f = alvo ? Math.min(1, solta.f + dt / SOLTA.desce) : Math.max(0, solta.f - dt / SOLTA.sobe);
+}
+// suave nos dois sentidos: a mão escorrega devagar, desce e, na volta, assenta devagar no aro
+const soltaCurva = () => smoothT(solta.f);
 V.on('marcha', () => {
+  if (dormindo()) return;
   const { sai, fica } = TROCA, t = trocaMao.t;
   if (t < sai) return;                          // ainda saindo
   if (t < sai + fica) { trocaMao.t = sai; return; } // na alavanca: espera mais um pouco
@@ -92,16 +109,22 @@ function giroDaMao(m, w, giro) {
   }
   return maoCabe(poseMao(m, w, giro), baixo) ? giro : a; // completa o resto (menos de 1°)
 }
-function drawHands(c, w, giroGraus) {
-  const giro = giroGraus * Math.PI / 180;
-  const fora = state.reduceMotion ? 0 : trocaEnvelope();
+function drawHands(c, w, giroGraus, mascara = false) {
+  let giro = giroGraus * Math.PI / 180;
+  const fora = state.reduceMotion || mascara ? 0 : trocaEnvelope();
+  let caida = 0; // quanto as mãos já desceram (raios do volante)
+  if (!mascara) {
+    if (dormindo()) { giro = 0; trocaMao.t = 9; } // não acompanham o giro nem trocam marcha
+    if (solta.f >= 1) return;                     // fora da tela: só o volante
+    caida = SOLTA.recuo * w.r * soltaCurva();
+  }
   for (const m of MAOS) {
     if (!m.img.complete || !m.img.naturalWidth) continue;
     const troca = m === MAOS[1] && fora > 0;
-    const p = poseMao(m, w, giroDaMao(m, w, giro), troca ? TROCA.recuo * w.r * fora : 0);
+    const p = poseMao(m, w, giroDaMao(m, w, giro), (troca ? TROCA.recuo * w.r * fora : 0) + caida);
     c.save();
     c.translate(p.P[0], p.P[1]); c.rotate(p.rot); c.scale(p.k, p.k);
-    c.shadowColor = 'rgba(0,0,0,.4)'; c.shadowBlur = 14; c.shadowOffsetY = 5;
+    if (!mascara) { c.shadowColor = 'rgba(0,0,0,.4)'; c.shadowBlur = 14; c.shadowOffsetY = 5; }
     c.drawImage(m.img, -m.pega[0], -m.pega[1]);
     c.restore();
   }
@@ -110,7 +133,13 @@ function drawHands(c, w, giroGraus) {
 // Balanço da cabine arredondado para pixels inteiros da tela: deslocamentos fracionários
 // reamostram as bordas (colunas, molduras) e deixam frestas claras piscando ao sacudir.
 const snap = v => Math.round(v * dpr) / dpr;
-const cabin = V.cabin = { layout: null, resize, snap };
+const cabin = V.cabin = { layout: null, resize, snap, telaMini, solta };
+// Área da cena 2D na tela "Visão 2D" do painel (px da cabine): para onde a troca de câmera leva a 2D.
+function telaMini() {
+  const s = cabin.layout?.screen; if (!s) return null;
+  const S = s.h / 165;
+  return { x: s.x + 6 * S, y: s.y + 21 * S, w: s.w - 12 * S, h: s.h - 21 * S - 24 * S };
+}
 
 function rr(c, x, y, w, h, r) { c.beginPath(); c.roundRect ? c.roundRect(x, y, w, h, r) : (c.moveTo(x + r, y), c.arcTo(x + w, y, x + w, y + h, r), c.arcTo(x + w, y + h, x, y + h, r), c.arcTo(x, y + h, x, y, r), c.arcTo(x, y, x + w, y, r), c.closePath()); }
 function grad(c, x0, y0, x1, y1, stops) { const g = c.createLinearGradient(x0, y0, x1, y1); stops.forEach(([o, col]) => g.addColorStop(o, col)); return g; }
@@ -162,7 +191,7 @@ function computeLayout() {
 
   const wheelCx = narrow ? W * .5 : W * .445;
   const wheelR = narrow ? Math.min(W * .42, H * .44) : Math.min(H * .47, W * .3);
-  L.wheel = { cx: wheelCx, cy: H * 1.04, r: wheelR, t: Math.max(14, wheelR * .15) }; // aro grosso, como o da referência das mãos
+  L.wheel = { cx: wheelCx, cy: H * (narrow ? 1.04 : 1.1), r: wheelR, t: Math.max(14, wheelR * .15) }; // aro grosso, como o da referência das mãos
   L.cluster = narrow
     ? { x: W * .14, y: dashTop + H * .03, w: W * .72, h: H - dashTop - H * .05 }
     : { x: W * .272, y: dashTop + H * .028, w: W * .352, h: H - dashTop - H * .045 };
@@ -185,6 +214,8 @@ function layer() { const c = document.createElement('canvas'); c.width = Math.ro
 
 function buildStatic() {
   const L = cabin.layout = computeLayout();
+  construirVolante(L);
+  encaixarPaineis(L);
   let c;
   [under, c] = layer();
   const dt = L.dashTop, truck = L.truck;
@@ -259,7 +290,92 @@ function buildStatic() {
   }
 
   drawDmsCamera(c, L);
+}
 
+/* ---------- painéis fora do volante e das mãos ----------
+ * O quadro de instrumentos e a tela da visão 2D não podem ficar atrás do volante nem das mãos.
+ * Desenha o volante e as mãos numa máscara (a 1/4 da resolução), com o volante reto e girado até
+ * ±MASCARA_GIRO graus (as correções do dia a dia), e procura o maior retângulo livre:
+ *  - quadro: na abertura de cima do volante (entre o aro, os raios e o cubo), largo;
+ *  - tela 2D: à direita do volante, o mais baixo possível; se não couber no painel, sobe e fica
+ *    como uma tela apoiada sobre o painel, sem cobrir o retrovisor direito.
+ * Giros maiores (manobras fortes) e a mão saindo para trocar de marcha podem passar por cima por
+ * um instante, como num carro de verdade. Sem espaço suficiente, fica a posição de computeLayout. */
+const MASCARA_GIRO = [-3, 0, 3], MASCARA_CEL = 4, MASCARA_FOLGA = 6;
+function mascaraOcupada(L) {
+  const q = 1 / MASCARA_CEL, mw = Math.ceil(W * q), mh = Math.ceil(H * q);
+  const cv = document.createElement('canvas'); cv.width = mw; cv.height = mh;
+  const c = cv.getContext('2d', { willReadFrequently: true }), w = L.wheel;
+  for (const g of MASCARA_GIRO) {
+    c.setTransform(q, 0, 0, q, 0, 0);
+    c.translate(w.cx, w.cy); c.rotate(g * Math.PI / 180);
+    c.drawImage(over, -over.width / dpr / 2, -over.height / dpr / 2, over.width / dpr, over.height / dpr);
+    c.setTransform(q, 0, 0, q, 0, 0);
+    drawHands(c, w, g, true);
+  }
+  cabin.mascara = cv; // para inspeção (VIGIA.cabin.mascara)
+  const px = c.getImageData(0, 0, mw, mh).data;
+  // tabela de somas: ocupadas no retângulo de células [x0,x1) x [y0,y1) em O(1)
+  const sat = new Int32Array((mw + 1) * (mh + 1));
+  for (let y = 0; y < mh; y++) {
+    let lin = 0;
+    for (let x = 0; x < mw; x++) {
+      lin += px[(y * mw + x) * 4 + 3] > 110 ? 1 : 0;
+      sat[(y + 1) * (mw + 1) + x + 1] = sat[y * (mw + 1) + x + 1] + lin;
+    }
+  }
+  const ocup = (x0, y0, x1, y1) => sat[y1 * (mw + 1) + x1] - sat[y0 * (mw + 1) + x1] - sat[y1 * (mw + 1) + x0] + sat[y0 * (mw + 1) + x0];
+  return { mw, mh, ocup };
+}
+// Maior retângulo livre dentro da área [ax0,ax1]x[ay0,ay1] (px), com largura/altura entre rmin e
+// rmax; `nota` desempata (maior é melhor). Devolve {x,y,w,h} em px, já sem a folga.
+function maiorLivre(M, area, rmin, rmax, nota) {
+  const C = MASCARA_CEL, f = Math.ceil(MASCARA_FOLGA / C);
+  const cx0 = Math.max(0, Math.ceil(area[0] / C)), cx1 = Math.min(M.mw, Math.floor(area[1] / C));
+  const cy0 = Math.max(0, Math.ceil(area[2] / C)), cy1 = Math.min(M.mh, Math.floor(area[3] / C));
+  let melhor = null, melhorNota = -Infinity;
+  for (let y0 = cy0; y0 < cy1; y0++) for (let y1 = y0 + 4; y1 <= cy1; y1++) {
+    const h = y1 - y0;
+    // colunas livres em toda a altura (com a folga), em trechos contínuos
+    let ini = -1;
+    for (let x = cx0; x <= cx1; x++) {
+      const livre = x < cx1 && M.ocup(x, Math.max(0, y0 - f), x + 1, Math.min(M.mh, y1 + f)) === 0;
+      if (livre && ini < 0) ini = x;
+      if (!livre && ini >= 0) {
+        const a = ini + f, b = x - f; ini = -1; // folga nas laterais
+        const wMax = Math.min(b - a, Math.floor(h * rmax));
+        if (wMax < h * rmin) continue;
+        const r = { x: a * C, y: y0 * C, w: wMax * C, h: h * C, run: [a * C, b * C] };
+        const n = nota(r);
+        if (n > melhorNota) { melhorNota = n; melhor = r; }
+      }
+    }
+  }
+  return melhor;
+}
+function encaixarPaineis(L) {
+  if (!over || L.narrow) return;
+  const M = mascaraOcupada(L), w = L.wheel;
+  // quadro: dentro da abertura do volante, centrado nele o quanto der
+  const k = maiorLivre(M, [w.cx - w.r, w.cx + w.r, L.dashTop + H * .015, H - H * .02], 1.5, 3.2, r => r.w * r.h);
+  if (k && k.w > W * .2) {
+    const x = clamp(w.cx - k.w / 2, k.run[0], k.run[1] - k.w);
+    L.cluster = { x, y: k.y, w: k.w, h: k.h };
+  }
+  if (!L.screen) return;
+  // tela 2D: à direita do volante, sem passar do retrovisor e da porta direitos; prefere ficar
+  // baixa (no painel): cada pixel acima do painel conta como meio pixel de área
+  const xMax = Math.min(L.mirrors.right.x - 10, W * .885), topo = Math.max(L.mirrors.center.y + L.mirrors.center.h + 12, L.dashTop - H * .24);
+  const s = maiorLivre(M, [w.cx + w.r * .25, xMax, topo, H - H * .03], 1.05, 1.6, r => r.w * (r.h - .5 * Math.max(0, L.dashTop + H * .03 - r.y)));
+  if (s && s.w >= Math.min(150, W * .15)) {
+    const sw = Math.min(s.w, W * .19), sh = Math.min(s.h, sw / 1.2);
+    L.screen = { x: s.x + (s.w - sw) / 2, y: s.y + s.h - sh, w: sw, h: sh }; // encosta embaixo: o mais baixo possível
+  }
+}
+
+// Volante: numa imagem própria (canvas `over`), desenhado por cima do resto a cada quadro.
+function construirVolante(L) {
+  let c;
   // Volante: numa imagem própria, inteiro (aro completo e raio inferior). Antes só a metade de
   // cima era desenhada, numa camada do tamanho da tela; ao girar o volante, a parte que faltava
   // (e a cortada pela borda da tela) aparecia como um corte no aro.
@@ -520,6 +636,7 @@ function warnTri(c, x, y, s, color) {
 }
 
 function drawCluster(L, t) {
+  if (L.cluster.w / L.cluster.h > 2.2) return drawClusterFaixa(L, t);
   const c = ctx, k = L.cluster, lvl = V.effectiveLevel(), ui = uiDoNivel(lvl);
   const alertOn = lvl !== 'normal' && lvl !== 'degraded';
   const flash = alertOn && (lvl === 'attention' || Math.floor(t / 450) % 2 === 0);
@@ -617,6 +734,78 @@ function drawCluster(L, t) {
   c.restore();
 }
 
+// Setas (pisca ou pisca-alerta) apontando para fora, com a ponta em (tip, y).
+function setas(c, xEsq, xDir, y, as) {
+  if (!(state.hazardOn || state.leftOn || state.rightOn)) return;
+  c.save(); c.fillStyle = '#2fe08f'; c.shadowColor = '#2fe08f'; c.shadowBlur = 8;
+  for (const s of state.hazardOn ? [-1, 1] : state.leftOn ? [-1] : [1]) {
+    const tip = s < 0 ? xEsq : xDir;
+    c.beginPath(); c.moveTo(tip, y); c.lineTo(tip - s * as, y - as * .62); c.lineTo(tip - s * as, y - as * .25);
+    c.lineTo(tip - s * as * 1.6, y - as * .25); c.lineTo(tip - s * as * 1.6, y + as * .25); c.lineTo(tip - s * as, y + as * .25);
+    c.lineTo(tip - s * as, y + as * .62); c.closePath(); c.fill();
+  }
+  c.restore();
+}
+/* Quadro em faixa (largo e baixo): o formato que cabe na abertura do volante, entre o aro, o cubo
+ * e as mãos (veja encaixarPaineis). Letras maiores, sem os números da escala nem a visão de faixa:
+ * velocímetro com a velocidade no meio, à esquerda; marcha, setas, hora e quilometragem no centro;
+ * estado do VIGIA à direita. Tamanhos em px para um quadro de 80 px de altura (S). */
+function drawClusterFaixa(L, t) {
+  const c = ctx, k = L.cluster, lvl = V.effectiveLevel(), ui = uiDoNivel(lvl);
+  const alertOn = lvl !== 'normal' && lvl !== 'degraded';
+  const flash = alertOn && (lvl === 'attention' || Math.floor(t / 450) % 2 === 0);
+  const S = k.h / 80;
+  c.save();
+  rr(c, k.x, k.y, k.w, k.h, 12 * S); c.clip();
+  c.fillStyle = grad(c, 0, k.y, 0, k.y + k.h, [[0, '#07121f'], [1, '#02060c']]); c.fillRect(k.x, k.y, k.w, k.h);
+  // velocímetro
+  const r = k.h * .42, cx = k.x + 6 * S + r, cy = k.y + k.h * .52;
+  const max = V.VEHICLES[state.vehicle].maxSpeed, a0 = Math.PI * .75, a1 = Math.PI * 2.25;
+  c.lineCap = 'round';
+  c.lineWidth = r * .14; c.strokeStyle = '#13283c'; c.beginPath(); c.arc(cx, cy, r, a0, a1); c.stroke();
+  const frac = clamp(state.speed / max, 0, 1), aNow = a0 + (a1 - a0) * frac;
+  c.strokeStyle = grad(c, cx - r, cy, cx + r, cy, [[0, '#1d6fff'], [.75, '#36c6ff'], [1, '#f4be75']]);
+  c.shadowColor = '#1d8fff'; c.shadowBlur = 8;
+  c.beginPath(); c.arc(cx, cy, r, a0, aNow); c.stroke(); c.shadowBlur = 0;
+  for (let v = 0; v <= max; v += 20) {
+    const a = a0 + (a1 - a0) * v / max;
+    c.strokeStyle = v > max * .78 ? '#d98a74' : '#4f6b84'; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(cx + Math.cos(a) * r * .72, cy + Math.sin(a) * r * .72); c.lineTo(cx + Math.cos(a) * r * .82, cy + Math.sin(a) * r * .82); c.stroke();
+  }
+  txt(c, String(Math.round(state.speed)), cx, cy - 1 * S, 22 * S, '#ffffff', 800, 'center', 'middle');
+  txt(c, 'km/h', cx, cy + 15 * S, 8 * S, '#9cc0d8', 700, 'center', 'middle');
+  // centro: marcha, setas, hora · temperatura e quilometragem
+  const px = k.x + k.w - 6 * S - k.w * .3, mx = cx + r + 6 * S, mw = px - 5 * S - mx, mc = mx + mw / 2;
+  txt(c, world.gear, mc - 2 * S, k.y + 30 * S, 22 * S, '#3aa7ff', 800, 'right');
+  txt(c, String(world.gearNum || ''), mc, k.y + 30 * S, 12 * S, '#9cc0d8', 700, 'left');
+  setas(c, mx + 1, mx + mw - 1, k.y + 21 * S, 8 * S);
+  txt(c, V.clockText() + ' · ' + env.temperature + '°C', mc, k.y + 48 * S, 9.5 * S, '#cfe2f1', 600, 'center');
+  rr(c, mx, k.y + k.h - 22 * S, mw, 15 * S, 5 * S); c.fillStyle = '#0c1a29'; c.fill();
+  txt(c, world.odometer.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' km', mc, k.y + k.h - 14.5 * S, 9 * S, '#cfe2f1', 600, 'center', 'middle');
+  headlightIcon(c, k.x + 9 * S, k.y + 9 * S, 9 * S, env.night > .15);
+  // estado do VIGIA
+  const py = k.y + 5 * S, pw = k.x + k.w - 5 * S - px, ph = k.h - 10 * S;
+  c.fillStyle = alertOn ? (flash ? 'rgba(120,10,10,.55)' : 'rgba(60,8,8,.45)') : 'rgba(10,30,24,.5)';
+  rr(c, px, py, pw, ph, 9 * S); c.fill();
+  c.strokeStyle = ui.color; c.lineWidth = alertOn ? 2.2 : 1.2; c.shadowColor = ui.color; c.shadowBlur = alertOn && flash ? 16 : 5;
+  rr(c, px, py, pw, ph, 9 * S); c.stroke(); c.shadowBlur = 0;
+  const icx = px + pw / 2, is = 13 * S;
+  let icon = ui.icon === 'blink' ? (Math.floor(t / 700) % 2 ? 'coffee' : 'warn') : ui.icon;
+  if (lvl === 'intervention' && !flash) icon = null;
+  if (icon === 'coffee') coffee(c, icx, py + 15 * S, is, ui.color);
+  else if (icon === 'vigia') vigiaIcon(c, icx, py + 15 * S, is * 1.15, ui.color);
+  else if (icon === 'warn') warnTri(c, icx, py + 15 * S, is, ui.color);
+  // título em até duas linhas, no tamanho que couber na largura
+  const words = ui.title.split(' '), linhas = words.length > 1 ? [words[0], words.slice(1).join(' ')] : [ui.title];
+  c.font = `900 ${10 * S}px Inter, "Segoe UI", system-ui, sans-serif`;
+  const fs = 10 * S * Math.min(1, (pw - 6 * S) / Math.max(...linhas.map(l => c.measureText(l).width)));
+  linhas.forEach((l, i) => txt(c, l, icx, py + 37 * S + i * fs * 1.15, fs, ui.color, 900, 'center'));
+  c.font = `600 ${7 * S}px Inter, "Segoe UI", system-ui, sans-serif`;
+  const sub = alertOn ? 'AVISO ATIVADO' : ui.sub, fsub = 7 * S * Math.min(1, (pw - 6 * S) / c.measureText(sub).width);
+  txt(c, sub, icx, py + ph - 5 * S, fsub, alertOn ? '#f3d2d2' : '#c5d4df', 700, 'center');
+  c.restore();
+}
+
 function drawScreen(L) {
   const s = L.screen; if (!s) return;
   const c = ctx, S = s.h / 165;
@@ -625,7 +814,7 @@ function drawScreen(L) {
   c.fillStyle = grad(c, 0, s.y, 0, s.y + s.h, [[0, '#0d1b2c'], [1, '#07101b']]); c.fillRect(s.x, s.y, s.w, s.h);
   txt(c, 'VISÃO 2D - SIMPLIFICADA', s.x + 10 * S, s.y + 15 * S, 8.5 * S, '#cfe2f1', 700);
   // a mesma cena da "Visão 2D", renderizada em tamanho reduzido (quadros alternados)
-  const mx = s.x + 6 * S, my = s.y + 21 * S, mw = s.w - 12 * S, mh = s.h - 21 * S - 24 * S;
+  const { x: mx, y: my, w: mw, h: mh } = telaMini(); // a mesma área usada pela troca de câmera
   // a mesma cena da Visão 2D, redesenhada a cada quadro (antes era a cada 2, parecia travar)
   const mini = V.scene2d?.renderMini(Math.round(mw), Math.round(mh)) || cabin.miniCache;
   if (mini) { cabin.miniCache = mini; c.save(); rr(c, mx, my, mw, mh, 6); c.clip(); c.drawImage(mini, mx, my, mw, mh); c.restore(); }
@@ -643,7 +832,8 @@ function drawScreen(L) {
 
 function draw(dt, t) {
   trocaMao.t += dt;
-  if (state.viewMode !== '3d' || !under || !V.world3d?.ready) return;
+  atualizarSolta(dt);
+  if (!V.vistaAtiva('3d') || !under || !V.world3d?.ready) return;
   const L = cabin.layout, dy = snap(V.motion.bob); // balanço vertical da cabine (suspensão)
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -681,5 +871,5 @@ function draw(dt, t) {
   drawFlash(L);
   ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
-V.addRenderer(draw);
+V.addRenderer(draw, 'cabine');
 })();
